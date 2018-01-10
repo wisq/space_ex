@@ -28,22 +28,17 @@ defmodule SpaceEx.Connection do
     Socket.Stream.send!(sock, size <> message)
   end
 
-  def recv_message(sock, received \\ <<>>) do
-    byte = Socket.Stream.recv!(sock, 1)
-    buffer = received <> byte
+  def recv_message(sock, buffer \\ <<>>) do
+    case Socket.Stream.recv!(sock, 1) do
+      <<1 :: size(1), _ :: bitstring>> = byte ->
+        # high bit set, varint incomplete
+        recv_message(sock, buffer <> byte)
 
-    case try_decode_varint(buffer) do
-      {:ok, size} -> Socket.Stream.recv!(sock, size)
-      {:error, _} -> recv_message(sock, buffer)
-    end
-  end
+      <<0 :: size(1), _ :: bitstring>> = byte ->
+        {size, ""} = :gpb.decode_varint(buffer <> byte)
+        Socket.Stream.recv!(sock, size)
 
-  def try_decode_varint(bytes) do
-    try do
-      {int, ""} = :gpb.decode_varint(bytes)
-      {:ok, int}
-    rescue
-      FunctionClauseError -> {:error, :incomplete}
+      nil -> raise "kRPC connection closed"
     end
   end
 end
