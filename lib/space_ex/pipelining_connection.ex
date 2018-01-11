@@ -136,12 +136,11 @@ defmodule SpaceEx.PipeliningConnection do
   def extract_reply(buffer) do
     case safe_decode_varint(buffer) do
       {size, leftover} ->
-        if byte_size(leftover) >= size do
-          reply  = binary_part(leftover, 0, size)
-          buffer = binary_part(leftover, size, byte_size(leftover) - size)
-          {:ok, reply, buffer}
-        else
-          {:error, :incomplete}
+        case leftover do
+          <<reply :: bytes-size(size), buffer :: binary>> ->
+            {:ok, reply, buffer}
+
+          _ -> {:error, :incomplete}
         end
 
       nil -> {:error, :incomplete}
