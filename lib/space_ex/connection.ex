@@ -1,4 +1,5 @@
 defmodule SpaceEx.Connection do
+  use GenServer
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
     ConnectionResponse,
@@ -24,6 +25,9 @@ defmodule SpaceEx.Connection do
       :OK -> sock
       _ -> raise "kRPC connection failed: #{inspect response.message}"
     end
+
+    {:ok, pid} = GenServer.start_link(__MODULE__, sock)
+    pid
   end
 
   def send_message(sock, message) do
@@ -48,7 +52,7 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  def call_rpc(sock, service, procedure) do # TODO: args
+  def call_rpc(pid, service, procedure) do # TODO: args
     call = ProcedureCall.new(
       service: service,
       procedure: procedure,
@@ -58,22 +62,25 @@ defmodule SpaceEx.Connection do
       Request.new(calls: [call])
       |> Request.encode
 
-    send_message(sock, request)
-
     response =
-      recv_message(sock)
+      GenServer.call(pid, {:rpc, request})
       |> Response.decode
 
     if response.error do
-      raise response.error
-    end
-
-    [call_reply] = response.results
-
-    if call_reply.error do
-      {:error, call_reply.error}
+      {:error, response.error}
     else
-      {:ok, call_reply.value}
+      [call_reply] = response.results
+
+      if call_reply.error do
+        {:error, call_reply.error}
+      else
+        {:ok, call_reply.value}
+      end
     end
+  end
+
+  def handle_call({:rpc, bytes}, _, sock) do
+    send_message(sock, bytes)
+    {:reply, recv_message(sock), sock}
   end
 end
