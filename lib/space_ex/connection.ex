@@ -1,5 +1,11 @@
 defmodule SpaceEx.Connection do
-  alias SpaceEx.Protobufs.{ConnectionRequest, ConnectionResponse} 
+  alias SpaceEx.Protobufs.{
+    ConnectionRequest,
+    ConnectionResponse,
+    ProcedureCall,
+    Request,
+    Response,
+  }
 
   def connect!(host, port) do
     sock = Socket.TCP.connect!(host, port, packet: :raw)
@@ -39,6 +45,35 @@ defmodule SpaceEx.Connection do
         Socket.Stream.recv!(sock, size)
 
       nil -> raise "kRPC connection closed"
+    end
+  end
+
+  def call_rpc(sock, service, procedure) do # TODO: args
+    call = ProcedureCall.new(
+      service: service,
+      procedure: procedure,
+      arguments: [],
+    )
+    request =
+      Request.new(calls: [call])
+      |> Request.encode
+
+    send_message(sock, request)
+
+    response =
+      recv_message(sock)
+      |> Response.decode
+
+    if response.error do
+      raise response.error
+    end
+
+    [call_reply] = response.results
+
+    if call_reply.error do
+      {:error, call_reply.error}
+    else
+      {:ok, call_reply.value}
     end
   end
 end
