@@ -16,20 +16,17 @@ defmodule SpaceEx.Service do
     end
   end
 
-  def module_basename(mod) do
-    Module.split(mod)
-    |> List.last
-  end
-
   defmacro __before_compile__(_env) do
-    quote do
+    quote location: :keep do
       @service_json
       |> Map.fetch!("enumerations")
       |> Enum.each(&SpaceEx.Service.define_enumeration(@service_name, &1))
 
       @service_json
-      |> Map.fetch!("procedures")
-      |> Enum.each(&SpaceEx.Service.define_service_procedure(@service_name, &1))
+      |> SpaceEx.Service.procedures_by_class
+      |> Enum.each(fn {class, procedures} ->
+        SpaceEx.Service.define_service_module(@service_name, class, procedures)
+      end)
     end
   end
 
@@ -40,7 +37,6 @@ defmodule SpaceEx.Service do
     ] do
       {enum_name, opts} = json
 
-      IO.inspect([service_name, enum_name, __MODULE__])
       defmodule :"Elixir.SpaceEx.#{service_name}.#{enum_name}" do
         Map.fetch!(opts, "values")
         |> Enum.each(fn %{"name" => name, "value" => value} ->
@@ -65,13 +61,32 @@ defmodule SpaceEx.Service do
     end
   end
 
-  defmacro define_service_procedure(service_name, json) do
+  defmacro define_service_module(service_name, class, procedures) do
     quote bind_quoted: [
       service_name: service_name,
+      class: class,
+      procedures: procedures,
+    ] do
+      if class do
+        {class_name, _} = class
+        service_name = @service_name
+        defmodule Module.concat(__MODULE__, String.to_atom(class_name)) do
+          Enum.each(procedures, &SpaceEx.Service.define_service_procedure(service_name, class_name, &1))
+        end
+      else
+        Enum.each(procedures, &SpaceEx.Service.define_service_procedure(@service_name, nil, &1))
+      end
+    end
+  end
+
+  defmacro define_service_procedure(service_name, class_name, json) do
+    quote bind_quoted: [
+      service_name: service_name,
+      class_name: class_name,
       json: json,
     ] do
       {rpc_name, opts} = json
-      fn_name = SpaceEx.Service.to_snake_case(rpc_name) |> String.to_atom
+      fn_name = SpaceEx.Service.rpc_function_name(rpc_name, class_name)
       {fn_args, arg_encoders} = Map.fetch!(opts, "parameters") |> SpaceEx.Service.args_builder
       return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
@@ -100,10 +115,51 @@ defmodule SpaceEx.Service do
 
   def to_snake_case(name) do
     name
-    #|> regex_replace(@regex_underscores, "\\1__")
-    |> regex_replace(@regex_single_uppercase, "\\1_\\2")
-    |> regex_replace(@regex_multi_uppercase, "\\1_\\2")
+    #|> String.replace(@regex_underscores, "\\1__")
+    |> String.replace(@regex_single_uppercase, "\\1_\\2")
+    |> String.replace(@regex_multi_uppercase, "\\1_\\2")
     |> String.downcase
+  end
+
+  def module_basename(mod) do
+    Module.split(mod)
+    |> List.last
+  end
+
+  def procedures_by_class(json) do
+    classes = Map.fetch!(json, "classes")
+    procedures = Map.fetch!(json, "procedures")
+
+    [nil | Enum.to_list(classes)]
+    |> Enum.map(fn class ->
+      {class, class_procedures(class, procedures, classes)}
+    end)
+  end
+
+  # Find procedures without any class.
+  def class_procedures(nil, procedures, classes) do
+    Enum.reject(procedures, fn {proc_name, _} ->
+      Enum.any?(classes, fn {class_name, _} ->
+        String.starts_with?(proc_name, "#{class_name}_")
+      end)
+    end)
+  end
+
+  # Find procedures for a particular class.
+  def class_procedures({class_name, _}, procedures, _classes) do
+    Enum.filter(procedures, fn {proc_name, _} ->
+      String.starts_with?(proc_name, "#{class_name}_")
+    end)
+  end
+
+  def rpc_function_name(rpc_name, nil) do
+    to_snake_case(rpc_name)
+    |> String.to_atom
+  end
+
+  def rpc_function_name(rpc_name, class_name) do
+    String.replace(rpc_name, ~r{^#{Regex.escape(class_name)}_}, "")
+    |> rpc_function_name(nil)
   end
 
   def args_builder(params) do
@@ -133,6 +189,4 @@ defmodule SpaceEx.Service do
   def encode_args([arg | args], [encoder | encoders]) do
     [encoder.(arg) | encode_args(args, encoders)]
   end
-
-  defp regex_replace(from, regex, to), do: Regex.replace(regex, from, to)
 end
