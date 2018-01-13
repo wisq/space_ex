@@ -64,7 +64,7 @@ defmodule SpaceEx.Connection do
       service: service,
       procedure: procedure,
       arguments: args,
-    )
+    ) |> IO.inspect
 
     request =
       Request.new(calls: [call])
@@ -73,12 +73,12 @@ defmodule SpaceEx.Connection do
     response =
       GenServer.call(pid, {:rpc, request})
       |> Response.decode
+      |> IO.inspect
 
     if response.error do
       {:error, response.error}
     else
       [call_reply] = response.results
-      IO.inspect(response)
 
       if call_reply.error do
         {:error, call_reply.error}

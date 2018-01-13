@@ -15,3 +15,11 @@ message Double {
 message SInt32 {
   sint32 value = 1;
 }
+
+message UInt32 {
+  uint32 value = 1;
+}
+
+message UInt64 {
+  uint64 value = 1;
+}

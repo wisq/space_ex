@@ -36,18 +36,14 @@ defmodule SpaceEx.Service do
     ] do
       {rpc_name, opts} = json
       fn_name = SpaceEx.Service.to_snake_case(rpc_name) |> String.to_atom
-      fn_args =
-        Map.fetch!(opts, "parameters")
-        |> Enum.map(fn param ->
-          Map.fetch!(param, "name")
-          |> String.to_atom
-          |> Macro.var(__MODULE__)
-        end)
+      {fn_args, arg_encoders} = Map.fetch!(opts, "parameters") |> SpaceEx.Service.args_builder
       return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
       @doc Map.fetch!(opts, "documentation")
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-        case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), unquote(fn_args)) do
+        args = SpaceEx.Service.encode_args(unquote(fn_args), unquote(arg_encoders))
+
+        case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), args) do
           {:ok, value} -> {:ok, SpaceEx.Types.decode(value, unquote(return_type))}
           {:error, error} -> {:error, error}
         end
@@ -72,6 +68,34 @@ defmodule SpaceEx.Service do
     |> regex_replace(@regex_single_uppercase, "\\1_\\2")
     |> regex_replace(@regex_multi_uppercase, "\\1_\\2")
     |> String.downcase
+  end
+
+  def args_builder(params) do
+    fn_args =
+      Enum.map(params, fn param ->
+        Map.fetch!(param, "name")
+        |> String.to_atom
+        |> Macro.var(__MODULE__)
+      end)
+
+    arg_encoders =
+      Enum.map(params, fn param ->
+        type = Map.fetch!(param, "type") |> Macro.escape
+
+        quote do
+          fn arg ->
+            SpaceEx.Types.encode(arg, unquote(type))
+          end
+        end
+      end)
+
+    {fn_args, arg_encoders}
+  end
+
+  def encode_args([], []), do: []
+
+  def encode_args([arg | args], [encoder | encoders]) do
+    [encoder.(arg) | encode_args(args, encoders)]
   end
 
   defp regex_replace(from, regex, to), do: Regex.replace(regex, from, to)
