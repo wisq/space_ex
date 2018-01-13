@@ -37,7 +37,7 @@ defmodule SpaceEx.Service do
     ] do
       {enum_name, opts} = json
 
-      defmodule :"Elixir.SpaceEx.#{service_name}.#{enum_name}" do
+      defmodule Module.concat(__MODULE__, enum_name) do
         Map.fetch!(opts, "values")
         |> Enum.each(fn %{"name" => name, "value" => value} ->
           SpaceEx.Service.define_enumeration_value(name, value)
@@ -70,7 +70,7 @@ defmodule SpaceEx.Service do
       if class do
         {class_name, _} = class
         service_name = @service_name
-        defmodule Module.concat(__MODULE__, String.to_atom(class_name)) do
+        defmodule Module.concat(__MODULE__, class_name) do
           Enum.each(procedures, &SpaceEx.Service.define_service_procedure(service_name, class_name, &1))
         end
       else
