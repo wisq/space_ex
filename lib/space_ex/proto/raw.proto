@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+message String {
+  string value = 1;
+}
+
+message Float {
+  float value = 1;
+}
+
+message Double {
+  double value = 1;
+}
+
+message SInt32 {
+  sint32 value = 1;
+}

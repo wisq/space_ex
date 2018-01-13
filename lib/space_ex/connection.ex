@@ -4,6 +4,7 @@ defmodule SpaceEx.Connection do
     ConnectionRequest,
     ConnectionResponse,
     ProcedureCall,
+    Argument,
     Request,
     Response,
   }
@@ -52,12 +53,19 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  def call_rpc(pid, service, procedure) do # TODO: args
+  def call_rpc(pid, service, procedure, args \\ []) do
+    args =
+      Enum.with_index(args)
+      |> Enum.map(fn {arg, index} ->
+        Argument.new(position: index, value: arg)
+      end)
+
     call = ProcedureCall.new(
       service: service,
       procedure: procedure,
-      arguments: [],
+      arguments: args,
     )
+
     request =
       Request.new(calls: [call])
       |> Request.encode
@@ -70,6 +78,7 @@ defmodule SpaceEx.Connection do
       {:error, response.error}
     else
       [call_reply] = response.results
+      IO.inspect(response)
 
       if call_reply.error do
         {:error, call_reply.error}

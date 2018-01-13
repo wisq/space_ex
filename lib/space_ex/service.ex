@@ -1,8 +1,18 @@
 defmodule SpaceEx.Service do
   defmacro __using__(opts) do
     quote do
-      import SpaceEx.Service
-      define_from_service_json(unquote(opts)[:from], unquote(opts)[:name] || module_basename(__MODULE__))
+      require SpaceEx.Types
+
+      json_file = unquote(opts)[:from]
+
+      @service_name unquote(opts)[:name] || SpaceEx.Service.module_basename(__MODULE__)
+      @service_json (
+        File.read!(json_file)
+        |> Poison.decode!
+        |> Map.fetch!(@service_name)
+      )
+      @external_resource json_file
+      @before_compile SpaceEx.Service
     end
   end
 
@@ -11,16 +21,11 @@ defmodule SpaceEx.Service do
     |> List.last
   end
 
-  defmacro define_from_service_json(json_file, service_name) do
+  defmacro __before_compile__(_env) do
     quote do
-      json =
-        File.read!(unquote(json_file))
-        |> Poison.decode!
-        |> Map.fetch!(unquote(service_name))
-
-      json
+      @service_json
       |> Map.fetch!("procedures")
-      |> Enum.map(&define_service_procedure(unquote(service_name), &1))
+      |> Enum.each(&SpaceEx.Service.define_service_procedure(@service_name, &1))
     end
   end
 
@@ -30,7 +35,7 @@ defmodule SpaceEx.Service do
       json: json,
     ] do
       {rpc_name, opts} = json
-      fn_name = to_snake_case(rpc_name) |> String.to_atom
+      fn_name = SpaceEx.Service.to_snake_case(rpc_name) |> String.to_atom
       fn_args =
         Map.fetch!(opts, "parameters")
         |> Enum.map(fn param ->
@@ -38,17 +43,28 @@ defmodule SpaceEx.Service do
           |> String.to_atom
           |> Macro.var(__MODULE__)
         end)
+      return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
       @doc Map.fetch!(opts, "documentation")
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-        SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name))
+        case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), unquote(fn_args)) do
+          {:ok, value} -> {:ok, SpaceEx.Types.decode(value, unquote(return_type))}
+          {:error, error} -> {:error, error}
+        end
+      end
+
+      def unquote(:"#{fn_name}!")(conn, unquote_splicing(fn_args)) do
+        case unquote(fn_name)(conn, unquote_splicing(fn_args)) do
+          {:ok, value} -> value
+          {:error, error} -> raise error.description
+        end
       end
     end
   end
 
   @regex_multi_uppercase ~r'([A-Z]+)([A-Z][a-z0-9])'
   @regex_single_uppercase ~r'([a-z0-9])([A-Z])'
-  @regex_underscores ~r'(.)_'
+  #@regex_underscores ~r'(.)_'
 
   def to_snake_case(name) do
     name
