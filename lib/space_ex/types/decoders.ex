@@ -24,6 +24,17 @@ defmodule SpaceEx.Types.Decoders do
     end
   end
 
+  def type_decoder(input, :ENUMERATION, opts) do
+    %{"service" => service, "name" => name} = opts
+    module = :"Elixir.SpaceEx.#{service}.#{name}"
+    decoder = type_decoder(input, :SINT32, %{})
+
+    quote do
+      unquote(decoder)
+      |> unquote(module).atom
+    end
+  end
+
   def type_decoder(input, type, _opts) do
     if module = SpaceEx.Types.protobuf_module(type) do
       quote do: unquote(module).decode(unquote(input))

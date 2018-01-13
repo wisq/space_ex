@@ -24,8 +24,44 @@ defmodule SpaceEx.Service do
   defmacro __before_compile__(_env) do
     quote do
       @service_json
+      |> Map.fetch!("enumerations")
+      |> Enum.each(&SpaceEx.Service.define_enumeration(@service_name, &1))
+
+      @service_json
       |> Map.fetch!("procedures")
       |> Enum.each(&SpaceEx.Service.define_service_procedure(@service_name, &1))
+    end
+  end
+
+  defmacro define_enumeration(service_name, json) do
+    quote bind_quoted: [
+      service_name: service_name,
+      json: json,
+    ] do
+      {enum_name, opts} = json
+
+      IO.inspect([service_name, enum_name, __MODULE__])
+      defmodule :"Elixir.SpaceEx.#{service_name}.#{enum_name}" do
+        Map.fetch!(opts, "values")
+        |> Enum.each(fn %{"name" => name, "value" => value} ->
+          SpaceEx.Service.define_enumeration_value(name, value)
+        end)
+      end
+    end
+  end
+
+  defmacro define_enumeration_value(name, value) do
+    quote bind_quoted: [
+      name: name,
+      value: value,
+    ] do
+      name =
+        SpaceEx.Service.to_snake_case(name)
+        |> String.to_atom
+      def atom(unquote(value)), do: unquote(name)
+      def value(unquote(name)), do: unquote(value)
+
+      def unquote(name)(), do: unquote(name)
     end
   end
 

@@ -8,9 +8,17 @@ defmodule SpaceEx.Types.Encoders do
   def type_encoder(input, :CLASS, _opts),  do: input
 
   # FIXME: wtf do I do with this?
-  def type_encoder(input, :PROCEDURE_CALL, _opts),  do: input
-  # FIXME: add enumeration support
-  def type_encoder(input, :ENUMERATION, _opts),  do: input
+  def type_encoder(input, :PROCEDURE_CALL, _opts), do: input
+
+  def type_encoder(input, :ENUMERATION, opts) do
+    %{"service" => service, "name" => name} = opts
+    module = :"Elixir.SpaceEx.#{service}.#{name}"
+
+    ast = quote do
+      unquote(module).value(unquote(input))
+    end
+    type_encoder(ast, :SINT32, %{})
+  end
 
   # Strings can also be encoded via:
   #quote do
