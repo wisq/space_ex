@@ -22,14 +22,6 @@ defmodule SpaceEx.Types do
   defmacro encode(input, {:%{}, _, tuples}) do
     opts = Map.new(tuples)
     code = Map.fetch!(opts, "code") |> String.to_atom
-    types = Map.get(opts, "types", nil)
-
-    input =
-      if pre = Encoders.pre_encode(code, types, opts) do
-        {:"|>", [], [input, pre]}
-      else
-        input
-      end
 
     Encoders.type_encoder(input, code, opts)
   end

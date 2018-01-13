@@ -1,8 +1,16 @@
 defmodule SpaceEx.Types.Encoders do
   alias SpaceEx.Protobufs.Raw
 
+  def type_encoder(input, code, %{"types" => subtypes} = opts),
+    do: nested_type_encoder(input, code, subtypes, opts)
+
   def type_encoder(input, :BYTES, _opts),  do: input
   def type_encoder(input, :CLASS, _opts),  do: input
+
+  # FIXME: wtf do I do with this?
+  def type_encoder(input, :PROCEDURE_CALL, _opts),  do: input
+  # FIXME: add enumeration support
+  def type_encoder(input, :ENUMERATION, _opts),  do: input
 
   # Strings can also be encoded via:
   #quote do
@@ -25,14 +33,6 @@ defmodule SpaceEx.Types.Encoders do
     end
   end
 
-  def type_encoder(input, type, _opts) do
-    if module = SpaceEx.Types.protobuf_module(type) do
-      quote do: unquote(module).encode(unquote(input))
-    else
-      raise "No Protobuf module found for type #{type}"
-    end
-  end
-
 
   def raw_encoder(input, module) do
     quote do
@@ -43,29 +43,29 @@ defmodule SpaceEx.Types.Encoders do
   end
 
 
-  def pre_encode(:LIST, subtypes, _opts) do
+  def nested_type_encoder(input, :LIST, subtypes, _opts) do
     [subtype] = subtypes
     quote do
-      Enum.map(fn item ->
-        SpaceEx.Types.encode(item, unquote(subtype))
-      end)
+      unquote(input)
+      |> Enum.map(fn item -> SpaceEx.Types.encode(item, unquote(subtype)) end)
       |> SpaceEx.Types.Encoders.build_map(:items)
       |> SpaceEx.Protobufs.List.new
+      |> SpaceEx.Protobufs.List.encode
     end
   end
 
-  def pre_encode(:SET, subtypes, _opts) do
+  def nested_type_encoder(input, :SET, subtypes, _opts) do
     [subtype] = subtypes
     quote do
-      Enum.map(fn item ->
-        SpaceEx.Types.encode(item, unquote(subtype))
-      end)
+      unquote(input)
+      |> Enum.map(fn item -> SpaceEx.Types.encode(item, unquote(subtype)) end)
       |> SpaceEx.Types.Encoders.build_map(:items)
       |> SpaceEx.Protobufs.Set.new
+      |> SpaceEx.Protobufs.Set.encode
     end
   end
 
-  def pre_encode(:TUPLE, subtypes, _opts) do
+  def nested_type_encoder(input, :TUPLE, subtypes, _opts) do
     encoders = Enum.map(subtypes, fn subtype ->
       quote do
         fn item ->
@@ -75,17 +75,20 @@ defmodule SpaceEx.Types.Encoders do
     end)
 
     quote do
-      SpaceEx.Types.Encoders.encode_tuple(unquote(encoders))
+      unquote(input)
+      |> SpaceEx.Types.Encoders.encode_tuple(unquote(encoders))
       |> SpaceEx.Types.Encoders.build_map(:items)
       |> SpaceEx.Protobufs.Tuple.new
+      |> SpaceEx.Protobufs.Tuple.encode
     end
   end
 
-  def pre_encode(:DICTIONARY, subtypes, _opts) do
+  def nested_type_encoder(input, :DICTIONARY, subtypes, _opts) do
     [key_type, value_type] = subtypes
 
     quote do
-      Enum.each(fn {key, value} ->
+      unquote(input)
+      |> Enum.map(fn {key, value} ->
         SpaceEx.Protobufs.DictionaryEntry.new(
           key:   SpaceEx.Types.encode(key, unquote(key_type)),
           value: SpaceEx.Types.encode(value, unquote(value_type)),
@@ -93,14 +96,9 @@ defmodule SpaceEx.Types.Encoders do
       end)
       |> SpaceEx.Types.Encoders.build_map(:entries)
       |> SpaceEx.Protobufs.Dictionary.new
+      |> SpaceEx.Protobufs.Dictionary.encode
     end
   end
-
-  def pre_encode(code, types, _opts) when is_list(types) do
-    raise "Unknown type code with subtypes: #{inspect(code)}"
-  end
-
-  def pre_encode(_, _, _), do: nil
 
 
   def encode_tuple(tuple, encoders) do
