@@ -27,6 +27,7 @@ defmodule SpaceEx.Mixfile do
       {:socket, "~> 0.3"},
       {:poison, "~> 3.1", only: :dev},
       {:ex_doc, "~> 0.10", only: :dev},
+      {:floki, "~> 0.19.0", only: :dev},
     ]
   end
 end

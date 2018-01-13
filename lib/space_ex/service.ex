@@ -1,4 +1,6 @@
 defmodule SpaceEx.Service do
+  @moduledoc false
+
   defmacro __using__(opts) do
     quote do
       require SpaceEx.Types
@@ -38,25 +40,33 @@ defmodule SpaceEx.Service do
       {enum_name, opts} = json
 
       defmodule Module.concat(__MODULE__, enum_name) do
+        @moduledoc SpaceEx.Doc.enumeration(opts)
+
         Map.fetch!(opts, "values")
-        |> Enum.each(fn %{"name" => name, "value" => value} ->
-          SpaceEx.Service.define_enumeration_value(name, value)
+        |> Enum.each(fn %{"name" => name, "value" => value} = opts ->
+          SpaceEx.Service.define_enumeration_value(name, value, opts)
         end)
       end
     end
   end
 
-  defmacro define_enumeration_value(name, value) do
+  defmacro define_enumeration_value(name, value, opts) do
     quote bind_quoted: [
       name: name,
       value: value,
+      opts: opts,
     ] do
       name =
         SpaceEx.Service.to_snake_case(name)
         |> String.to_atom
+
+      @doc false  # Converts a raw wire value to a named atom.
       def atom(unquote(value)), do: unquote(name)
+
+      @doc false  # Converts a named atom to a raw wire value.
       def value(unquote(name)), do: unquote(value)
 
+      @doc SpaceEx.Doc.enumeration_value(opts, name)
       def unquote(name)(), do: unquote(name)
     end
   end
@@ -68,12 +78,16 @@ defmodule SpaceEx.Service do
       procedures: procedures,
     ] do
       if class do
-        {class_name, _} = class
+        {class_name, opts} = class
         service_name = @service_name
         defmodule Module.concat(__MODULE__, class_name) do
+          @moduledoc SpaceEx.Doc.class(opts)
+
           Enum.each(procedures, &SpaceEx.Service.define_service_procedure(service_name, class_name, &1))
         end
       else
+        @moduledoc SpaceEx.Doc.service(@service_json)
+
         Enum.each(procedures, &SpaceEx.Service.define_service_procedure(@service_name, nil, &1))
       end
     end
@@ -90,7 +104,7 @@ defmodule SpaceEx.Service do
       {fn_args, arg_encoders} = Map.fetch!(opts, "parameters") |> SpaceEx.Service.args_builder
       return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
-      @doc Map.fetch!(opts, "documentation")
+      @doc SpaceEx.Doc.procedure(opts)
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
         args = SpaceEx.Service.encode_args(unquote(fn_args), unquote(arg_encoders))
 
