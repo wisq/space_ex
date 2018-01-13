@@ -100,12 +100,13 @@ defmodule SpaceEx.Service do
         end
       end
 
-      def unquote(:"#{fn_name}!")(conn, unquote_splicing(fn_args)) do
-        case unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-          {:ok, value} -> value
-          {:error, error} -> raise error.description
-        end
-      end
+      #@doc Map.fetch!(opts, "documentation")
+      #def unquote(:"#{fn_name}!")(conn, unquote_splicing(fn_args)) do
+      #  case unquote(fn_name)(conn, unquote_splicing(fn_args)) do
+      #    {:ok, value} -> value
+      #    {:error, error} -> raise error.description
+      #  end
+      #end
     end
   end
 
