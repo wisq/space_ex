@@ -72,11 +72,17 @@ defmodule SpaceEx.PipeliningConnection do
     end
   end
 
-  def call_rpc(pid, service, procedure) do # TODO: args
+  def call_rpc(pid, service, procedure, args) do
+    args =
+      Enum.with_index(args)
+      |> Enum.map(fn {arg, index} ->
+        Argument.new(position: index, value: arg)
+      end)
+
     call = ProcedureCall.new(
       service: service,
       procedure: procedure,
-      arguments: [],
+      arguments: args,
     )
 
     request =
