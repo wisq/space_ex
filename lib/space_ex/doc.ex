@@ -34,23 +34,56 @@ defmodule SpaceEx.Doc do
     |> Enum.join("\n\n")
   end
 
+  # Strip these HTML tags entirely:
   defp process_html({"doc", [], contents}), do: process_html(contents)
-  defp process_html({"summary", [], contents}), do: process_html(contents)
+  defp process_html({"list", _opts, contents}), do: process_html(contents)
+  defp process_html({"description", [], contents}), do: process_html(contents)
+  defp process_html({"remarks", [], contents}), do: process_html(contents)
+
+  # Pass these HTML tags through:
+  defp process_html({"a" = name, opts, contents}), do: {name, opts, process_html(contents)}
+  defp process_html({"math" = name, opts, contents}), do: {name, opts, process_html(contents)}
+
+  # The remaining tags get special processing.
+
+  defp process_html({"summary", [], contents}) do
+    process_html(contents) ++ ["\n\n"]
+  end
+
+  defp process_html({"returns", [], contents}) do
+    ["\n\n## Returns:\n\n" | process_html(contents)]
+  end
+
+  defp process_html({"param", opts, contents}) do
+    [{"name", name}] = opts
+    ["\n * `#{name}` — "] ++ process_html(contents) ++ ["\n"]
+  end
+
+  defp process_html({"paramref", opts, []}) do
+    [{"name", name}] = opts
+    "`#{name}`"
+  end
+
+  defp process_html({"c", [], [content]}) do
+    case content do
+      "null" -> "`nil`"
+      _ -> "`#{content}`"
+    end
+  end
+
+  defp process_html({"item", [], contents}) do
+    ["\n * "] ++ process_html(contents) ++ ["\n"]
+  end
 
   defp process_html({"see", opts, _} = element) do
     [{"cref", ref}] = opts
 
     case ref do
-      <<"M:", method :: bitstring>> ->
-        parts = String.split(method, ".")
-        {getter, mod_parts} = List.pop_at(parts, -1)
+      <<"M:", spec :: bitstring>> -> find_method_spec(spec)
 
-        mod_name = ["SpaceEx" | mod_parts] |> Enum.join(".")
-        fn_name = "get_#{SpaceEx.Service.to_snake_case(getter)}"
+      <<"T:", spec :: bitstring>> -> "`SpaceEx.#{spec}`"
 
-        "`#{mod_name}`.`#{fn_name}`" # FIXME: get arity so we can do a proper link
-
-      _ -> element
+      _ -> raise "Unknown <see> cref: #{inspect(element)}"
     end
   end
 
@@ -59,11 +92,64 @@ defmodule SpaceEx.Doc do
     |> List.flatten
   end
 
-  defp process_html(x) do
-    x
+  defp process_html({name, _, contents}) do
+    IO.puts "Unknown HTML element stripped: #{inspect(name)}"
+    process_html(contents)
   end
+
+  defp process_html(text) when is_bitstring(text), do: text
 
   defp split_first_sentence(text) do
     String.split(text, ~r{(?<=\.)\s+}, parts: 2)
+  end
+
+  defp find_method_spec(spec) do
+    found =
+      case String.split(spec, ".") do
+        [service, class, method] ->
+          find_method(service, class, method) ||
+            find_method(service, class, "get_#{method}") ||
+              find_method(service, class, "static_#{method}") ||
+                find_enum_value(service, class, method)
+
+        [service, method] ->
+          find_method(service, nil, method) ||
+            find_method(service, nil, "get_#{method}")
+      end
+
+    if found do
+      found
+    else
+      IO.puts "Cannot resolve documentation cross-reference: #{inspect(spec)}"
+      "`(unknown)`"
+    end
+  end
+
+  defp find_method(service, nil, method) do
+    module_name = "SpaceEx.#{service}"
+    find_raw_method(service, method, module_name, method)
+  end
+
+  defp find_method(service, class, method) do
+    module_name = "SpaceEx.#{service}.#{class}"
+    rpc_method = "#{class}_#{method}"
+    find_raw_method(service, rpc_method, module_name, method)
+  end
+
+  def find_raw_method(service, rpc_name, module_name, fn_name) do
+    if arity = SpaceEx.API.rpc_arity(service, rpc_name) do
+      fn_name = SpaceEx.Service.to_snake_case(fn_name)
+
+      # arity + 1 because args are (conn, *rpc_args)
+      "`#{module_name}.#{fn_name}/#{arity + 1}`"
+    end
+  end
+
+  defp find_enum_value(service, enum, value) do
+    if SpaceEx.API.enum_value_exists?(service, enum, value) do
+      atom = SpaceEx.Service.to_snake_case(value)
+
+      "`:#{atom}`"
+    end
   end
 end
