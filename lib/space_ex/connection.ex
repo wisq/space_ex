@@ -18,16 +18,20 @@ defmodule SpaceEx.Connection do
     )
   end
 
-  def connect!(host, port) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, [host, port])
+  def connect!(opts) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, opts)
     pid
   end
     
-  def init([host, port]) do
+  def init(opts) do
+    host = opts[:host] || "127.0.0.1"
+    port = opts[:port] || 50000
+    name = opts[:name] || "SpaceEx-#{whoami()}"
+
     sock = Socket.TCP.connect!(host, port, packet: :raw)
 
     request =
-      ConnectionRequest.new(type: :RPC, client_name: "test-client-1")
+      ConnectionRequest.new(type: :RPC, client_name: name)
       |> ConnectionRequest.encode
 
     send_message(sock, request)
@@ -165,4 +169,11 @@ defmodule SpaceEx.Connection do
   def has_varint?(<<>>), do: false
   def has_varint?(<<0 :: size(1), _ :: bitstring>>), do: true # high bit unset, varint complete
   def has_varint?(<<1 :: size(1), _ :: size(7), rest :: bitstring>>), do: has_varint?(rest) # high bit set, varint incomplete
+
+  def whoami do
+    os_pid = System.get_pid
+    [_, erlang_pid, _] = inspect(self()) |> String.split(~r/[<>]/)
+
+    "#{os_pid}-#{erlang_pid}"
+  end
 end
