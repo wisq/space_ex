@@ -13,7 +13,11 @@ defmodule SpaceEx.Util do
   end
 
   # Similar to file basename:
-  #   module_basename(Foo.Bar.Baz) = Baz
+  #
+  #   module_basename(Foo.Bar.Baz) = "Baz"
+  #
+  # Note that the result is a string, not an atom.
+
   def module_basename(mod) do
     Module.split(mod)
     |> List.last

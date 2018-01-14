@@ -1,33 +1,28 @@
-defmodule SpaceEx.Service do
+defmodule SpaceEx.Gen do
   @moduledoc false
 
-  defmacro __using__(opts) do
-    quote do
-      require SpaceEx.Types
+  defmacro generate_service(name) do
+    quote bind_quoted: [name: name] do
+      defmodule Module.concat(SpaceEx, name) do
+        require SpaceEx.Types
 
-      json_file = unquote(opts)[:from]
-
-      @service_name unquote(opts)[:name] || SpaceEx.Util.module_basename(__MODULE__)
-      @service_json (
-        File.read!(json_file)
-        |> Poison.decode!
-        |> Map.fetch!(@service_name)
-      )
-      @external_resource json_file
-      @before_compile SpaceEx.Service
+        @service_name name
+        @service_data SpaceEx.API.service_data(@service_name)
+        @before_compile SpaceEx.Gen
+      end
     end
   end
 
   defmacro __before_compile__(_env) do
     quote location: :keep do
-      @service_json
+      @service_data
       |> Map.fetch!("enumerations")
-      |> Enum.each(&SpaceEx.Service.define_enumeration(@service_name, &1))
+      |> Enum.each(&SpaceEx.Gen.define_enumeration(@service_name, &1))
 
-      @service_json
-      |> SpaceEx.Service.procedures_by_class
+      @service_data
+      |> SpaceEx.Gen.procedures_by_class
       |> Enum.each(fn {class, procedures} ->
-        SpaceEx.Service.define_service_module(@service_name, class, procedures)
+        SpaceEx.Gen.define_service_module(@service_name, class, procedures)
       end)
     end
   end
@@ -44,7 +39,7 @@ defmodule SpaceEx.Service do
 
         Map.fetch!(opts, "values")
         |> Enum.each(fn %{"name" => name, "value" => value} = opts ->
-          SpaceEx.Service.define_enumeration_value(name, value, opts)
+          SpaceEx.Gen.define_enumeration_value(name, value, opts)
         end)
       end
     end
@@ -83,12 +78,12 @@ defmodule SpaceEx.Service do
         defmodule Module.concat(__MODULE__, class_name) do
           @moduledoc SpaceEx.Doc.class(opts)
 
-          Enum.each(procedures, &SpaceEx.Service.define_service_procedure(service_name, class_name, &1))
+          Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(service_name, class_name, &1))
         end
       else
-        @moduledoc SpaceEx.Doc.service(@service_json)
+        @moduledoc SpaceEx.Doc.service(@service_data)
 
-        Enum.each(procedures, &SpaceEx.Service.define_service_procedure(@service_name, nil, &1))
+        Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(@service_name, nil, &1))
       end
     end
   end
@@ -100,13 +95,13 @@ defmodule SpaceEx.Service do
       json: json,
     ] do
       {rpc_name, opts} = json
-      fn_name = SpaceEx.Service.rpc_function_name(rpc_name, class_name)
-      {fn_args, arg_encoders} = Map.fetch!(opts, "parameters") |> SpaceEx.Service.args_builder
+      fn_name = SpaceEx.Gen.rpc_function_name(rpc_name, class_name)
+      {fn_args, arg_encoders} = Map.fetch!(opts, "parameters") |> SpaceEx.Gen.args_builder
       return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
       @doc SpaceEx.Doc.procedure(opts)
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-        args = SpaceEx.Service.encode_args(unquote(fn_args), unquote(arg_encoders))
+        args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_encoders))
 
         case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), args) do
           {:ok, value} -> {:ok, SpaceEx.Types.decode(value, unquote(return_type))}

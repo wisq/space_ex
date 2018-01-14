@@ -3,10 +3,18 @@ defmodule SpaceEx.API do
 
   @api_path Path.expand("api", __DIR__)
 
-  @services (
+  @service_files (
     File.ls!(@api_path)
     |> Enum.filter(&String.match?(&1, ~r{^KRPC(\..*)?\.json$}))
     |> Enum.map(&Path.expand(&1, @api_path))
+  )
+
+  Enum.each(@service_files, fn file ->
+    @external_resource file
+  end)
+
+  @services (
+    @service_files
     |> Enum.map(&File.read!/1)
     |> Enum.map(&Poison.decode!/1)
     |> Enum.map(&Enum.to_list/1)
