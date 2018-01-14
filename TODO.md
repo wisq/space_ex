@@ -25,18 +25,18 @@ I initially didn't like how cluttered these made things, but I think they're nec
 If I go ahead with this, it would allow you to do things like
 
 ```elixir
-vessel = SpaceEx.SpaceCenter.get_active_vessel(conn)
-orbit = SpaceEx.SpaceCenter.Vessel.get_orbit(vessel)
-apoapsis = SpaceEx.SpaceCenter.Orbit.get_apoapsis_altitude(orbit)
+vessel = SpaceEx.SpaceCenter.get_active_vessel!(conn)
+orbit = SpaceEx.SpaceCenter.Vessel.get_orbit!(vessel)
+apoapsis = SpaceEx.SpaceCenter.Orbit.get_apoapsis_altitude!(orbit)
 ```
 
 Note the lack of `conn` in lines 2 and 3.  The idea here is that — although you could always specify `conn` if you really want — by default, it'll use the same connection you used to retrieve the object.  This also allows the above code to be simplified down to
 
 ```elixir
 apoapsis =
-  SpaceEx.SpaceCenter.get_active_vessel(conn)
-  |> SpaceEx.SpaceCenter.Vessel.get_orbit
-  |> SpaceEx.SpaceCenter.Orbit.get_apoapsis_altitude
+  SpaceEx.SpaceCenter.get_active_vessel!(conn)
+  |> SpaceEx.SpaceCenter.Vessel.get_orbit!
+  |> SpaceEx.SpaceCenter.Orbit.get_apoapsis_altitude!
 ```
 
 I need to think about this a bit more, since I'm a bit concerned about having a bunch of different versions of the function all with subtle differences.  But if I give everything a proper struct type and do pattern matching on the arguments, it may not be too bad.
