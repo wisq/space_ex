@@ -20,6 +20,8 @@ These are in the API JSON, but we currently ignore them and require all argument
 
 I initially didn't like how cluttered these made things, but I think they're necessary.  Nobody wants to be checking for `{:ok, _}` on every single function call, it prevents any sort of nice-looking nested calling, and it just generally makes simple things difficult.
 
+I'm *very* tentatively considering the idea of just having the functions be "raise on error" by default.  But that *really* goes against The Elixir Way™ (as I understand it), and so I'm extremely hesitant to go down that road.  More thoughts and consultation needed.
+
 ### Embed connection in object pointers
 
 If I go ahead with this, it would allow you to do things like
