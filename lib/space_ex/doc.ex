@@ -50,7 +50,7 @@ defmodule SpaceEx.Doc do
   end
 
   defp process_html({"returns", [], contents}) do
-    ["\n\n## Returns:\n\n" | process_html(contents)]
+    ["\n\n**Returns:** " | process_html(contents)]
   end
 
   defp process_html({"param", opts, contents}) do
