@@ -9,6 +9,8 @@ defmodule SpaceEx.Mixfile do
       start_permanent: Mix.env == :prod,
       deps: deps(),
       docs: docs(),
+      description: description(),
+      package: package(),
     ]
   end
 
@@ -16,6 +18,30 @@ defmodule SpaceEx.Mixfile do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp description do
+    """
+    SpaceEx allows you to write Elixir code to control virtual
+    rockets in Kerbal Space Program, by connecting to the kRPC mod.
+    """
+  end
+
+  defp package do
+    [
+      files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      maintainers: ["Adrian Irving-Beer"],
+      licenses: ["Apache Version 2.0"],
+      links: %{"GitHub": "https://github.com/wisq/space_ex"},
+    ]
+  end
+
+  defp docs do
+    [
+      before_closing_head_tag: fn _ ->
+        ~S(<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>)
+      end
     ]
   end
 
@@ -29,14 +55,6 @@ defmodule SpaceEx.Mixfile do
       {:poison, "~> 3.1", only: :dev},
       {:ex_doc, "~> 0.10", only: :dev},
       {:floki, "~> 0.19.0", only: :dev},
-    ]
-  end
-
-  defp docs do
-    [
-      before_closing_head_tag: fn _ ->
-        ~S(<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>)
-      end
     ]
   end
 end
