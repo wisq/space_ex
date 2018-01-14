@@ -4,6 +4,7 @@ defmodule SpaceEx.Connection do
     ConnectionRequest,
     ConnectionResponse,
     ProcedureCall,
+    Argument,
     Request,
     Response,
   }
