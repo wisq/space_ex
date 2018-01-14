@@ -7,7 +7,8 @@ defmodule SpaceEx.Mixfile do
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs(),
     ]
   end
 
@@ -28,6 +29,14 @@ defmodule SpaceEx.Mixfile do
       {:poison, "~> 3.1", only: :dev},
       {:ex_doc, "~> 0.10", only: :dev},
       {:floki, "~> 0.19.0", only: :dev},
+    ]
+  end
+
+  defp docs do
+    [
+      before_closing_head_tag: fn _ ->
+        ~S(<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>)
+      end
     ]
   end
 end

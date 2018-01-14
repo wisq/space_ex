@@ -42,7 +42,6 @@ defmodule SpaceEx.Doc do
 
   # Pass these HTML tags through:
   defp process_html({"a" = name, opts, contents}), do: {name, opts, process_html(contents)}
-  defp process_html({"math" = name, opts, contents}), do: {name, opts, process_html(contents)}
 
   # The remaining tags get special processing.
 
@@ -73,6 +72,11 @@ defmodule SpaceEx.Doc do
 
   defp process_html({"item", [], contents}) do
     ["\n * "] ++ process_html(contents) ++ ["\n"]
+  end
+
+  defp process_html({"math", [], contents}) do
+    {"span", [class: "math"],
+      ["\\\\("] ++ process_html(contents) ++ ["\\\\)"]}
   end
 
   defp process_html({"see", opts, _} = element) do
