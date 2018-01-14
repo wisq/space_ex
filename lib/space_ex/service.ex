@@ -7,7 +7,7 @@ defmodule SpaceEx.Service do
 
       json_file = unquote(opts)[:from]
 
-      @service_name unquote(opts)[:name] || SpaceEx.Service.module_basename(__MODULE__)
+      @service_name unquote(opts)[:name] || SpaceEx.Util.module_basename(__MODULE__)
       @service_json (
         File.read!(json_file)
         |> Poison.decode!
@@ -57,7 +57,7 @@ defmodule SpaceEx.Service do
       opts: opts,
     ] do
       name =
-        SpaceEx.Service.to_snake_case(name)
+        SpaceEx.Util.to_snake_case(name)
         |> String.to_atom
 
       @doc false  # Converts a raw wire value to a named atom.
@@ -124,22 +124,6 @@ defmodule SpaceEx.Service do
     end
   end
 
-  @regex_multi_uppercase ~r'([A-Z]+)([A-Z][a-z0-9])'
-  @regex_single_uppercase ~r'([a-z0-9])([A-Z])'
-  #@regex_underscores ~r'(.)_'
-
-  def to_snake_case(name) do
-    name
-    #|> String.replace(@regex_underscores, "\\1__")
-    |> String.replace(@regex_single_uppercase, "\\1_\\2")
-    |> String.replace(@regex_multi_uppercase, "\\1_\\2")
-    |> String.downcase
-  end
-
-  def module_basename(mod) do
-    Module.split(mod)
-    |> List.last
-  end
 
   def procedures_by_class(json) do
     classes = Map.fetch!(json, "classes")
@@ -168,7 +152,7 @@ defmodule SpaceEx.Service do
   end
 
   def rpc_function_name(rpc_name, nil) do
-    to_snake_case(rpc_name)
+    SpaceEx.Util.to_snake_case(rpc_name)
     |> String.to_atom
   end
 

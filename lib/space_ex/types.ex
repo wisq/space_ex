@@ -32,8 +32,8 @@ defmodule SpaceEx.Types do
   |> Enum.each(fn {_, module} ->
     type_code =
       module
-      |> SpaceEx.Service.module_basename
-      |> SpaceEx.Service.to_snake_case
+      |> SpaceEx.Util.module_basename
+      |> SpaceEx.Util.to_snake_case
       |> String.upcase
       |> String.to_atom
 

@@ -142,7 +142,7 @@ defmodule SpaceEx.Doc do
 
   def find_raw_method(service, rpc_name, module_name, fn_name) do
     if arity = SpaceEx.API.rpc_arity(service, rpc_name) do
-      fn_name = SpaceEx.Service.to_snake_case(fn_name)
+      fn_name = SpaceEx.Util.to_snake_case(fn_name)
 
       # arity + 1 because args are (conn, *rpc_args)
       "`#{module_name}.#{fn_name}/#{arity + 1}`"
@@ -151,7 +151,7 @@ defmodule SpaceEx.Doc do
 
   defp find_enum_value(service, enum, value) do
     if SpaceEx.API.enum_value_exists?(service, enum, value) do
-      atom = SpaceEx.Service.to_snake_case(value)
+      atom = SpaceEx.Util.to_snake_case(value)
 
       "`:#{atom}`"
     end
