@@ -1,6 +1,8 @@
 defmodule SpaceEx.Types.Decoders do
   alias SpaceEx.Protobufs.Raw
 
+  @moduledoc false
+
   def type_decoder(input, :BYTES, _opts),  do: input
   # TODO: maybe render classes as structs?
   def type_decoder(input, :CLASS, _opts),  do: input

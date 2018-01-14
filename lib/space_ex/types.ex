@@ -1,6 +1,8 @@
 defmodule SpaceEx.Types do
   alias SpaceEx.Types.{Encoders, Decoders}
 
+  @moduledoc false
+
   defmacro decode(_input, nil) do
     :ok
   end

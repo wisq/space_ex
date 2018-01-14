@@ -1,6 +1,8 @@
 defmodule SpaceEx.Types.Encoders do
   alias SpaceEx.Protobufs.Raw
 
+  @moduledoc false
+
   def type_encoder(input, code, %{"types" => subtypes} = opts),
     do: nested_type_encoder(input, code, subtypes, opts)
 
