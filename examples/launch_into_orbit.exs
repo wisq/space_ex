@@ -229,8 +229,7 @@ defmodule LaunchIntoOrbit do
   end
 end
 
-conn = SpaceEx.Connection.connect!(
-  host: "192.168.68.6", name: "Launch into orbit")
+conn = SpaceEx.Connection.connect!(name: "Launch into orbit")
 
 SpaceEx.KRPC.set_paused(conn, false)
 LaunchIntoOrbit.launch(conn)
