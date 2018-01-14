@@ -26,6 +26,10 @@ Run `mix deps.get` to pull SpaceEx into your project, and you're good to go.
 
 Full documentation can be found at [https://hexdocs.pm/space_ex](https://hexdocs.pm/space_ex).
 
+Examples can be found in the [examples directory](examples/).
+
+Be aware that this library is very new, and the code required to do anything complex is very ugly (as the examples demonstrate).  Improvements are planned; see the [to-do list](TODO.md).
+
 ## Legal stuff
 
 Copyright © 2018, Adrian Irving-Beer.
