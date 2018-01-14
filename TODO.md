@@ -44,3 +44,9 @@ I need to think about this a bit more, since I'm a bit concerned about having a 
 ### Keyword-based function arguments
 
 Some functions have a bunch of args, many of which are optional.  Most of the args are sensibly named (except `this`, which I may need to dynamically rename).  It might make sense to offer keyword-based versions, or to use keywords for the optional arguments.
+
+## Cleanups
+
+### Fix static function naming
+
+At first glance, I just need to ditch the `static_` part.  All my functions are effectively statics.  But before I do this, I want to think about whether having object-reference-based functions directly alongside "static" functions will cause any confusion.
