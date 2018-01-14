@@ -95,7 +95,7 @@ defmodule SpaceEx.Connection do
       |> Request.encode
 
     response =
-      GenServer.call(pid, {:rpc, request})
+      GenServer.call(pid, {:rpc, request}, :infinity)
       |> Response.decode
 
     if response.error do
