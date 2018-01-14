@@ -15,11 +15,12 @@ defmodule SpaceEx.Connection do
   This is the first step you'll need in any kRPC program.  Every other call in
   this library depends on having a connection.
 
-  This connection class allows for pipelining.  Although the kRPC server will
-  only handle one request at a time (and will always handle requests in order),
-  multiple requests can be "on the wire" at any given time.  This dramatically
-  improves performance compared to the standard approach of sending a single
-  request and waiting until it responds.
+  Connections allow pipelining.  Although the kRPC server will only handle one
+  request at a time (and will always handle requests in order), multiple
+  requests — issued by multiple Elixir processes sharing the same connection —
+  can be "on the wire" at any given time.  This dramatically improves
+  performance compared to the standard approach of sending a single request and
+  waiting until it responds.
 
   However, be aware that if you issue a call that blocks for a long time, like
   `SpaceEx.SpaceCenter.AutoPilot.wait/2`, it will also block all other RPC
@@ -89,7 +90,7 @@ defmodule SpaceEx.Connection do
     }}
   end
 
-  def send_message(sock, message) do
+  defp send_message(sock, message) do
     size =
       byte_size(message)
       |> :gpb.encode_varint
@@ -100,7 +101,7 @@ defmodule SpaceEx.Connection do
   # Only called during initialisation.
   # After that, the socket is in active mode,
   # and all replies come via handle_info messages.
-  def recv_message(sock, buffer \\ <<>>) do
+  defp recv_message(sock, buffer \\ <<>>) do
     case Socket.Stream.recv!(sock, 1) do
       <<1 :: size(1), _ :: bitstring>> = byte ->
         # high bit set, varint incomplete
@@ -114,6 +115,7 @@ defmodule SpaceEx.Connection do
     end
   end
 
+  @doc false
   def call_rpc(pid, service, procedure, args) do
     args =
       Enum.with_index(args)
@@ -165,7 +167,7 @@ defmodule SpaceEx.Connection do
     }}
   end
 
-  def dispatch_replies(queue, buffer) do
+  defp dispatch_replies(queue, buffer) do
     case extract_reply(buffer) do
       {:ok, reply, new_buffer} ->
         new_queue = dispatch_reply(queue, reply)
@@ -175,13 +177,13 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  def dispatch_reply(queue, reply) do
+  defp dispatch_reply(queue, reply) do
     {{:value, from}, queue} = :queue.out(queue)
     GenServer.reply(from, reply)
     queue
   end
 
-  def extract_reply(buffer) do
+  defp extract_reply(buffer) do
     case safe_decode_varint(buffer) do
       {size, leftover} ->
         case leftover do
@@ -195,7 +197,7 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  def safe_decode_varint(bytes) do
+  defp safe_decode_varint(bytes) do
     if has_varint?(bytes) do
       :gpb.decode_varint(bytes)
     else
@@ -203,11 +205,11 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  def has_varint?(<<>>), do: false
-  def has_varint?(<<0 :: size(1), _ :: bitstring>>), do: true # high bit unset, varint complete
-  def has_varint?(<<1 :: size(1), _ :: size(7), rest :: bitstring>>), do: has_varint?(rest) # high bit set, varint incomplete
+  defp has_varint?(<<>>), do: false
+  defp has_varint?(<<0 :: size(1), _ :: bitstring>>), do: true # high bit unset, varint complete
+  defp has_varint?(<<1 :: size(1), _ :: size(7), rest :: bitstring>>), do: has_varint?(rest) # high bit set, varint incomplete
 
-  def whoami do
+  defp whoami do
     os_pid = System.get_pid
     [_, erlang_pid, _] = inspect(self()) |> String.split(~r/[<>]/)
 
