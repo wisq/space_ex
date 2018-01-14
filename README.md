@@ -31,3 +31,5 @@ Full documentation can be found at [https://hexdocs.pm/space_ex](https://hexdocs
 Copyright © 2018, Adrian Irving-Beer.
 
 SpaceEx is released under the [Apache 2 License](LICENSE) and is provided with **no warranty**.  But, let's face it — if anything goes wrong, the worst that can likely happen is that your rocket crashes and Jeb dies.
+
+SpaceEx is in no way associated with the launching of real rockets, and has no affiliations with any companies that do real rocketry, as kickass as they (and their CEO) may be.
