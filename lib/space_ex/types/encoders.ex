@@ -9,8 +9,15 @@ defmodule SpaceEx.Types.Encoders do
   def type_encoder(input, :BYTES, _opts),  do: input
   def type_encoder(input, :CLASS, _opts),  do: input
 
-  # FIXME: wtf do I do with this?
-  def type_encoder(input, :PROCEDURE_CALL, _opts), do: input
+  def type_encoder(input, :PROCEDURE_CALL, _opts) do
+    quote bind_quoted: [proc: input] do
+      SpaceEx.Protobufs.ProcedureCall.new(
+        service: proc.rpc_service,
+        procedure: proc.rpc_method,
+        arguments: proc.rpc_args,
+      ) |> SpaceEx.Protobufs.ProcedureCall.encode
+    end
+  end
 
   def type_encoder(input, :ENUMERATION, opts) do
     %{"service" => service, "name" => name} = opts

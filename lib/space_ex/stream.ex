@@ -1,6 +1,6 @@
 defmodule SpaceEx.Stream do
   use GenServer
-  @moduledoc false
+  alias SpaceEx.Stream
 
   defmodule State do
     @moduledoc false
@@ -13,17 +13,41 @@ defmodule SpaceEx.Stream do
     )
   end
 
+  @enforce_keys [:pid, :decoder]
+  defstruct(
+    pid: nil,
+    decoder: nil,
+    getter: nil,
+  )
+
+  def create(conn, procedure, opts \\ []) do
+    start = opts[:start] || true
+
+    {:ok, stream_obj} = SpaceEx.KRPC.add_stream(conn, procedure, start)
+    stream_id = stream_obj.id
+
+    {:ok, pid} = start_link(stream_id)
+    SpaceEx.StreamConnection.register_stream(conn, stream_id, pid)
+
+    decoder = fn value ->
+      procedure.module.rpc_decode_return_value(procedure.function, value)
+    end
+    stream = %Stream{pid: pid, decoder: decoder}
+
+    getter = fn -> Stream.get_value(stream) end
+    %Stream{stream | getter: getter}
+  end
 
   def start_link(stream_id) do
     GenServer.start_link(__MODULE__, %State{id: stream_id})
   end
     
-  def get_value(pid) do
-    result = GenServer.call(pid, :get)
+  def get_value(stream) do
+    result = GenServer.call(stream.pid, :get)
     if result.error do
       raise result.error
     else
-      result.value
+      stream.decoder.(result.value)
     end
   end
 

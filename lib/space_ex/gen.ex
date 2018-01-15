@@ -84,12 +84,17 @@ defmodule SpaceEx.Gen do
         service_name = @service_name
         defmodule Module.concat(__MODULE__, class_name) do
           @moduledoc SpaceEx.Doc.class(opts)
+          @service_name service_name
           @service_exclude []
+
+          def rpc_service_name, do: @service_name
 
           Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(service_name, class_name, &1))
         end
       else
         @moduledoc SpaceEx.Doc.service(@service_data)
+
+        def rpc_service_name, do: @service_name
 
         Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(@service_name, nil, &1))
       end
@@ -108,12 +113,25 @@ defmodule SpaceEx.Gen do
       return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
       unless fn_name in @service_exclude do
+        @doc false
+        def rpc_method_name(unquote(fn_name)), do: unquote(rpc_name)
+
+        @doc false
+        def rpc_encode_arguments(unquote(fn_name), unquote(fn_args)) do
+          SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_encoders))
+        end
+
+        @doc false
+        def rpc_decode_return_value(unquote(fn_name), value) do
+          SpaceEx.Types.decode(value, unquote(return_type))
+        end
+
         @doc SpaceEx.Doc.procedure(opts)
         def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-          args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_encoders))
+          args = rpc_encode_arguments(unquote(fn_name), unquote(fn_args))
 
           case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), args) do
-            {:ok, value} -> {:ok, SpaceEx.Types.decode(value, unquote(return_type))}
+            {:ok, value} -> {:ok, rpc_decode_return_value(unquote(fn_name), value)}
             {:error, error} -> {:error, error}
           end
         end
