@@ -1,14 +1,21 @@
 defmodule SpaceEx.Gen do
   @moduledoc false
 
+  defmacro __using__(opts) do
+    quote bind_quoted: [opts: opts] do
+      require SpaceEx.Types
+
+      @service_name opts[:name] || SpaceEx.Util.module_basename(__MODULE__)
+      @service_data SpaceEx.API.service_data(@service_name)
+      @service_exclude opts[:exclude] || []
+      @before_compile SpaceEx.Gen
+    end
+  end
+
   defmacro generate_service(name) do
     quote bind_quoted: [name: name] do
       defmodule Module.concat(SpaceEx, name) do
-        require SpaceEx.Types
-
-        @service_name name
-        @service_data SpaceEx.API.service_data(@service_name)
-        @before_compile SpaceEx.Gen
+        use SpaceEx.Gen, name: name
       end
     end
   end
@@ -77,6 +84,7 @@ defmodule SpaceEx.Gen do
         service_name = @service_name
         defmodule Module.concat(__MODULE__, class_name) do
           @moduledoc SpaceEx.Doc.class(opts)
+          @service_exclude []
 
           Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(service_name, class_name, &1))
         end
@@ -99,13 +107,15 @@ defmodule SpaceEx.Gen do
       {fn_args, arg_encoders} = Map.fetch!(opts, "parameters") |> SpaceEx.Gen.args_builder
       return_type = Map.get(opts, "return_type", nil) |> Macro.escape
 
-      @doc SpaceEx.Doc.procedure(opts)
-      def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-        args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_encoders))
+      unless fn_name in @service_exclude do
+        @doc SpaceEx.Doc.procedure(opts)
+        def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
+          args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_encoders))
 
-        case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), args) do
-          {:ok, value} -> {:ok, SpaceEx.Types.decode(value, unquote(return_type))}
-          {:error, error} -> {:error, error}
+          case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), args) do
+            {:ok, value} -> {:ok, SpaceEx.Types.decode(value, unquote(return_type))}
+            {:error, error} -> {:error, error}
+          end
         end
       end
 
