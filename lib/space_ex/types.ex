@@ -28,6 +28,10 @@ defmodule SpaceEx.Types do
     Encoders.type_encoder(input, code, opts)
   end
 
+  defmacro encode(input, code) when is_atom(code) do
+    Encoders.type_encoder(input, code, %{})
+  end
+
   SpaceEx.Protobufs.defs
   |> Enum.map(&elem(&1, 0))
   |> Enum.filter(fn {type, _} -> type == :msg end)

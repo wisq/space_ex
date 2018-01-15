@@ -1,5 +1,6 @@
 defmodule SpaceEx.StreamConnection do
   use GenServer
+  alias SpaceEx.Connection
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
     ConnectionResponse,
@@ -69,8 +70,12 @@ defmodule SpaceEx.StreamConnection do
     end
   end
 
-  def register_stream(stream_conn, stream_id, pid) do
-    GenServer.call(stream_conn, {:register, stream_id, pid})
+  def register_stream(%Connection{stream_pid: stconn_pid}, stream_id, pid) do
+    register_stream(stconn_pid, stream_id, pid)
+  end
+
+  def register_stream(stconn_pid, stream_id, pid) when is_pid(stconn_pid) do
+    GenServer.call(stconn_pid, {:register, stream_id, pid})
   end
 
   def handle_call({:register, stream_id, pid}, _from, state) do
