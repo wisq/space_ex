@@ -1,5 +1,6 @@
 defmodule SpaceEx.Connection do
   use GenServer
+  alias SpaceEx.{Connection, StreamConnection}
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
     ConnectionResponse,
@@ -31,21 +32,47 @@ defmodule SpaceEx.Connection do
   consider establishing a separate connection for your blocking calls.
   """
 
+  @enforce_keys [:pid, :stream_pid, :info, :client_id]
+  defstruct(
+    pid: nil,
+    stream_pid: nil,
+    info: nil,
+    client_id: nil,
+  )
+
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:socket, :reply_queue]
+    @enforce_keys [:socket, :client_id]
     defstruct(
       socket: nil,
-      reply_queue: nil,
+      client_id: nil,
+      reply_queue: :queue.new,
       buffer: <<>>,
+    )
+  end
+
+  defmodule Info do
+    @moduledoc """
+    Structure containing information about a kRPC connection.
+
+    This can be accessed via `conn.info` from a connection returned by
+    `SpaceEx.Connection.connect!/1`, and can also be passed to that function
+    instead of raw connection parameters.  The keys and defaults are the same.
+    """
+
+    defstruct(
+      name: nil,
+      host: "127.0.0.1",
+      port: 50000,
+      stream_port: 50001,
     )
   end
 
   @doc """
   Connects to a kRPC server.
 
-  `opts` is a keyword list:
+  `opts` is either a `SpaceEx.Connection.Info` struct, or a keyword list:
 
   * `opts[:host]` is the target hostname or IP (default: `127.0.0.1`)
   * `opts[:port]` is the target port (default: `50000`)
@@ -56,20 +83,27 @@ defmodule SpaceEx.Connection do
   close when that process terminates.
   """
 
-  def connect!(opts) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, opts)
-    pid
-  end
-    
-  def init(opts) do
-    host = opts[:host] || "127.0.0.1"
-    port = opts[:port] || 50000
-    name = opts[:name] || "SpaceEx-#{whoami()}"
+  def connect!(%Info{} = info) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, info)
 
-    sock = Socket.TCP.connect!(host, port, packet: :raw)
+    client_id = GenServer.call(pid, :client_id)
+    stream_pid = StreamConnection.connect!(info, client_id)
+
+    %Connection{
+      pid: pid,
+      stream_pid: stream_pid,
+      info: info,
+      client_id: client_id,
+    }
+  end
+
+  def connect!(opts), do: struct!(Info, opts) |> connect!
+
+  def init(info) do
+    sock = Socket.TCP.connect!(info.host, info.port, packet: :raw)
 
     request =
-      ConnectionRequest.new(type: :RPC, client_name: name)
+      ConnectionRequest.new(type: :RPC, client_name: info.name || whoami())
       |> ConnectionRequest.encode
 
     send_message(sock, request)
@@ -86,7 +120,7 @@ defmodule SpaceEx.Connection do
     Socket.active(sock)
     {:ok, %State{
       socket: sock,
-      reply_queue: :queue.new,
+      client_id: response.client_identifier,
     }}
   end
 
@@ -116,7 +150,7 @@ defmodule SpaceEx.Connection do
   end
 
   @doc false
-  def call_rpc(pid, service, procedure, args) do
+  def call_rpc(%Connection{pid: pid}, service, procedure, args) do
     args =
       Enum.with_index(args)
       |> Enum.map(fn {arg, index} ->
@@ -155,6 +189,10 @@ defmodule SpaceEx.Connection do
     queue = :queue.in(from, state.reply_queue)
 
     {:noreply, %State{state | reply_queue: queue}}
+  end
+
+  def handle_call(:client_id, _from, state) do
+    {:reply, state.client_id, state}
   end
 
   def handle_info({:tcp, sock, bytes}, %State{socket: sock} = state) do
