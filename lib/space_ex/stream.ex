@@ -198,6 +198,35 @@ defmodule SpaceEx.Stream do
   end
 
   @doc """
+  Wait for the stream value to change.
+
+  This will wait until a new stream value is received, then retrieve it and
+  decode it.  It will block for up to `timeout` milliseconds (default:
+  forever, aka `:infinity`), after which it will throw an `exit` signal.
+
+  You can technically catch this exit signal with `try ... catch :exit, _`,
+  but it's not generally considered good practice to do so.  As such, `wait/2`
+  timeouts should generally be reserved for "something has gone badly wrong".
+
+  ## Example
+
+  ```elixir
+  paused = SpaceEx.SpaceCenter.get_paused(conn) |> SpaceEx.Stream.stream
+
+  SpaceEx.Stream.wait(paused)  # returns true/false the next time you un/pause
+  ```
+  """
+
+  def wait(stream, timeout \\ :infinity) do
+    result = GenServer.call(stream.pid, :wait, timeout)
+    if result.error do
+      raise result.error.description
+    else
+      stream.decoder.(result.value)
+    end
+  end
+
+  @doc """
   Set the update rate of a stream.
 
   `rate` is the number of updates per second.  Setting the rate to `0` or `nil`
@@ -225,15 +254,17 @@ defmodule SpaceEx.Stream do
     {:reply, state.result, state}
   end
 
-  # If this is the first message, also notify waitlist.
-  def handle_info({:stream_result, id, result}, %State{id: id, result: nil} = state) do
-    Enum.each(state.waitlist, &GenServer.reply(&1, result))
-
-    {:noreply, %State{state | result: result}}
+  def handle_call(:wait, from, state) do
+    waitlist = [from | state.waitlist]
+    {:noreply, %State{state | waitlist: waitlist}}
   end
 
-  # Otherwise, just store the result.
   def handle_info({:stream_result, id, result}, %State{id: id} = state) do
-    {:noreply, %State{state | result: result}}
+    if result == state.result do
+      {:noreply, state}
+    else
+      Enum.each(state.waitlist, &GenServer.reply(&1, result))
+      {:noreply, %State{state | result: result}}
+    end
   end
 end
