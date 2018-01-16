@@ -9,7 +9,7 @@ defmodule SpaceEx.Types do
 
   defmacro decode(input, {:%{}, _, tuples}) do
     opts = Map.new(tuples)
-    code = Map.fetch!(opts, "code") |> String.to_atom
+    code = Map.fetch!(opts, "code") |> ensure_atom
     types = Map.get(opts, "types", nil)
 
     decoder = Decoders.type_decoder(input, code, opts)
@@ -21,15 +21,23 @@ defmodule SpaceEx.Types do
     end
   end
 
+  defmacro decode(input, code) when is_atom(code) do
+    quote do
+      SpaceEx.Types.decode(unquote(input), %{"code" => unquote(code)})
+    end
+  end
+
   defmacro encode(input, {:%{}, _, tuples}) do
     opts = Map.new(tuples)
-    code = Map.fetch!(opts, "code") |> String.to_atom
+    code = Map.fetch!(opts, "code") |> ensure_atom
 
     Encoders.type_encoder(input, code, opts)
   end
 
   defmacro encode(input, code) when is_atom(code) do
-    Encoders.type_encoder(input, code, %{})
+    quote do
+      SpaceEx.Types.encode(unquote(input), %{"code" => unquote(code)})
+    end
   end
 
   SpaceEx.Protobufs.defs
@@ -47,4 +55,7 @@ defmodule SpaceEx.Types do
   end)
 
   def protobuf_module(_), do: nil
+
+  def ensure_atom(atom) when is_atom(atom), do: atom
+  def ensure_atom(str) when is_bitstring(str), do: String.to_atom(str)
 end
