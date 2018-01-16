@@ -87,6 +87,7 @@ defmodule SpaceEx.Gen do
           @service_name service_name
           @service_exclude []
 
+          @doc false
           def rpc_service_name, do: @service_name
 
           Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(service_name, class_name, &1))
@@ -94,6 +95,7 @@ defmodule SpaceEx.Gen do
       else
         @moduledoc SpaceEx.Doc.service(@service_data)
 
+        @doc false
         def rpc_service_name, do: @service_name
 
         Enum.each(procedures, &SpaceEx.Gen.define_service_procedure(@service_name, nil, &1))
