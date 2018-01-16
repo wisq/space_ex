@@ -2,11 +2,11 @@
 
 ## Missing functionality
 
-**These need to be addressed before 1.0.**  I can't rightfully call it a full release without these.
+**These need to be addressed before v1.0.0.**  I can't rightfully call it a full release without these.
 
-### Stream support
+### ~~Stream support~~ (added in v0.2.0)
 
-Streams are way better than polling over and over.  Getting them working is a fairly high priority.
+Streams are way better than polling over and over.  ~~Getting them working is a fairly high priority.~~ *Done!*
 
 ### Events: Remote procedures and expressions
 
