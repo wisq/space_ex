@@ -100,12 +100,19 @@ defmodule SpaceEx.Stream do
       SpaceEx.KRPC.set_stream_rate(conn, stream_id, rate)
     end
 
-    {:ok, pid} = start_link(conn, stream_id)
-    SpaceEx.StreamConnection.register_stream(conn, stream_id, pid)
-
     decoder = fn value ->
       procedure.module.rpc_decode_return_value(procedure.function, value)
     end
+
+    launch(conn, stream_id, decoder)
+  end
+
+  # Used by both Stream and Event.
+  @doc false
+  def launch(conn, stream_id, decoder) do
+    {:ok, pid} = start_link(conn, stream_id)
+    SpaceEx.StreamConnection.register_stream(conn, stream_id, pid)
+
     %Stream{id: stream_id, conn: conn, pid: pid, decoder: decoder}
   end
 
