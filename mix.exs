@@ -41,8 +41,23 @@ defmodule SpaceEx.Mixfile do
     [
       before_closing_head_tag: fn _ ->
         ~S(<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>)
-      end
+      end,
+      groups_for_modules: [
+        "kRPC API": api_services() |> Enum.map(fn s -> ~r/^SpaceEx\.#{s}(\.|$)/ end) |> IO.inspect,
+      ],
     ]
+  end
+
+  defp api_services do
+    File.ls!("lib/space_ex/api")
+    |> Enum.map(fn file ->
+      case String.split(file, ".") do
+        ["KRPC", "json"] -> "KRPC"
+        ["KRPC", service, "json"] -> service
+        _ -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
   end
 
   # Run "mix help deps" to learn about dependencies.
