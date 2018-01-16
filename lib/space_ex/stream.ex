@@ -10,11 +10,15 @@ defmodule SpaceEx.Stream do
   To set up a stream, you can use `SpaceEx.Stream.stream/2`.
 
   Alternatively, you can create `SpaceEx.Procedure` that references the
-  procedure you want to run, and then pass that to `SpaceEx.Stream.create`.
+  procedure you want to run, and then pass that to `SpaceEx.Stream.create/2`.
 
   In most situations where you find yourself asking for the same piece of data
   over and over, you're probably better off using a stream.  This will reduce
   the load on both ends and make your code run faster.
+
+  However, if your code checks the value infrequently (e.g. once per second or
+  less), but the value is changing constantly (altitude, current time, etc.),
+  you should consider either using polling, or reducing the stream's rate.
 
   Example usage:
 
@@ -53,17 +57,19 @@ defmodule SpaceEx.Stream do
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:id]
+    @enforce_keys [:id, :conn]
     defstruct(
       id: nil,
+      conn: nil,
       result: nil,
       waitlist: [],
     )
   end
 
-  @enforce_keys [:id, :pid, :decoder]
+  @enforce_keys [:id, :conn, :pid, :decoder]
   defstruct(
     id: nil,
+    conn: nil,
     pid: nil,
     decoder: nil,
   )
@@ -71,15 +77,16 @@ defmodule SpaceEx.Stream do
   @doc """
   Creates a stream, and optionally starts it.
 
-  `procedure` should be a `SpaceEx.Procedure` structure generated using
-  `SpaceEx.Procedure.call/1`.  The stream's value will be the result of calling
-  this function over and over (with the same arguments each time).
+  `procedure` should be a `SpaceEx.Procedure` structure.  The stream's value
+  will be the result of calling this procedure over and over (with the same
+  arguments each time).
 
   See the module documentation for usage examples.
 
   ## Options
 
-  * `:start` — when `false`, the stream is created, but not started.  The default is `start: true`.
+  * `:start` — when `false`, the stream is created, but not started.  Default: `start: true`.
+  * `:rate` — the stream's update rate, in updates per second.  Default: unlimited.
   """
 
   def create(procedure, opts \\ []) do
@@ -89,13 +96,17 @@ defmodule SpaceEx.Stream do
     {:ok, stream_obj} = SpaceEx.KRPC.add_stream(conn, procedure, start)
     stream_id = stream_obj.id
 
-    {:ok, pid} = start_link(stream_id)
+    if rate = opts[:rate] do
+      SpaceEx.KRPC.set_stream_rate(conn, stream_id, rate)
+    end
+
+    {:ok, pid} = start_link(conn, stream_id)
     SpaceEx.StreamConnection.register_stream(conn, stream_id, pid)
 
     decoder = fn value ->
       procedure.module.rpc_decode_return_value(procedure.function, value)
     end
-    %Stream{id: stream_id, pid: pid, decoder: decoder}
+    %Stream{id: stream_id, conn: conn, pid: pid, decoder: decoder}
   end
 
   @doc """
@@ -114,10 +125,11 @@ defmodule SpaceEx.Stream do
   ```
   """
 
-  defmacro stream(function_call, opts) do
+  defmacro stream(function_call, opts \\ []) do
     quote do
+      require SpaceEx.Procedure
       SpaceEx.Procedure.create(unquote(function_call))
-      |> SpaceEx.Stream.new(unquote(opts))
+      |> SpaceEx.Stream.create(unquote(opts))
     end
   end
 
@@ -140,7 +152,7 @@ defmodule SpaceEx.Stream do
   ```
   """
 
-  defmacro stream_fn(function_call, opts) do
+  defmacro stream_fn(function_call, opts \\ []) do
     quote do
       stream = SpaceEx.Stream.stream(unquote(function_call), unquote(opts))
 
@@ -179,15 +191,26 @@ defmodule SpaceEx.Stream do
   def get(stream, timeout \\ 5000) do
     result = GenServer.call(stream.pid, :get, timeout)
     if result.error do
-      raise result.error
+      raise result.error.description
     else
       stream.decoder.(result.value)
     end
   end
 
+  @doc """
+  Set the update rate of a stream.
+
+  `rate` is the number of updates per second.  Setting the rate to `0` or `nil`
+  will remove all rate limiting and update as often as possible.
+  """
+
+  def set_rate(stream, rate) do
+    SpaceEx.KRPC.set_stream_rate(stream.conn, stream.stream_id, rate || 0)
+  end
+
   @doc false
-  def start_link(stream_id) do
-    GenServer.start_link(__MODULE__, %State{id: stream_id})
+  def start_link(conn, stream_id) do
+    GenServer.start_link(__MODULE__, %State{id: stream_id, conn: conn})
   end
 
   # If stream has no data yet, add caller to waitlist.

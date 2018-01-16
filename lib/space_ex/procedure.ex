@@ -2,7 +2,7 @@ defmodule SpaceEx.Procedure do
   @moduledoc """
   Represents a remote procedure call, for streams and expressions.
 
-  Normally created using the `create/4` function or the `call/1` macro.
+  Normally created using the `new/4` function or the `create/1` macro.
   """
 
   @enforce_keys [:module, :function, :conn, :rpc_service, :rpc_method, :rpc_args]
@@ -58,8 +58,8 @@ defmodule SpaceEx.Procedure do
     |> SpaceEx.Procedure.create
   ```
 
-  `SpaceEx.Procedure.create(Mod.func(conn, args))` is equivalent to calling
-  `SpaceEx.Procedure.new(conn, Mod, :func, args)`.
+  `create(Mod.func(conn, args))` is equivalent to calling
+  `new(conn, Mod, :func, args)`.
   """
 
   defmacro create({{:., _, [module, func]}, _, args}) do
