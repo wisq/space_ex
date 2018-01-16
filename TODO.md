@@ -36,8 +36,6 @@ These are in the API JSON, but we currently ignore them and require all argument
 
 And it's hard to disagree with that.  I think the number of times someone will want to catch an error is going to be small compared to the number of times they'll just want to write simple, straightforward code that will raise if anything weird happens.
 
-Since this is a major breaking change, I'm going to wait until version 1.0, to respect semantic versioning.
-
 ### Embed connection in object pointers
 
 If I go ahead with this, it would allow you to do things like
@@ -62,8 +60,6 @@ I need to think about this a bit more, since I'm a bit concerned about having a 
 **Update:** I think what I'm going to do is, have the first argument be `object_or_tuple`, e.g. `vessel_or_tuple` for `Vessel` functions.  It will accept either *just* a `vessel` struct (with the `conn` embedded in it), or a `{conn, vessel}` tuple if you want to work with a different connection.  I may also add something like `Connection.claim(vessel)` (or `rehome` or something) to change the `conn` embedded in it.
 
 This means that both versions will have the same arity, they won't clog the docs, etc.  I can describe the `conn_or_tuple` argument at the top of the page.
-
-Since this is a major breaking change (decreases arity for all calls), I'm going to wait until version 1.0, to respect semantic versioning.
 
 ### Keyword-based function arguments
 
