@@ -14,8 +14,8 @@
 #   * structs for vessel, flight, etc. that include the conn, to allow piping;
 #   * versions of functions that use keyword arguments instead of positional.
 #
-# This script should be used with the stock "Kerbal 1" craft, due to the
-# hardcoded fuel checks and stage numbers.
+# This script should be used with the included "launch_into_orbit.craft" craft,
+# due to the hardcoded fuel checks and stage numbers.
 
 defmodule LaunchIntoOrbit do
   require SpaceEx.Stream
@@ -30,8 +30,9 @@ defmodule LaunchIntoOrbit do
   }
 
   @turn_start_altitude 250
-  @turn_end_altitude 55_000
+  @turn_end_altitude 45_000
   @target_altitude 150_000
+  @atmosphere_height 70_500
 
   def launch(conn) do
     {:ok, vessel}    = SpaceCenter.get_active_vessel(conn)
@@ -39,7 +40,6 @@ defmodule LaunchIntoOrbit do
     {:ok, control}   = Vessel.get_control(conn, vessel)
     {:ok, surf_ref}  = Vessel.get_surface_reference_frame(conn, vessel)
     {:ok, flight}    = Vessel.flight(conn, vessel, surf_ref)
-    #{:ok, resources} = Vessel.get_resources(conn, vessel)
     {:ok, orbit}     = Vessel.get_orbit(conn, vessel)
 
     # Set up streams for telemetry
@@ -47,11 +47,10 @@ defmodule LaunchIntoOrbit do
     {_, fn_altitude} = Flight.get_mean_altitude(conn, flight) |> SpaceEx.Stream.stream_fn
     {_, fn_apoapsis} = Orbit.get_apoapsis_altitude(conn, orbit) |> SpaceEx.Stream.stream_fn
 
-    {_, stage_4_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 4, false)
-    {_, stage_3_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 3, false)
-
-    {_, fn_srb_fuel}    = Resources.amount(conn, stage_4_resources, "SolidFuel")  |> SpaceEx.Stream.stream_fn
-    {_, fn_liquid_fuel} = Resources.amount(conn, stage_3_resources, "LiquidFuel") |> SpaceEx.Stream.stream_fn
+    {_, stage_2_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 2, false)
+    {_, fn_srb_fuel} =
+      Resources.amount(conn, stage_2_resources, "SolidFuel")
+      |> SpaceEx.Stream.stream_fn
 
     # Pre-launch setup
     {:ok, _} = Control.set_sas(conn, control, false)
@@ -74,14 +73,13 @@ defmodule LaunchIntoOrbit do
 
     # Upon return, we should be at 90% of apoapsis altitude.
     ascent_loop(
-      conn, autopilot, control, fn_altitude,
-      fn_srb_fuel, fn_liquid_fuel, fn_apoapsis
+      conn, autopilot, control,
+      fn_altitude, fn_srb_fuel, fn_apoapsis
     )
 
     # Disable engines when target apoapsis is reached
     {:ok, _} = Control.set_throttle(conn, control, 0.25)
-    # This is effectively the functional equivalent of a 'while' loop. :)
-    Stream.cycle([:ok]) |> Enum.find(fn _ ->
+    wait_until(fn ->
       fn_apoapsis.() >= @target_altitude
     end)
 
@@ -90,8 +88,8 @@ defmodule LaunchIntoOrbit do
 
     # Wait until out of atmosphere
     IO.puts("Coasting out of atmosphere")
-    Stream.cycle([:ok]) |> Enum.find(fn _ ->
-      fn_altitude.() >= 70_500
+    wait_until(fn ->
+      fn_altitude.() >= @atmosphere_height
     end)
 
     # Plan circularization burn (using vis-viva equation)
@@ -108,8 +106,8 @@ defmodule LaunchIntoOrbit do
     delta_v = v2 - v1
     {:ok, time_to_apo} = Orbit.get_time_to_apoapsis(conn, orbit)
     node_ut = fn_ut.() + time_to_apo
-    {:ok, maneuver_node} = Control.add_node(
-      conn, control, node_ut, delta_v, 0, 0)
+    # `node` is an Elixir builtin, but it's not a reserved word, so.
+    {:ok, node} = Control.add_node(conn, control, node_ut, delta_v, 0, 0)
 
     # Calculate burn time (using rocket equation)
     {:ok, f} = Vessel.get_available_thrust(conn, vessel)
@@ -122,7 +120,7 @@ defmodule LaunchIntoOrbit do
 
     # Orientate ship
     IO.puts("Orientating ship for circularization burn")
-    {:ok, node_frame} = Node.get_reference_frame(conn, maneuver_node)
+    {:ok, node_frame} = Node.get_reference_frame(conn, node)
     {:ok, _} = AutoPilot.set_reference_frame(conn, autopilot, node_frame)
     {:ok, _} = AutoPilot.set_target_direction(conn, autopilot, {0, 1, 0})
     {:ok, _} = AutoPilot.engage(conn, autopilot)
@@ -136,8 +134,12 @@ defmodule LaunchIntoOrbit do
 
     # Execute burn
     IO.puts("Ready to execute burn")
-    Stream.cycle([:ok]) |> Enum.find(fn _ ->
-      fn_ut.() >= burn_ut
+    {_, fn_time_to_apoapsis} =
+      Orbit.get_time_to_apoapsis(conn, orbit)
+      |> SpaceEx.Stream.stream_fn
+
+    wait_until(fn ->
+      fn_time_to_apoapsis.() - (burn_time / 2.0) <= 0.0
     end)
 
     IO.puts("Executing burn")
@@ -147,21 +149,25 @@ defmodule LaunchIntoOrbit do
     IO.puts("Fine tuning")
     {:ok, _} = Control.set_throttle(conn, control, 0.05)
 
-    {_, fn_dv} = Node.get_remaining_delta_v(conn, maneuver_node) |> SpaceEx.Stream.stream_fn
+    {_, fn_remaining_delta_v} =
+      Node.get_remaining_delta_v(conn, node)
+      |> SpaceEx.Stream.stream_fn
 
-    Stream.cycle([:ok]) |> Enum.find(fn _ ->
-      fn_dv.() <= 0.2
+    wait_until(fn ->
+      fn_remaining_delta_v.() <= 0.2
     end)
 
     {:ok, _} = Control.set_throttle(conn, control, 0.0)
-    {:ok, _} = Node.remove(conn, maneuver_node)
+    {:ok, _} = Node.remove(conn, node)
 
     IO.puts("Launch complete")
   end
 
-  def ascent_loop(conn, autopilot, control, fn_altitude,
-                  fn_srb_fuel, fn_liquid_fuel, fn_apoapsis,
-                  turn_angle \\ 0, current_stage \\ 5) do
+  def ascent_loop(
+    conn, autopilot, control,
+    fn_altitude, fn_srb_fuel, fn_apoapsis,
+    turn_angle \\ 0, srbs_separated \\ false
+  ) do
     altitude = fn_altitude.()
 
     # Gravity turn
@@ -172,51 +178,49 @@ defmodule LaunchIntoOrbit do
         new_turn_angle = frac * 90.0
 
         if abs(new_turn_angle - turn_angle) > 0.5 do
-          cond do
-            turn_angle == 0 -> IO.puts("Beginning gravity turn ...")
-            new_turn_angle >= 89.5 -> IO.puts("Gravity turn complete.")
-            true -> :ok
-          end
           {:ok, _} = AutoPilot.target_pitch_and_heading(conn, autopilot, 90 - new_turn_angle, 90)
           new_turn_angle
         end
       end || turn_angle
 
     # Separate SRBs when finished
-    current_stage =
-      case current_stage do
-        5 ->
-          if fn_srb_fuel.() < 0.1 do
-            {:ok, _} = Control.activate_next_stage(conn, control)
-            IO.puts("SRBs separated")
-            4
-          end
-        4 ->
-          if fn_liquid_fuel.() < 0.1 do
-            {:ok, _} = Control.activate_next_stage(conn, control)
-            IO.puts("Bottom liquid fuel separated")
-            Process.sleep(1_000)
-            {:ok, _} = Control.activate_next_stage(conn, control)
-            IO.puts("Next engine ignited")
-            2
-          end
-        _ -> nil
-      end || current_stage
+    srbs_separated =
+      if !srbs_separated && fn_srb_fuel.() < 0.1 do
+        {:ok, _} = Control.activate_next_stage(conn, control)
+        IO.puts("SRBs separated")
+        true
+      else
+        srbs_separated
+      end
+
 
     # Decrease throttle when approaching target apoapsis
     if fn_apoapsis.() > @target_altitude*0.9 do
       IO.puts("Approaching target apoapsis")
       # return to main sequence
     else
-      ascent_loop(conn, autopilot, control, fn_altitude,
-                  fn_srb_fuel, fn_liquid_fuel, fn_apoapsis,
-                  turn_angle, current_stage)
+      ascent_loop(
+        conn, autopilot, control,
+        fn_altitude, fn_srb_fuel, fn_apoapsis,
+        turn_angle, srbs_separated
+      )
     end
+  end
+
+  # Basically an imperative 'until' loop.
+  def wait_until(func) do
+    Stream.cycle([:ok])
+    |> Enum.find(fn _ -> func.() end)
   end
 end
 
-conn = SpaceEx.Connection.connect!(name: "Launch into orbit")
+conn = SpaceEx.Connection.connect!(name: "Launch into orbit", host: "192.168.68.6")
 
-SpaceEx.KRPC.set_paused(conn, false)
-LaunchIntoOrbit.launch(conn)
-SpaceEx.KRPC.set_paused(conn, true)
+try do
+  LaunchIntoOrbit.launch(conn)
+after
+  # If the script dies, the ship will just keep doing whatever it's doing, but
+  # without any control or autopilot guidance.  Pausing on completion, but
+  # especially on error, makes it clear when a human should take over.
+  SpaceEx.KRPC.set_paused(conn, true)
+end
