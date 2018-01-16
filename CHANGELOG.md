@@ -1,10 +1,11 @@
 # Changelog
 
-## v0.3.0 (planned)
+## v0.3.0
 
-* Events added.
 * `Stream.wait` added.
-* [sub_orbital.exs](examples/sub_orbital.exs) (port from kRPC docs) added. *(planned)*
+* Events added.
+* sub_orbital_flight.exs and .craft added, ported from kRPC SubOrbitalFlight.py.  Provides example of Events.
+* launch_into_orbit.craft added, and .exs made more true to original.
 
 ## v0.2.0
 

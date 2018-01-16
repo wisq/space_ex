@@ -2,15 +2,15 @@
 
 ## Missing functionality
 
-**These need to be addressed before v1.0.0.**  I can't rightfully call it a full release without these.
+~~These need to be addressed before v1.0.0.  I can't rightfully call it a full release without these.~~ *I think we're feature-complete!*
 
 ### ~~Stream support~~ (added in v0.2.0)
 
 Streams are way better than polling over and over.  ~~Getting them working is a fairly high priority.~~ *Done!*
 
-### Events: Remote procedures and expressions
+### ~~Events: Remote procedures and expressions~~ (added in v0.3.0)
 
-These are new since the last time I worked in kRPC, but they seem to provide a great next step in offloading parameter monitoring from the client to the server.
+These are new since the last time I worked in kRPC, but they seem to provide a great next step in offloading parameter monitoring from the client to the server.  *Done!*
 
 ## Quality of life
 
@@ -78,6 +78,20 @@ Some functions have a bunch of args, many of which are optional.  Most of the ar
 At first glance, I just need to ditch the `static_` part.  All my functions are effectively statics.  But before I do this, I want to think about whether having object-reference-based functions directly alongside "static" functions will cause any confusion.
 
 *Hmm, I need to survey these methods to see what they all do, but maybe I should put them in a `.Util` module under their existing module?*
+
+### Fix `get_*` function naming
+
+Some functions are called `Vessel.get_max_thrust`, `Node.get_remaining_delta_v`, etc.  Other functions are called `Vessel.flight`, `Node.remaining_burn_vector`, etc.  I can't seem to find any rhyme or reason to it, and it's confusing and makes it hard to reason about what a function call should look like.
+
+I can't rightly just put `get_` in front of everything, so maybe I should just remove the `get_` prefix, same as I'm probably going to remove the `static_` prefix.  After all, in Python, Ruby, etc., all of those would just be `vessel.max_thrust`, `node.remaining_delta_v`, etc.
+
+The `set_` methods will have to remain as-is, of course, but I think that's reasonable.  It's not like they collate well with the getters as-is, because they're sorted alphabetically and not semantically (in docs, tab completion, etc.).
+
+### Hide/rename core I/O functions
+
+Certain functions like `KRPC.add_stream` should probably be marked as `@doc false` (or otherwise flagged as "don't use this"), because their behaviour is provided by core classes.
+
+Of course, we can't just get rid of those functions, because they're actually used by the functionality in question.  But we can potentially rename them.
 
 ### Tests
 
