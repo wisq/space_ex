@@ -67,7 +67,7 @@ defmodule SpaceEx.Event do
     # Don't use Stream.wait here, because it may have already received the
     # "true" value if the condition was true immediately.  The only thing we
     # care about is that the stream has received its first value.
-    Stream.get(event, timeout)
+    SpaceEx.Stream.get(event, timeout)
     # TODO: Unregister stream from server and StreamConnection?
     # But maybe keep stream pid alive so this continues to return true immediately.
   end
