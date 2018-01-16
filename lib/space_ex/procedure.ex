@@ -52,7 +52,6 @@ defmodule SpaceEx.Procedure do
   require SpaceEx.Procedure
 
   call1 = SpaceEx.Procedure.create(SpaceEx.SpaceCenter.get_ut(conn))
-
   # You can also use pipelining:
   call2 =
     SpaceEx.SpaceCenter.Flight.get_mean_altitude(conn, flight)
@@ -60,7 +59,7 @@ defmodule SpaceEx.Procedure do
   ```
 
   `SpaceEx.Procedure.create(Mod.func(conn, args))` is equivalent to calling
-  `SpaceEx.Procedure.new(conn, Mod, :func, args)`.
+  `SpaceEx.Procedure.new(conn, Mod, :func, args)`.
   """
 
   defmacro create({{:., _, [module, func]}, _, args}) do
