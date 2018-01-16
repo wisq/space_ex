@@ -14,13 +14,14 @@
 #   * structs for vessel, flight, etc. that include the conn, to allow piping;
 #   * versions of functions that use keyword arguments instead of positional.
 #
-# The lack of streams is also not ideal -- they can be simulated somewhat with
-# anonymous functions, but obviously with reduced performance.
-#
 # This script should be used with the stock "Kerbal 1" craft, due to the
 # hardcoded fuel checks and stage numbers.
 
 defmodule LaunchIntoOrbit do
+  require SpaceEx.Stream
+  # ... but don't try to `alias SpaceEx.Stream`,
+  # because we also use Elixir's `Stream` module.
+
   alias SpaceEx.SpaceCenter
   alias SpaceEx.SpaceCenter.{
     Vessel, Control, AutoPilot,
@@ -41,32 +42,16 @@ defmodule LaunchIntoOrbit do
     #{:ok, resources} = Vessel.get_resources(conn, vessel)
     {:ok, orbit}     = Vessel.get_orbit(conn, vessel)
 
-    # We don't have streams currently, but
-    # anonymous functions can mimic them for now.
-    fn_ut = fn ->
-      {:ok, value} = SpaceCenter.get_ut(conn)
-      value
-    end
-    fn_altitude = fn ->
-      {:ok, value} = Flight.get_mean_altitude(conn, flight)
-      value
-    end
-    fn_apoapsis = fn ->
-      {:ok, value} = Orbit.get_apoapsis_altitude(conn, orbit)
-      value
-    end
+    # Set up streams for telemetry
+    {_, fn_ut} = SpaceCenter.get_ut(conn) |> SpaceEx.Stream.stream_fn
+    {_, fn_altitude} = Flight.get_mean_altitude(conn, flight) |> SpaceEx.Stream.stream_fn
+    {_, fn_apoapsis} = Orbit.get_apoapsis_altitude(conn, orbit) |> SpaceEx.Stream.stream_fn
 
-    {:ok, stage_4_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 4, false)
-    {:ok, stage_3_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 3, false)
+    {_, stage_4_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 4, false)
+    {_, stage_3_resources} = Vessel.resources_in_decouple_stage(conn, vessel, 3, false)
 
-    fn_srb_fuel = fn ->
-      {:ok, value} = Resources.amount(conn, stage_4_resources, "SolidFuel")
-      value
-    end
-    fn_liquid_fuel = fn ->
-      {:ok, value} = Resources.amount(conn, stage_3_resources, "LiquidFuel")
-      value
-    end
+    {_, fn_srb_fuel}    = Resources.amount(conn, stage_4_resources, "SolidFuel")  |> SpaceEx.Stream.stream_fn
+    {_, fn_liquid_fuel} = Resources.amount(conn, stage_3_resources, "LiquidFuel") |> SpaceEx.Stream.stream_fn
 
     # Pre-launch setup
     {:ok, _} = Control.set_sas(conn, control, false)
@@ -162,9 +147,10 @@ defmodule LaunchIntoOrbit do
     IO.puts("Fine tuning")
     {:ok, _} = Control.set_throttle(conn, control, 0.05)
 
+    {_, fn_dv} = Node.get_remaining_delta_v(conn, maneuver_node) |> SpaceEx.Stream.stream_fn
+
     Stream.cycle([:ok]) |> Enum.find(fn _ ->
-      {:ok, dv} = Node.get_remaining_delta_v(conn, maneuver_node)
-      dv <= 0.2
+      fn_dv.() <= 0.2
     end)
 
     {:ok, _} = Control.set_throttle(conn, control, 0.0)
