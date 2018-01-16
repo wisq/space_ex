@@ -7,6 +7,8 @@ defmodule SpaceEx.StreamConnection do
     StreamUpdate,
   }
 
+  @moduledoc false
+
   defmodule State do
     @moduledoc false
 
