@@ -89,6 +89,12 @@ Certain functions like `KRPC.add_stream` should probably be marked as `@doc fals
 
 Of course, we can't just get rid of those functions, because they're actually used by the functionality in question.  But we can potentially rename them.
 
+### Revisit encoding/decoding macros
+
+Function argument encoding and return type decoding are currently baked in at compile time using macros.  This does have the advantage of ensuring that we never run into a "I don't know how to encode/decode this" error at runtime, and *may* have speed benefits, but it makes the encoders/decoders harder to run dynamically, and makes tracebacks all pretty useless.
+
+I may be able to fix the tracebacks, either with `quote(location: keep)` or maybe something better.  But I should probably try converting them to dynamic runtime functions and seeing what impact that has on performance.  If the benefit is negligible, I may be better off just going that way instead.
+
 ### Tests
 
 Considering the API is automatically generated based on JSON definitions, the protocol is raw binary over TCP, and the server requires a running instance of a graphically intensive game with manual input required to set it up, I don't think SpaceEx will ever have full end-to-end integration tests, or particularly high test coverage across the entire API.
