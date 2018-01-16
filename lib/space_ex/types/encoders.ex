@@ -11,11 +11,18 @@ defmodule SpaceEx.Types.Encoders do
 
   def type_encoder(input, :PROCEDURE_CALL, _opts) do
     quote bind_quoted: [proc: input] do
+      args =
+        Enum.with_index(proc.rpc_args)
+        |> Enum.map(fn {arg, index} ->
+          SpaceEx.Protobufs.Argument.new(position: index, value: arg)
+        end)
+
       SpaceEx.Protobufs.ProcedureCall.new(
         service: proc.rpc_service,
         procedure: proc.rpc_method,
-        arguments: proc.rpc_args,
-      ) |> SpaceEx.Protobufs.ProcedureCall.encode
+        arguments: args,
+      )
+      |> SpaceEx.Protobufs.ProcedureCall.encode
     end
   end
 
