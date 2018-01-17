@@ -19,7 +19,8 @@ defmodule SpaceEx.API do
     |> Enum.map(&Poison.decode!/1)
     |> Enum.map(&Enum.to_list/1)
     |> List.flatten
-    |> Map.new
+    |> Enum.map(&SpaceEx.API.Service.parse/1)
+    |> Map.new(fn service -> {service.name, service} end)
   )
 
   def service_names, do: Map.keys(@services)
