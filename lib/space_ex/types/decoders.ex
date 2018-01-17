@@ -1,123 +1,64 @@
 defmodule SpaceEx.Types.Decoders do
-  alias SpaceEx.Protobufs.Raw
+  alias SpaceEx.API.Type
+  alias SpaceEx.Protobufs
 
   @moduledoc false
 
-  def type_decoder(input, :BYTES, _opts),  do: input
-  # TODO: maybe render classes as structs?
-  def type_decoder(input, :CLASS, _opts),  do: input
-
-  # Strings can also be decoded via:
-  #quote do
-  #  {size, str} = :gpb.decode_varint(unquote(input))
-  #  <<_str :: bytes-size(size)>> = str
-  #end
-  def type_decoder(input, :STRING, _opts), do: raw_decoder(input, Raw.String, "dummy")
-  def type_decoder(input, :FLOAT, _opts),  do: raw_decoder(input, Raw.Float, 1.23)
-  def type_decoder(input, :DOUBLE, _opts), do: raw_decoder(input, Raw.Double, 1.23)
-  def type_decoder(input, :SINT32, _opts), do: raw_decoder(input, Raw.SInt32, 123)
-
-  def type_decoder(input, :BOOL, _opts) do
-    quote do
-      case unquote(input) do
-        <<0>> -> false
-        <<1>> -> true
-      end
-    end
-  end
-
-  def type_decoder(input, :ENUMERATION, opts) do
-    %{"service" => service, "name" => name} = opts
-    module = :"Elixir.SpaceEx.#{service}.#{name}"
-    decoder = type_decoder(input, :SINT32, %{})
-
-    quote do
-      unquote(decoder)
-      |> unquote(module).atom
-    end
-  end
-
-  def type_decoder(input, type, _opts) do
-    if module = SpaceEx.Types.protobuf_module(type) do
-      quote do: unquote(module).decode(unquote(input))
-    else
-      raise "No Protobuf module found for type #{type}"
-    end
-  end
-
-
-  def raw_decoder(input, module, example) do
+  [
+    {Protobufs.Raw.Bool, true},
+    {Protobufs.Raw.Bytes, <<1, 2, 3>>},
+    {Protobufs.Raw.String, "dummy"},
+    {Protobufs.Raw.Float, 1.23},
+    {Protobufs.Raw.Double, 1.23},
+    {Protobufs.Raw.SInt32, 123},
+  ] |> Enum.each(fn {module, example} ->
     <<first_byte, _ :: binary>> =
       module.new(value: example)
       |> module.encode
 
-    quote do
-      <<unquote(first_byte)>> <> unquote(input)
-      |> unquote(module).decode
-      |> Map.fetch!(:value)
-    end
+    def raw_first_byte(unquote(module)), do: <<unquote(first_byte)>>
+  end)
+
+  def decode(bytes, %Type.Raw{module: module}) do
+    bytes = raw_first_byte(module) <> bytes
+    module.decode(bytes).value
   end
 
-
-  def post_decode(:LIST, subtypes, _opts) do
-    [subtype] = subtypes
-    quote do
-      Map.fetch!(:items)
-      |> Enum.map(fn item ->
-        SpaceEx.Types.decode(item, unquote(subtype))
-      end)
-    end
+  def decode(bytes, %Type.Protobuf{module: module}) do
+    module.decode(bytes)
   end
 
-  def post_decode(:SET, subtypes, _opts) do
-    [subtype] = subtypes
-    quote do
-      Map.fetch!(:items)
-      |> MapSet.new(fn item ->
-        SpaceEx.Types.decode(item, unquote(subtype))
-      end)
-    end
+  def decode(bytes, %Type.List{subtype: subtype}) do
+    Protobufs.List.decode(bytes).items
+    |> Enum.map(&decode(&1, subtype))
   end
 
-  def post_decode(:TUPLE, subtypes, _opts) do
-    decoders = Enum.map(subtypes, fn subtype ->
-      quote do
-        fn item ->
-          SpaceEx.Types.decode(item, unquote(subtype))
-        end
-      end
-    end)
-
-    quote do
-      Map.fetch!(:items)
-      |> SpaceEx.Types.Decoders.decode_tuple(unquote(decoders))
-    end
+  def decode(bytes, %Type.Set{subtype: subtype}) do
+    Protobufs.Set.decode(bytes).items
+    |> MapSet.new(&decode(&1, subtype))
   end
 
-  def post_decode(:DICTIONARY, subtypes, _opts) do
-    [key_type, value_type] = subtypes
-
-    quote do
-      Map.fetch!(:entries)
-      |> Map.new(fn entry ->
-        {
-          SpaceEx.Types.decode(entry.key, unquote(key_type)),
-          SpaceEx.Types.decode(entry.value, unquote(value_type)),
-        }
-      end)
-    end
-  end
-
-  def post_decode(code, types, _opts) when is_list(types) do
-    raise "Unknown type code with subtypes: #{inspect(code)}"
-  end
-
-  def post_decode(_, _, _), do: nil
-
-
-  def decode_tuple(items, decoders) do
-    Enum.zip(items, decoders)
-    |> Enum.map(fn {item, decoder} -> decoder.(item) end)
+  def decode(bytes, %Type.Tuple{subtypes: subtypes}) do
+    Protobufs.Tuple.decode(bytes).items
+    |> decode_tuple(subtypes)
     |> List.to_tuple
+  end
+
+  def decode(bytes, %Type.Dictionary{key_type: key_type, value_type: value_type}) do
+    Protobufs.Dictionary.decode(bytes).entries
+    |> Map.new(fn entry ->
+      {
+        decode(entry.key, key_type),
+        decode(entry.value, value_type),
+      }
+    end)
+  end
+
+  # TODO: struct containing both reference (`bytes`) and conn
+  def decode(bytes, %Type.Class{}), do: bytes
+
+  defp decode_tuple([], []), do: []
+  defp decode_tuple([item | items], [type | types]) do
+    [decode(item, type) | decode_tuple(items, types)]
   end
 end

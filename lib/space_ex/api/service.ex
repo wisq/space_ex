@@ -23,7 +23,7 @@ defmodule SpaceEx.API.Service do
 
     procedures =
       Map.fetch!(proc_by_class, :no_class)
-      |> Enum.map(&Procedure.parse/1)
+      |> Enum.map(&Procedure.parse(&1, nil))
 
     enumerations =
       Map.fetch!(json, "enumerations")
@@ -39,27 +39,29 @@ defmodule SpaceEx.API.Service do
   end
 
   # Returns %{:no_class => [...], "Class1" => [...], "Class2" => [...], ...}
-  def procedures_by_class(json) do
-    classes = Map.fetch!(json, "classes")
+  defp procedures_by_class(json) do
+    class_names =
+      Map.fetch!(json, "classes")
+      |> Enum.map(fn {name, _} -> name end)
     procedures = Map.fetch!(json, "procedures")
 
-    [:no_class | Enum.to_list(classes)]
+    [:no_class | class_names]
     |> Map.new(fn class ->
-      {class, class_procedures(class, procedures, classes)}
+      {class, class_procedures(class, procedures, class_names)}
     end)
   end
 
   # Find procedures without any class.
-  def class_procedures(:no_class, procedures, classes) do
+  def class_procedures(:no_class, procedures, class_names) do
     Enum.reject(procedures, fn {proc_name, _} ->
-      Enum.any?(classes, fn {class_name, _} ->
+      Enum.any?(class_names, fn class_name ->
         String.starts_with?(proc_name, "#{class_name}_")
       end)
     end)
   end
 
   # Find procedures for a particular class.
-  def class_procedures({class_name, _}, procedures, _classes) do
+  def class_procedures(class_name, procedures, _class_names) do
     Enum.filter(procedures, fn {proc_name, _} ->
       String.starts_with?(proc_name, "#{class_name}_")
     end)

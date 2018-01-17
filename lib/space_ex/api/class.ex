@@ -12,7 +12,7 @@ defmodule SpaceEx.API.Class do
   def parse(name, json, class_procedures) do
     procedures =
       class_procedures
-      |> Enum.map(&Procedure.parse/1)
+      |> Enum.map(&Procedure.parse(&1, name))
 
     %Class{
       name: name,

@@ -6,6 +6,7 @@ defmodule SpaceEx.API.Enumeration do
   defmodule Value do
     defstruct(
       name: nil,
+      atom: nil,
       documentation: nil,
       value: nil,
     )
@@ -32,6 +33,7 @@ defmodule SpaceEx.API.Enumeration do
   defp parse_value(%{"name" => name, "value" => value, "documentation" => doc}) do
     %Value{
       name: name,
+      atom: SpaceEx.Util.to_snake_case(name) |> String.to_atom,
       documentation: doc,
       value: value,
     }
