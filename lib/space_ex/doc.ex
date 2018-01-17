@@ -129,20 +129,20 @@ defmodule SpaceEx.Doc do
     end
   end
 
-  defp find_method(service, nil, method) do
+  defp find_method(service, nil = class, method) do
     module_name = "SpaceEx.#{service}"
-    find_raw_method(service, method, module_name, method)
+    find_raw_method(service, method, module_name, class)
   end
 
   defp find_method(service, class, method) do
     module_name = "SpaceEx.#{service}.#{class}"
     rpc_method = "#{class}_#{method}"
-    find_raw_method(service, rpc_method, module_name, method)
+    find_raw_method(service, rpc_method, module_name, class)
   end
 
-  def find_raw_method(service, rpc_name, module_name, fn_name) do
+  def find_raw_method(service, rpc_name, module_name, class) do
     if arity = SpaceEx.API.rpc_arity(service, rpc_name) do
-      fn_name = SpaceEx.Util.to_snake_case(fn_name)
+      fn_name = SpaceEx.Gen.rpc_function_name(rpc_name, class)
 
       # arity + 1 because args are (conn, *rpc_args)
       "`#{module_name}.#{fn_name}/#{arity + 1}`"
