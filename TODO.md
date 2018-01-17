@@ -1,40 +1,10 @@
 # To-do list
 
-## Missing functionality
-
-~~These need to be addressed before v1.0.0.  I can't rightfully call it a full release without these.~~ *I think we're feature-complete!*
-
-### ~~Stream support~~ (added in v0.2.0)
-
-Streams are way better than polling over and over.  ~~Getting them working is a fairly high priority.~~ *Done!*
-
-### ~~Events: Remote procedures and expressions~~ (added in v0.3.0)
-
-These are new since the last time I worked in kRPC, but they seem to provide a great next step in offloading parameter monitoring from the client to the server.  *Done!*
-
 ## Quality of life
 
 ### Default values for args
 
 These are in the API JSON, but we currently ignore them and require all arguments at all times.
-
-### ~~Generate bang functions (e.g. `get_x!`)~~ Return plain values, raise on error
-
-~~I initially didn't like how cluttered these made things, but I think they're necessary.~~  Nobody wants to be checking for `{:ok, _}` on every single function call, it prevents any sort of nice-looking nested calling, and it just generally makes simple things difficult.
-
-~~I'm *very* tentatively considering idea of just having the functions be "raise on error" by default.  But that *really* goes against The Elixir Way™ (as I understand it), and so I'm extremely hesitant to go down that road.  More thoughts and consultation needed.~~
-
-**Update:** I've talked about this with some people on the Elixir community, and it didn't take much to convince me.  I'm going to have functions raise some sort of RPCError if they don't succeed, and just return the raw value, without the `{:ok, value}` tuples.  In their words:
-
-> if you are doing RPC, just error everywhere
-
-> errors in RPC are broken by design anyway
-
-> and it is not like you are doing anything if you get a non ok right now
-
-> you are already erroring
-
-And it's hard to disagree with that.  I think the number of times someone will want to catch an error is going to be small compared to the number of times they'll just want to write simple, straightforward code that will raise if anything weird happens.
 
 ### Embed connection in object pointers
 
@@ -61,6 +31,8 @@ I need to think about this a bit more, since I'm a bit concerned about having a 
 
 This means that both versions will have the same arity, they won't clog the docs, etc.  I can describe the `conn_or_tuple` argument at the top of the page.
 
+**Update 2:** Actually, I think I may ditch the tuple idea entirely, and just add maybe a `Connection.rehome` method that takes an object struct and updates the `conn` parameter to the specified connection.  If people are passing objects between connections a lot and want some sort of syntactic sugar for that, then I can fall back to the tuple idea.
+
 ### Keyword-based function arguments
 
 Some functions have a bunch of args, many of which are optional.  Most of the args are sensibly named (except `this`, which I may need to dynamically rename).  It might make sense to offer keyword-based versions, or to use keywords for the optional arguments.
@@ -68,20 +40,6 @@ Some functions have a bunch of args, many of which are optional.  Most of the ar
 *See above re: `object_or_tuple`; this will likely be what `this` gets renamed to.*
 
 ## Cleanups
-
-### Fix static function naming
-
-At first glance, I just need to ditch the `static_` part.  All my functions are effectively statics.  But before I do this, I want to think about whether having object-reference-based functions directly alongside "static" functions will cause any confusion.
-
-*Hmm, I need to survey these methods to see what they all do, but maybe I should put them in a `.Util` module under their existing module?*
-
-### Fix `get_*` function naming
-
-Some functions are called `Vessel.get_max_thrust`, `Node.get_remaining_delta_v`, etc.  Other functions are called `Vessel.flight`, `Node.remaining_burn_vector`, etc.  I can't seem to find any rhyme or reason to it, and it's confusing and makes it hard to reason about what a function call should look like.
-
-I can't rightly just put `get_` in front of everything, so maybe I should just remove the `get_` prefix, same as I'm probably going to remove the `static_` prefix.  After all, in Python, Ruby, etc., all of those would just be `vessel.max_thrust`, `node.remaining_delta_v`, etc.
-
-The `set_` methods will have to remain as-is, of course, but I think that's reasonable.  It's not like they collate well with the getters as-is, because they're sorted alphabetically and not semantically (in docs, tab completion, etc.).
 
 ### Hide/rename core I/O functions
 
