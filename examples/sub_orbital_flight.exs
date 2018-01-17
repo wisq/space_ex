@@ -10,13 +10,10 @@
 # rather than monitoring a bunch of aspects at once -- keeps things much
 # cleaner.
 #
-# The main thing getting in the way of good-looking code here is the constant
-# need for `{:ok, _} = ...` call syntax, especially since it makes nested
-# Expression code very difficult.  I'm moving away from that in more recent
-# modules like `Stream` and `Event`, but I'll be getting rid of it entirely
-# for the v1.0.0 release and just raising on error.
-#
-# Also, function naming needs work, especially all the `static_*` functions.
+# There have been some syntax improvements since this script was originally
+# ported, some of which should allow the code to be cleaned up somewhat, but
+# that cleanup is still pending.  I'll do a cleanup pass once we've reached a
+# stable v1.0.0 API.
 #
 # This script should be used with the included "sub_orbital_flight.craft"
 # craft, due to the hardcoded staging sequence.
@@ -35,76 +32,84 @@ defmodule SubOrbitalFlight do
   }
 
   def launch(conn) do
-    {:ok, vessel}    = SpaceCenter.get_active_vessel(conn)
-    {:ok, autopilot} = Vessel.get_auto_pilot(conn, vessel)
-    {:ok, resources} = Vessel.get_resources(conn, vessel)
-    {:ok, control}   = Vessel.get_control(conn, vessel)
-    {:ok, surf_ref}  = Vessel.get_surface_reference_frame(conn, vessel)
-    {:ok, flight}    = Vessel.flight(conn, vessel, surf_ref)
-    {:ok, orbit}     = Vessel.get_orbit(conn, vessel)
+    vessel    = SpaceCenter.active_vessel(conn)
+    autopilot = Vessel.auto_pilot(conn, vessel)
+    resources = Vessel.resources(conn, vessel)
+    control   = Vessel.control(conn, vessel)
+    surf_ref  = Vessel.surface_reference_frame(conn, vessel)
+    flight    = Vessel.flight(conn, vessel, surf_ref)
+    orbit     = Vessel.orbit(conn, vessel)
 
-    {:ok, _} = AutoPilot.target_pitch_and_heading(conn, autopilot, 90, 90)
-    {:ok, _} = AutoPilot.engage(conn, autopilot)
-    {:ok, _} = Control.set_throttle(conn, control, 1.0)
+    AutoPilot.target_pitch_and_heading(conn, autopilot, 90, 90)
+    AutoPilot.engage(conn, autopilot)
+    Control.set_throttle(conn, control, 1.0)
     Process.sleep(1)
 
     IO.puts("Launch!")
-    {:ok, _} = Control.activate_next_stage(conn, control)
+    Control.activate_next_stage(conn, control)
 
     # Wait until SRBs exhausted:
     fuel_amount = Resources.amount(conn, resources, "SolidFuel") |> Procedure.create
-    {:ok, expr_call}  = Expression.static_call(conn, fuel_amount)
-    {:ok, expr_value} = Expression.static_constant_float(conn, 0.1)
-    {:ok, expr}       = Expression.static_less_than(conn, expr_call, expr_value)
+    expr = Expression.less_than(
+      conn,
+      Expression.call(conn, fuel_amount),
+      Expression.constant_float(conn, 0.1)
+    )
     Event.create(conn, expr) |> Event.wait
 
     IO.puts("Booster separation")
-    {:ok, _} = Control.activate_next_stage(conn, control)
+    Control.activate_next_stage(conn, control)
 
     # Wait until above 10,000m altitude:
-    mean_altitude = Flight.get_mean_altitude(conn, flight) |> Procedure.create
-    {:ok, expr_call}  = Expression.static_call(conn, mean_altitude)
-    {:ok, expr_value} = Expression.static_constant_double(conn, 10_000)
-    {:ok, expr}       = Expression.static_greater_than(conn, expr_call, expr_value)
+    mean_altitude = Flight.mean_altitude(conn, flight) |> Procedure.create
+    expr = Expression.greater_than(
+      conn,
+      Expression.call(conn, mean_altitude),
+      Expression.constant_double(conn, 10_000)
+    )
     Event.create(conn, expr) |> Event.wait
 
     IO.puts("Gravity turn")
-    {:ok, _} = AutoPilot.target_pitch_and_heading(conn, autopilot, 60, 90)
+    AutoPilot.target_pitch_and_heading(conn, autopilot, 60, 90)
 
     # Wait until above 100,000 apoapsis:
-    apoapsis_altitude = Orbit.get_apoapsis_altitude(conn, orbit) |> Procedure.create
-    {:ok, expr_call}  = Expression.static_call(conn, apoapsis_altitude)
-    {:ok, expr_value} = Expression.static_constant_double(conn, 100_000)
-    {:ok, expr}       = Expression.static_greater_than(conn, expr_call, expr_value)
+    apoapsis_altitude = Orbit.apoapsis_altitude(conn, orbit) |> Procedure.create
+    expr = Expression.greater_than(
+      conn,
+      Expression.call(conn, apoapsis_altitude),
+      Expression.constant_double(conn, 100_000)
+    )
     Event.create(conn, expr) |> Event.wait
 
     IO.puts("Launch stage separation")
-    {:ok, _} = Control.set_throttle(conn, control, 0.0)
+    Control.set_throttle(conn, control, 0.0)
     Process.sleep(1_000)
-    {:ok, _} = Control.activate_next_stage(conn, control)
-    {:ok, _} = AutoPilot.disengage(conn, autopilot)
+    Control.activate_next_stage(conn, control)
+    AutoPilot.disengage(conn, autopilot)
 
     # Wait until under 1,000m altitude:
-    srf_altitude = Flight.get_surface_altitude(conn, flight) |> Procedure.create
-    {:ok, expr_call}  = Expression.static_call(conn, srf_altitude)
-    {:ok, expr_value} = Expression.static_constant_double(conn, 1_000)
-    {:ok, expr}       = Expression.static_less_than(conn, expr_call, expr_value)
+    srf_altitude = Flight.surface_altitude(conn, flight) |> Procedure.create
+    expr = Expression.less_than(
+      conn,
+      Expression.call(conn, srf_altitude),
+      Expression.constant_double(conn, 1_000)
+    )
     Event.create(conn, expr) |> Event.wait
 
-    {:ok, _} = Control.activate_next_stage(conn, control)
+    Control.activate_next_stage(conn, control)
 
-    {:ok, kerbin} = Orbit.get_body(conn, orbit)
-    {:ok, kerbin_frame} = CelestialBody.get_reference_frame(conn, kerbin)
-    {:ok, kerbin_flight} = Vessel.flight(conn, vessel, kerbin_frame)
+    kerbin = Orbit.body(conn, orbit)
+    kerbin_frame = CelestialBody.reference_frame(conn, kerbin)
+    kerbin_flight = Vessel.flight(conn, vessel, kerbin_frame)
 
     wait_until(fn ->
-      {:ok, surface_altitude} = Flight.get_surface_altitude(conn, flight)
+      surface_altitude = Flight.surface_altitude(conn, flight)
       alti = :erlang.float_to_binary(surface_altitude, decimals: 1)
       IO.puts("Altitude = #{alti} meters")
 
       Process.sleep(1_000)
       # Break if vertical speed reaches zero (or positive).
-      {:ok, vertical_speed} = Flight.get_vertical_speed(conn, kerbin_flight)
+      vertical_speed = Flight.vertical_speed(conn, kerbin_flight)
       vertical_speed > -0.1
     end)
 
