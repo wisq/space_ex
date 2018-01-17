@@ -93,18 +93,17 @@ defmodule SpaceEx.Stream do
     conn = procedure.conn
     start = opts[:start] || true
 
-    {:ok, stream_obj} = SpaceEx.KRPC.add_stream(conn, procedure, start)
-    stream_id = stream_obj.id
+    stream = SpaceEx.KRPC.add_stream(conn, procedure, start)
 
     if rate = opts[:rate] do
-      SpaceEx.KRPC.set_stream_rate(conn, stream_id, rate)
+      SpaceEx.KRPC.set_stream_rate(conn, stream.id, rate)
     end
 
     decoder = fn value ->
       procedure.module.rpc_decode_return_value(procedure.function, value)
     end
 
-    launch(conn, stream_id, decoder)
+    launch(conn, stream.id, decoder)
   end
 
   # Used by both Stream and Event.

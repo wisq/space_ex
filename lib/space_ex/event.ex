@@ -35,7 +35,7 @@ defmodule SpaceEx.Event do
   """
 
   def create(conn, expression, opts \\ []) do
-    {:ok, event} = SpaceEx.KRPC.add_event(conn, expression)
+    event = SpaceEx.KRPC.add_event(conn, expression)
     stream_id = event.stream.id
 
     if rate = opts[:rate] do
