@@ -131,21 +131,10 @@ defmodule SpaceEx.Gen do
         @doc SpaceEx.Doc.procedure(opts)
         def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
           args = rpc_encode_arguments(unquote(fn_name), unquote(fn_args))
-
-          case SpaceEx.Connection.call_rpc(conn, unquote(service_name), unquote(rpc_name), args) do
-            {:ok, value} -> {:ok, rpc_decode_return_value(unquote(fn_name), value)}
-            {:error, error} -> {:error, error}
-          end
+          value = SpaceEx.Connection.call_rpc!(conn, unquote(service_name), unquote(rpc_name), args)
+          rpc_decode_return_value(unquote(fn_name), value)
         end
       end
-
-      #@doc Map.fetch!(opts, "documentation")
-      #def unquote(:"#{fn_name}!")(conn, unquote_splicing(fn_args)) do
-      #  case unquote(fn_name)(conn, unquote_splicing(fn_args)) do
-      #    {:ok, value} -> value
-      #    {:error, error} -> raise error.description
-      #  end
-      #end
     end
   end
 

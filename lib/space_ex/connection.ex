@@ -10,6 +10,17 @@ defmodule SpaceEx.Connection do
     Response,
   }
 
+  defmodule RPCError do
+    defexception [:error, :message]
+
+    def exception(error) do
+      %RPCError{
+        error: error,
+        message: error.description,
+      }
+    end
+  end
+
   @moduledoc """
   Establishes a connection to a kRPC server.
 
@@ -181,6 +192,14 @@ defmodule SpaceEx.Connection do
       else
         {:ok, call_reply.value}
       end
+    end
+  end
+
+  @doc false
+  def call_rpc!(conn, service, procedure, args) do
+    case call_rpc(conn, service, procedure, args) do
+      {:ok, value} -> value
+      {:error, error} -> raise RPCError, error
     end
   end
 
