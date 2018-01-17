@@ -1,7 +1,7 @@
 defmodule SpaceEx.API do
   @moduledoc false
 
-  @api_path Path.expand("api", __DIR__)
+  @api_path Path.expand("api/json", __DIR__)
 
   @service_files (
     File.ls!(@api_path)
