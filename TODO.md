@@ -47,21 +47,6 @@ Certain functions like `KRPC.add_stream` should probably be marked as `@doc fals
 
 Of course, we can't just get rid of those functions, because they're actually used by the functionality in question.  But we can potentially rename them.
 
-### Revisit encoding/decoding macros
-
-Function argument encoding and return type decoding are currently baked in at compile time using macros.  This does have the advantage of ensuring that we never run into a "I don't know how to encode/decode this" error at runtime, and *may* have speed benefits, but it makes the encoders/decoders harder to run dynamically, and makes tracebacks all pretty useless.
-
-I may be able to fix the tracebacks, either with `quote(location: keep)` or maybe something better.  But I should probably try converting them to dynamic runtime functions and seeing what impact that has on performance.  If the benefit is negligible, I may be better off just going that way instead.
-
-As I see it, there's two ways to go:
-
-1. Fully dynamic — pattern match on the type codes at runtime; and,
-2. Semi-dynamic — parse types into e.g. `%ListType{subtype: ...}`, `%TupleType{subtypes: {...}`, `%ProtobufType{module: X}`, etc., and pattern match on that at runtime.
-
-The #2 case has the advantage of ensuring we at least know about every type at compile time (ensuring completeness).
-
-Even in the #1 case, we can still ensure completeness if we have a test suite that tests every known type, and then walks the API JSON and ensures there aren't any types we haven't tested.
-
 ### Tests
 
 Considering the API is automatically generated based on JSON definitions, the protocol is raw binary over TCP, and the server requires a running instance of a graphically intensive game with manual input required to set it up, I don't think SpaceEx will ever have full end-to-end integration tests, or particularly high test coverage across the entire API.
