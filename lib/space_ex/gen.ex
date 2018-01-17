@@ -167,6 +167,7 @@ defmodule SpaceEx.Gen do
 
   def rpc_function_name(rpc_name, nil) do
     SpaceEx.Util.to_snake_case(rpc_name)
+    |> String.replace(~r{^(?:get|static)_}, "")
     |> String.to_atom
   end
 
