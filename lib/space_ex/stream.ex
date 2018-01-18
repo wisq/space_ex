@@ -25,16 +25,16 @@ defmodule SpaceEx.Stream do
 
   ```elixir
   require SpaceEx.Stream
+
   stream =
     SpaceEx.SpaceCenter.ut(conn)
-    |> SpaceEx.Stream.stream
+    |> SpaceEx.Stream.stream()
 
-  # Equivalent to:
-  #require SpaceEx.Procedure
-  #stream =
-  #  SpaceEx.SpaceCenter.ut(conn)
-  #  |> SpaceEx.Procedure.create
-  #  |> SpaceEx.Stream.create
+  # Equivalent:
+  stream =
+    SpaceEx.SpaceCenter.ut(conn)
+    |> SpaceEx.Procedure.create()
+    |> SpaceEx.Stream.create()
 
   SpaceEx.Stream.get(stream)  # 83689.09043863538
   Process.sleep(100)
@@ -54,7 +54,7 @@ defmodule SpaceEx.Stream do
   # You can even create both the stream and the shortcut at once:
   {stream, ut} =
     SpaceEx.SpaceCenter.get_ut(conn)
-    |> SpaceEx.Stream.stream_fn
+    |> SpaceEx.Stream.stream_fn()
 
   SpaceEx.Stream.get(stream)  # 83689.49043863541
   ut.()  # 83689.49043863541
@@ -132,7 +132,7 @@ defmodule SpaceEx.Stream do
   ```elixir
   stream =
     SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
-    |> SpaceEx.Stream.stream
+    |> SpaceEx.Stream.stream()
 
   SpaceEx.Stream.get(stream)  # 76.64177794696297
   ```
@@ -160,7 +160,7 @@ defmodule SpaceEx.Stream do
   ```elixir
   {stream, altitude} =
     SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
-    |> SpaceEx.Stream.stream_fn
+    |> SpaceEx.Stream.stream_fn()
 
   altitude.() |> IO.inspect  # 76.64177794696297
   ```

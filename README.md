@@ -28,11 +28,11 @@ Run `mix deps.get` to pull SpaceEx into your project, and you're good to go.
 
 ```elixir
 # If your kRPC is on the same machine:
-conn = SpaceEx.Connection.connect!
+conn = SpaceEx.Connection.connect!()
 # If it's on a different one:
-#conn = SpaceEx.Connection.connect!(host: "1.2.3.4")
+# conn = SpaceEx.Connection.connect!(host: "1.2.3.4")
 
-vessel  = SpaceEx.SpaceCenter.active_vessel(conn)
+vessel = SpaceEx.SpaceCenter.active_vessel(conn)
 control = SpaceEx.SpaceCenter.Vessel.control(conn, vessel)
 
 SpaceEx.KRPC.set_paused(conn, false)

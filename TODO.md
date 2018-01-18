@@ -17,8 +17,8 @@ Note the lack of `conn` in lines 2 and 3.  The idea here is that — although yo
 ```elixir
 apoapsis =
   SpaceEx.SpaceCenter.active_vessel(conn)
-  |> SpaceEx.SpaceCenter.Vessel.orbit
-  |> SpaceEx.SpaceCenter.Orbit.apoapsis_altitude
+  |> SpaceEx.SpaceCenter.Vessel.orbit()
+  |> SpaceEx.SpaceCenter.Orbit.apoapsis_altitude()
 ```
 
 To use an object via a different connection, there will be a `Connection` function; I'm currently thinking `Connection.reassign(obj)`, although `rehome` and `claim` are other possibilities.

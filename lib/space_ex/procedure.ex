@@ -55,7 +55,7 @@ defmodule SpaceEx.Procedure do
   # You can also use pipelining:
   call2 =
     SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
-    |> SpaceEx.Procedure.create
+    |> SpaceEx.Procedure.create()
   ```
 
   `create(Mod.func(conn, args))` is equivalent to calling
