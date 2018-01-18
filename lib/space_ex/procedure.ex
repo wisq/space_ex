@@ -5,14 +5,13 @@ defmodule SpaceEx.Procedure do
   Normally created using the `new/4` function or the `create/1` macro.
   """
 
-  @enforce_keys [:module, :function, :conn, :rpc_service, :rpc_method, :rpc_args]
+  @enforce_keys [:conn, :service, :procedure, :args]
   defstruct(
-    module: nil,
-    function: nil,
     conn: nil,
-    rpc_service: nil,
-    rpc_method: nil,
-    rpc_args: [],
+    service: nil,
+    procedure: nil,
+    args: [],
+    return_type: nil,
   )
 
   @doc """
@@ -28,17 +27,18 @@ defmodule SpaceEx.Procedure do
   """
 
   def new(conn, module, function, args \\ []) do
-    rpc_service = module.rpc_service_name()
-    rpc_method  = module.rpc_method_name(function)
-    rpc_args    = module.rpc_encode_arguments(function, args)
+    service_name = module.rpc_service_name()
+    proc = module.rpc_procedure(function)
+
+    arg_types = Enum.map(proc.parameters, fn p -> p.type end)
+    args = SpaceEx.Gen.encode_args(args, arg_types)
 
     %SpaceEx.Procedure{
-      module: module,
-      function: function,
       conn: conn,
-      rpc_service: rpc_service,
-      rpc_method: rpc_method,
-      rpc_args: rpc_args,
+      service: service_name,
+      procedure: proc.name,
+      args: args,
+      return_type: proc.return_type,
     }
   end
 

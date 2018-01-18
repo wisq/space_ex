@@ -31,6 +31,21 @@ defmodule SpaceEx.Types.Encoders do
     |> Protobufs.Tuple.encode
   end
 
+  def encode(%SpaceEx.Procedure{} = proc, %Type.ProcedureCall{}) do
+    args =
+      Enum.with_index(proc.args)
+      |> Enum.map(fn {arg, index} ->
+        Protobufs.Argument.new(position: index, value: arg)
+      end)
+
+    Protobufs.ProcedureCall.new(
+      service: proc.service,
+      procedure: proc.procedure,
+      arguments: args,
+    )
+    |> Protobufs.ProcedureCall.encode
+  end
+
   # TODO: struct containing both reference (`bytes`) and conn
   def encode(value, %Type.Class{}), do: value
 

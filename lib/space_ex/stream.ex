@@ -1,6 +1,7 @@
 defmodule SpaceEx.Stream do
   use GenServer
   alias SpaceEx.Stream
+  alias SpaceEx.{KRPC, StreamConnection, Types}
 
   @moduledoc """
   Enables data to be streamed as it changes, instead of polled repeatedly.
@@ -93,14 +94,14 @@ defmodule SpaceEx.Stream do
     conn = procedure.conn
     start = opts[:start] || true
 
-    stream = SpaceEx.KRPC.add_stream(conn, procedure, start)
+    stream = KRPC.add_stream(conn, procedure, start)
 
     if rate = opts[:rate] do
-      SpaceEx.KRPC.set_stream_rate(conn, stream.id, rate)
+      KRPC.set_stream_rate(conn, stream.id, rate)
     end
 
     decoder = fn value ->
-      procedure.module.rpc_decode_return_value(procedure.function, value)
+      Types.decode(value, procedure.return_type)
     end
 
     launch(conn, stream.id, decoder)
@@ -110,7 +111,7 @@ defmodule SpaceEx.Stream do
   @doc false
   def launch(conn, stream_id, decoder) do
     {:ok, pid} = start_link(conn, stream_id)
-    SpaceEx.StreamConnection.register_stream(conn, stream_id, pid)
+    StreamConnection.register_stream(conn, stream_id, pid)
 
     %Stream{id: stream_id, conn: conn, pid: pid, decoder: decoder}
   end
@@ -240,7 +241,7 @@ defmodule SpaceEx.Stream do
   """
 
   def set_rate(stream, rate) do
-    SpaceEx.KRPC.set_stream_rate(stream.conn, stream.stream_id, rate || 0)
+    KRPC.set_stream_rate(stream.conn, stream.stream_id, rate || 0)
   end
 
   @doc false

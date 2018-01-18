@@ -23,6 +23,9 @@ defmodule SpaceEx.Gen do
     quote location: :keep do
       @moduledoc SpaceEx.Doc.service(@service)
 
+      @doc false
+      def rpc_service_name(), do: @service.name
+
       @service.enumerations
       |> Enum.each(&SpaceEx.Gen.define_enumeration/1)
 
@@ -68,6 +71,9 @@ defmodule SpaceEx.Gen do
       defmodule Module.concat(__MODULE__, class.name) do
         @moduledoc SpaceEx.Doc.class(class)
 
+        @doc false
+        def rpc_service_name(), do: unquote(service.name)
+
         class.procedures
         |> Enum.each(&SpaceEx.Gen.define_procedure(service, &1))
       end
@@ -90,6 +96,9 @@ defmodule SpaceEx.Gen do
       arg_types = Enum.map(procedure.parameters, fn p -> p.type end) |> Macro.escape
       return_type = procedure.return_type |> Macro.escape
 
+      @doc false
+      def rpc_procedure(unquote(fn_name)), do: unquote(procedure |> Macro.escape)
+
       @doc SpaceEx.Doc.procedure(procedure)
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
         args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_types))
@@ -100,12 +109,14 @@ defmodule SpaceEx.Gen do
     end
   end
 
+  # FIXME: need to move this out to a better module
   def encode_args([], []), do: []
   def encode_args([arg | args], [type | types]) do
     value = SpaceEx.Types.encode(arg, type)
     [value | encode_args(args, types)]
   end
 
+  # FIXME: need to move this out to a better module
   def decode_return("", nil), do: :ok
   def decode_return(value, type) do
     SpaceEx.Types.decode(value, type)

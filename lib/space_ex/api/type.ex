@@ -28,6 +28,7 @@ defmodule SpaceEx.API.Type do
 
   @special_types %{
     "CLASS" => Type.Class,
+    "PROCEDURE_CALL" => Type.ProcedureCall,
   }
 
   defp parse_special(code, opts) do
