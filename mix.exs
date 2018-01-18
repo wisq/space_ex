@@ -39,6 +39,12 @@ defmodule SpaceEx.Mixfile do
 
   defp docs do
     [
+      main: "readme",
+      extras: [
+        "README.md",
+        "CHANGELOG.md",
+        "TODO.md",
+      ],
       before_closing_head_tag: fn _ ->
         ~S(<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>)
       end,
