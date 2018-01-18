@@ -32,25 +32,25 @@ conn = SpaceEx.Connection.connect!
 # If it's on a different one:
 #conn = SpaceEx.Connection.connect!(host: "1.2.3.4")
 
-{:ok, vessel}  = SpaceEx.SpaceCenter.get_active_vessel(conn)
-{:ok, control} = SpaceEx.SpaceCenter.Vessel.get_control(conn, vessel)
+vessel  = SpaceEx.SpaceCenter.active_vessel(conn)
+control = SpaceEx.SpaceCenter.Vessel.control(conn, vessel)
 
-{:ok, _} = SpaceEx.KRPC.set_paused(conn, false)
+SpaceEx.KRPC.set_paused(conn, false)
 
 IO.puts("Burning for 1 second ...")
-{:ok, _} = SpaceEx.SpaceCenter.Control.set_throttle(conn, control, 1.0)
+SpaceEx.SpaceCenter.Control.set_throttle(conn, control, 1.0)
 Process.sleep(1_000)
-{:ok, _} = SpaceEx.SpaceCenter.Control.set_throttle(conn, control, 0.0)
+SpaceEx.SpaceCenter.Control.set_throttle(conn, control, 0.0)
 IO.puts("Burn complete.")
 
-{:ok, _} = SpaceEx.KRPC.set_paused(conn, true)
+SpaceEx.KRPC.set_paused(conn, true)
 ```
 
 This will connect to your kRPC game, unpause it if needed, burn the engines for one second, and then pause it again.
 
 More examples can be found in the [examples directory](examples/).
 
-Be aware that this library is very new, and the code required to do anything complex is very ugly (as the examples demonstrate).  Improvements are planned; see the [to-do list](TODO.md).
+Be aware that this library is very new, and the syntax is changing day by day.  I expect to release v1.0.0 within a week or so, at which point the API will be considered stable.  For a list of what's planned, see the [to-do list](TODO.md).
 
 ## Documentation
 

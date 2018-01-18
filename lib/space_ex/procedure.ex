@@ -51,15 +51,15 @@ defmodule SpaceEx.Procedure do
   ```elixir
   require SpaceEx.Procedure
 
-  call1 = SpaceEx.Procedure.create(SpaceEx.SpaceCenter.get_ut(conn))
+  call1 = SpaceEx.Procedure.create(SpaceEx.SpaceCenter.ut(conn))
   # You can also use pipelining:
   call2 =
-    SpaceEx.SpaceCenter.Flight.get_mean_altitude(conn, flight)
+    SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
     |> SpaceEx.Procedure.create
   ```
 
   `create(Mod.func(conn, args))` is equivalent to calling
-  `new(conn, Mod, :func, args)`.
+  `new(conn, Mod, :func, [args])`.
   """
 
   defmacro create({{:., _, [module, func]}, _, args}) do

@@ -21,14 +21,20 @@ defmodule SpaceEx.Stream do
   less), but the value is changing constantly (altitude, current time, etc.),
   you should consider either using polling, or reducing the stream's rate.
 
-  Example usage:
+  ## Example usage
 
   ```elixir
-  require SpaceEx.Procedure
+  require SpaceEx.Stream
   stream =
-    SpaceEx.SpaceCenter.get_ut(conn)
-    |> SpaceEx.Procedure.call
-    |> SpaceEx.Stream.create(start: true)
+    SpaceEx.SpaceCenter.ut(conn)
+    |> SpaceEx.Stream.stream
+
+  # Equivalent to:
+  #require SpaceEx.Procedure
+  #stream =
+  #  SpaceEx.SpaceCenter.ut(conn)
+  #  |> SpaceEx.Procedure.create
+  #  |> SpaceEx.Stream.create
 
   SpaceEx.Stream.get(stream)  # 83689.09043863538
   Process.sleep(100)
@@ -48,9 +54,9 @@ defmodule SpaceEx.Stream do
   # You can even create both the stream and the shortcut at once:
   {stream, ut} =
     SpaceEx.SpaceCenter.get_ut(conn)
-    |> SpaceEx.Stream.stream
+    |> SpaceEx.Stream.stream_fn
 
-  SpaceEx.Stream.get(stream)  # 83689.09043863540
+  SpaceEx.Stream.get(stream)  # 83689.49043863541
   ut.()  # 83689.49043863541
   ```
   """
@@ -125,8 +131,8 @@ defmodule SpaceEx.Stream do
 
   ```elixir
   stream =
-    SpaceEx.SpaceCenter.Flight.get_mean_altitude(conn, flight)
-    |> SpaceEx.Stream.create
+    SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
+    |> SpaceEx.Stream.stream
 
   SpaceEx.Stream.get(stream)  # 76.64177794696297
   ```
@@ -152,7 +158,7 @@ defmodule SpaceEx.Stream do
 
   ```elixir
   {stream, altitude} =
-    SpaceEx.SpaceCenter.Flight.get_mean_altitude(conn, flight)
+    SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
     |> SpaceEx.Stream.stream_fn
 
   altitude.() |> IO.inspect  # 76.64177794696297
@@ -218,7 +224,7 @@ defmodule SpaceEx.Stream do
   ## Example
 
   ```elixir
-  paused = SpaceEx.SpaceCenter.get_paused(conn) |> SpaceEx.Stream.stream
+  paused = SpaceEx.SpaceCenter.paused(conn) |> SpaceEx.Stream.stream
 
   SpaceEx.Stream.wait(paused)  # returns true/false the next time you un/pause
   ```
