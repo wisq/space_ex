@@ -1,13 +1,14 @@
 defmodule SpaceEx.Connection do
   use GenServer
   alias SpaceEx.{Connection, StreamConnection}
+
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
     ConnectionResponse,
     ProcedureCall,
     Argument,
     Request,
-    Response,
+    Response
   }
 
   defmodule RPCError do
@@ -22,7 +23,7 @@ defmodule SpaceEx.Connection do
     def exception(error) do
       %RPCError{
         error: error,
-        message: error.description,
+        message: error.description
       }
     end
   end
@@ -54,7 +55,7 @@ defmodule SpaceEx.Connection do
     pid: nil,
     stream_pid: nil,
     info: nil,
-    client_id: nil,
+    client_id: nil
   )
 
   defmodule State do
@@ -64,8 +65,8 @@ defmodule SpaceEx.Connection do
     defstruct(
       socket: nil,
       client_id: nil,
-      reply_queue: :queue.new,
-      buffer: <<>>,
+      reply_queue: :queue.new(),
+      buffer: <<>>
     )
   end
 
@@ -82,7 +83,7 @@ defmodule SpaceEx.Connection do
       name: nil,
       host: "127.0.0.1",
       port: 50000,
-      stream_port: 50001,
+      stream_port: 50001
     )
   end
 
@@ -110,7 +111,7 @@ defmodule SpaceEx.Connection do
       pid: pid,
       stream_pid: stream_pid,
       info: info,
-      client_id: client_id,
+      client_id: client_id
     }
   end
 
@@ -121,30 +122,32 @@ defmodule SpaceEx.Connection do
 
     request =
       ConnectionRequest.new(type: :RPC, client_name: info.name || whoami())
-      |> ConnectionRequest.encode
+      |> ConnectionRequest.encode()
 
     send_message(sock, request)
 
     response =
       recv_message(sock)
-      |> ConnectionResponse.decode
+      |> ConnectionResponse.decode()
 
     case response.status do
       :OK -> sock
-      _ -> raise "kRPC connection failed: #{inspect response.message}"
+      _ -> raise "kRPC connection failed: #{inspect(response.message)}"
     end
 
     Socket.active(sock)
-    {:ok, %State{
-      socket: sock,
-      client_id: response.client_identifier,
-    }}
+
+    {:ok,
+     %State{
+       socket: sock,
+       client_id: response.client_identifier
+     }}
   end
 
   defp send_message(sock, message) do
     size =
       byte_size(message)
-      |> :gpb.encode_varint
+      |> :gpb.encode_varint()
 
     Socket.Stream.send!(sock, size <> message)
   end
@@ -154,15 +157,16 @@ defmodule SpaceEx.Connection do
   # and all replies come via handle_info messages.
   defp recv_message(sock, buffer \\ <<>>) do
     case Socket.Stream.recv!(sock, 1) do
-      <<1 :: size(1), _ :: bitstring>> = byte ->
+      <<1::size(1), _::bitstring>> = byte ->
         # high bit set, varint incomplete
         recv_message(sock, buffer <> byte)
 
-      <<0 :: size(1), _ :: bitstring>> = byte ->
+      <<0::size(1), _::bitstring>> = byte ->
         {size, ""} = :gpb.decode_varint(buffer <> byte)
         Socket.Stream.recv!(sock, size)
 
-      nil -> raise "kRPC connection closed"
+      nil ->
+        raise "kRPC connection closed"
     end
   end
 
@@ -174,19 +178,20 @@ defmodule SpaceEx.Connection do
         Argument.new(position: index, value: arg)
       end)
 
-    call = ProcedureCall.new(
-      service: service,
-      procedure: procedure,
-      arguments: args,
-    )
+    call =
+      ProcedureCall.new(
+        service: service,
+        procedure: procedure,
+        arguments: args
+      )
 
     request =
       Request.new(calls: [call])
-      |> Request.encode
+      |> Request.encode()
 
     response =
       GenServer.call(pid, {:rpc, request}, :infinity)
-      |> Response.decode
+      |> Response.decode()
 
     if response.error do
       {:error, response.error}
@@ -224,10 +229,7 @@ defmodule SpaceEx.Connection do
     buffer = state.buffer <> bytes
     {queue, buffer} = dispatch_replies(state.reply_queue, buffer)
 
-    {:noreply, %State{state |
-      reply_queue: queue,
-      buffer: buffer,
-    }}
+    {:noreply, %State{state | reply_queue: queue, buffer: buffer}}
   end
 
   defp dispatch_replies(queue, buffer) do
@@ -236,7 +238,8 @@ defmodule SpaceEx.Connection do
         new_queue = dispatch_reply(queue, reply)
         dispatch_replies(new_queue, new_buffer)
 
-      {:error, :incomplete} -> {queue, buffer}
+      {:error, :incomplete} ->
+        {queue, buffer}
     end
   end
 
@@ -250,13 +253,15 @@ defmodule SpaceEx.Connection do
     case safe_decode_varint(buffer) do
       {size, leftover} ->
         case leftover do
-          <<reply :: bytes-size(size), buffer :: binary>> ->
+          <<reply::bytes-size(size), buffer::binary>> ->
             {:ok, reply, buffer}
 
-          _ -> {:error, :incomplete}
+          _ ->
+            {:error, :incomplete}
         end
 
-      nil -> {:error, :incomplete}
+      nil ->
+        {:error, :incomplete}
     end
   end
 
@@ -269,11 +274,13 @@ defmodule SpaceEx.Connection do
   end
 
   defp has_varint?(<<>>), do: false
-  defp has_varint?(<<0 :: size(1), _ :: bitstring>>), do: true # high bit unset, varint complete
-  defp has_varint?(<<1 :: size(1), _ :: size(7), rest :: bitstring>>), do: has_varint?(rest) # high bit set, varint incomplete
+  # high bit unset, varint complete
+  defp has_varint?(<<0::size(1), _::bitstring>>), do: true
+  # high bit set, varint incomplete
+  defp has_varint?(<<1::size(1), _::size(7), rest::bitstring>>), do: has_varint?(rest)
 
   defp whoami do
-    os_pid = System.get_pid
+    os_pid = System.get_pid()
     [_, erlang_pid, _] = inspect(self()) |> String.split(~r/[<>]/)
 
     "#{os_pid}-#{erlang_pid}"

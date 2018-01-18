@@ -6,18 +6,16 @@ defmodule SpaceEx.API.Type.Raw do
 
   defstruct(module: nil)
 
-  @types (
-    Protobufs.Raw.defs
-    |> Enum.map(fn {{:msg, module}, _} -> module end)
-    |> Enum.reject(&is_nil/1)
-    |> Map.new(fn module ->
-      code =
-        Util.module_basename(module)
-        |> String.upcase
+  @types Protobufs.Raw.defs()
+         |> Enum.map(fn {{:msg, module}, _} -> module end)
+         |> Enum.reject(&is_nil/1)
+         |> Map.new(fn module ->
+           code =
+             Util.module_basename(module)
+             |> String.upcase()
 
-      {code, module}
-    end)
-  )
+           {code, module}
+         end)
 
   def parse(code) do
     if module = Map.get(@types, code) do

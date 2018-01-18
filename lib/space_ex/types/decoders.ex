@@ -10,9 +10,10 @@ defmodule SpaceEx.Types.Decoders do
     {Protobufs.Raw.String, "dummy"},
     {Protobufs.Raw.Float, 1.23},
     {Protobufs.Raw.Double, 1.23},
-    {Protobufs.Raw.SInt32, 123},
-  ] |> Enum.each(fn {module, example} ->
-    <<first_byte, _ :: binary>> =
+    {Protobufs.Raw.SInt32, 123}
+  ]
+  |> Enum.each(fn {module, example} ->
+    <<first_byte, _::binary>> =
       module.new(value: example)
       |> module.encode
 
@@ -41,7 +42,7 @@ defmodule SpaceEx.Types.Decoders do
   def decode(bytes, %Type.Tuple{subtypes: subtypes}) do
     Protobufs.Tuple.decode(bytes).items
     |> decode_tuple(subtypes)
-    |> List.to_tuple
+    |> List.to_tuple()
   end
 
   def decode(bytes, %Type.Dictionary{key_type: key_type, value_type: value_type}) do
@@ -49,7 +50,7 @@ defmodule SpaceEx.Types.Decoders do
     |> Map.new(fn entry ->
       {
         decode(entry.key, key_type),
-        decode(entry.value, value_type),
+        decode(entry.value, value_type)
       }
     end)
   end
@@ -62,6 +63,7 @@ defmodule SpaceEx.Types.Decoders do
   def decode(bytes, %Type.Class{}), do: bytes
 
   defp decode_tuple([], []), do: []
+
   defp decode_tuple([item | items], [type | types]) do
     [decode(item, type) | decode_tuple(items, types)]
   end

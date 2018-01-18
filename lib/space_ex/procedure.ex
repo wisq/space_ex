@@ -11,7 +11,7 @@ defmodule SpaceEx.Procedure do
     service: nil,
     procedure: nil,
     args: [],
-    return_type: nil,
+    return_type: nil
   )
 
   @doc """
@@ -38,7 +38,7 @@ defmodule SpaceEx.Procedure do
       service: service_name,
       procedure: proc.name,
       args: args,
-      return_type: proc.return_type,
+      return_type: proc.return_type
     }
   end
 
@@ -64,10 +64,10 @@ defmodule SpaceEx.Procedure do
 
   defmacro create({{:., _, [module, func]}, _, args}) do
     quote bind_quoted: [
-      module: module,
-      function: func,
-      macro_args: args
-    ] do
+            module: module,
+            function: func,
+            macro_args: args
+          ] do
       [conn | args] = macro_args
 
       SpaceEx.Procedure.new(conn, module, function, args)

@@ -8,7 +8,7 @@ defmodule SpaceEx.API.Service do
     documentation: nil,
     classes: nil,
     enumerations: nil,
-    procedures: nil,
+    procedures: nil
   )
 
   def parse({name, json}) do
@@ -34,7 +34,7 @@ defmodule SpaceEx.API.Service do
       documentation: Map.fetch!(json, "documentation"),
       classes: classes,
       enumerations: enumerations,
-      procedures: procedures,
+      procedures: procedures
     }
   end
 
@@ -43,6 +43,7 @@ defmodule SpaceEx.API.Service do
     class_names =
       Map.fetch!(json, "classes")
       |> Enum.map(fn {name, _} -> name end)
+
     procedures = Map.fetch!(json, "procedures")
 
     [:no_class | class_names]

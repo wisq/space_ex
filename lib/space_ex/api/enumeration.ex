@@ -10,14 +10,14 @@ defmodule SpaceEx.API.Enumeration do
       name: nil,
       atom: nil,
       documentation: nil,
-      value: nil,
+      value: nil
     )
   end
 
   defstruct(
     name: nil,
     documentation: nil,
-    values: nil,
+    values: nil
   )
 
   def parse({name, json}) do
@@ -28,16 +28,16 @@ defmodule SpaceEx.API.Enumeration do
     %Enumeration{
       name: name,
       documentation: Map.fetch!(json, "documentation"),
-      values: values,
+      values: values
     }
   end
 
   defp parse_value(%{"name" => name, "value" => value, "documentation" => doc}) do
     %Value{
       name: name,
-      atom: SpaceEx.Util.to_snake_case(name) |> String.to_atom,
+      atom: SpaceEx.Util.to_snake_case(name) |> String.to_atom(),
       documentation: doc,
-      value: value,
+      value: value
     }
   end
 end

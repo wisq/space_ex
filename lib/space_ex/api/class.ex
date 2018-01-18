@@ -6,7 +6,7 @@ defmodule SpaceEx.API.Class do
   defstruct(
     name: nil,
     documentation: nil,
-    procedures: nil,
+    procedures: nil
   )
 
   def parse(name, json, class_procedures) do
@@ -17,7 +17,7 @@ defmodule SpaceEx.API.Class do
     %Class{
       name: name,
       documentation: Map.fetch!(json, "documentation"),
-      procedures: procedures,
+      procedures: procedures
     }
   end
 end

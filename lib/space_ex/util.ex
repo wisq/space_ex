@@ -9,7 +9,7 @@ defmodule SpaceEx.Util do
     name
     |> String.replace(@regex_single_uppercase, "\\1_\\2")
     |> String.replace(@regex_multi_uppercase, "\\1_\\2")
-    |> String.downcase
+    |> String.downcase()
   end
 
   # Similar to file basename:
@@ -20,6 +20,6 @@ defmodule SpaceEx.Util do
 
   def module_basename(mod) do
     Module.split(mod)
-    |> List.last
+    |> List.last()
   end
 end

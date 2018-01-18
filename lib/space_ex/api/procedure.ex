@@ -10,7 +10,7 @@ defmodule SpaceEx.API.Procedure do
       name: nil,
       index: nil,
       type: nil,
-      default: nil,
+      default: nil
     )
   end
 
@@ -20,7 +20,7 @@ defmodule SpaceEx.API.Procedure do
     doc_name: nil,
     documentation: nil,
     parameters: nil,
-    return_type: nil,
+    return_type: nil
   )
 
   def parse({name, json}, class_name) do
@@ -29,7 +29,7 @@ defmodule SpaceEx.API.Procedure do
 
     parameters =
       Map.fetch!(json, "parameters")
-      |> Enum.with_index
+      |> Enum.with_index()
       |> Enum.map(&parse_parameter/1)
 
     return_type =
@@ -45,13 +45,13 @@ defmodule SpaceEx.API.Procedure do
       doc_name: doc_name,
       documentation: Map.fetch!(json, "documentation"),
       parameters: parameters,
-      return_type: return_type,
+      return_type: return_type
     }
   end
 
   defp make_fn_name(stripped_name) do
     SpaceEx.Util.to_snake_case(stripped_name)
-    |> String.to_atom
+    |> String.to_atom()
   end
 
   defp strip_rpc_name(rpc_name, nil) do
@@ -60,28 +60,31 @@ defmodule SpaceEx.API.Procedure do
 
   defp strip_rpc_name(rpc_name, class_name) do
     prefix = "#{class_name}_"
+
     case String.split_at(rpc_name, String.length(prefix)) do
       {^prefix, suffix} ->
         strip_rpc_name(suffix, nil)
 
-      _ -> raise "Unexpected function #{rpc_name} for class #{class_name}"
+      _ ->
+        raise "Unexpected function #{rpc_name} for class #{class_name}"
     end
   end
 
   defp parse_parameter({json, index}) do
     type =
       Map.fetch!(json, "type")
-      |> Type.parse
+      |> Type.parse()
 
     %Parameter{
       name: Map.fetch!(json, "name"),
       index: index,
       type: type,
-      default: Map.get(json, "default_value") |> parse_default_value,
+      default: Map.get(json, "default_value") |> parse_default_value
     }
   end
 
   defp parse_default_value(nil), do: nil
+
   defp parse_default_value(str) do
     {:ok, binary} = Base.decode64(str)
     binary

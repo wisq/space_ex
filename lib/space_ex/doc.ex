@@ -4,50 +4,49 @@ defmodule SpaceEx.Doc.Indexer do
   @moduledoc false
 
   def build do
-    API.services
+    API.services()
     |> Enum.map(&index_service/1)
-    |> List.flatten
-    |> Map.new
+    |> List.flatten()
+    |> Map.new()
   end
 
   defp index_service(service) do
     [
       service.enumerations
       |> Enum.map(&index_enumeration(service, &1)),
-
       service.procedures
       |> Enum.map(&index_procedure(service.name, &1)),
-
       service.classes
-      |> Enum.map(&index_class(service, &1)),
+      |> Enum.map(&index_class(service, &1))
     ]
   end
 
   defp index_enumeration(service, enumeration) do
     module = "#{service.name}.#{enumeration.name}"
+
     [
       {"T:#{module}", "SpaceEx.#{module}"},
-
       Enum.map(enumeration.values, fn ev ->
         {"M:#{module}.#{ev.name}", "SpaceEx.#{module}.#{ev.atom}"}
-      end),
+      end)
     ]
   end
 
   defp index_procedure(module_name, procedure) do
     arity = Enum.count(procedure.parameters) + 1
+
     {
-      "M:#{module_name}.#{procedure.doc_name}", 
-      "SpaceEx.#{module_name}.#{procedure.fn_name}/#{arity}", 
+      "M:#{module_name}.#{procedure.doc_name}",
+      "SpaceEx.#{module_name}.#{procedure.fn_name}/#{arity}"
     }
   end
 
   defp index_class(service, class) do
     module = "#{service.name}.#{class.name}"
+
     [
       {"T:#{module}", "SpaceEx.#{module}"},
-
-      Enum.map(class.procedures, &index_procedure(module, &1)),
+      Enum.map(class.procedures, &index_procedure(module, &1))
     ]
   end
 end
@@ -55,7 +54,7 @@ end
 defmodule SpaceEx.Doc do
   @moduledoc false
 
-  @reference_index SpaceEx.Doc.Indexer.build
+  @reference_index SpaceEx.Doc.Indexer.build()
 
   def service(obj) do
     extract_documentation(obj)
@@ -81,10 +80,10 @@ defmodule SpaceEx.Doc do
   defp extract_documentation(obj) do
     text =
       obj.documentation
-      |> Floki.parse
+      |> Floki.parse()
       |> process_html
-      |> Floki.raw_html
-      |> String.trim
+      |> Floki.raw_html()
+      |> String.trim()
 
     split_first_sentence(text)
     |> Enum.join("\n\n")
@@ -131,8 +130,7 @@ defmodule SpaceEx.Doc do
   end
 
   defp process_html({"math", [], contents}) do
-    {"span", [class: "math"],
-      ["\\\\("] ++ process_html(contents) ++ ["\\\\)"]}
+    {"span", [class: "math"], ["\\\\("] ++ process_html(contents) ++ ["\\\\)"]}
   end
 
   defp process_html({"see", opts, _} = element) do
@@ -147,11 +145,11 @@ defmodule SpaceEx.Doc do
 
   defp process_html(list) when is_list(list) do
     Enum.map(list, &process_html/1)
-    |> List.flatten
+    |> List.flatten()
   end
 
   defp process_html({name, _, contents}) do
-    IO.puts "Unknown HTML element stripped: #{inspect(name)}"
+    IO.puts("Unknown HTML element stripped: #{inspect(name)}")
     process_html(contents)
   end
 

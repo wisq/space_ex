@@ -50,10 +50,12 @@ defmodule SpaceEx.Gen do
       atom = enum_value.atom
       wire = SpaceEx.Types.encode_enumeration_value(enum_value.value)
 
-      @doc false  # Converts a raw wire value to a named atom.
+      # Converts a raw wire value to a named atom.
+      @doc false
       def wire_to_atom(unquote(wire)), do: unquote(atom)
 
-      @doc false  # Converts a named atom to a raw wire value.
+      # Converts a named atom to a raw wire value.
+      @doc false
       def atom_to_wire(unquote(atom)), do: unquote(wire)
 
       @doc SpaceEx.Doc.enumeration_value(enum_value)
@@ -63,9 +65,9 @@ defmodule SpaceEx.Gen do
 
   defmacro define_class(service, class) do
     quote bind_quoted: [
-      service: service,
-      class: class,
-    ] do
+            service: service,
+            class: class
+          ] do
       defmodule Module.concat(__MODULE__, class.name) do
         @moduledoc SpaceEx.Doc.class(class)
 
@@ -80,22 +82,25 @@ defmodule SpaceEx.Gen do
 
   defmacro define_procedure(service, procedure) do
     quote bind_quoted: [
-      service: service,
-      procedure: procedure,
-    ] do
+            service: service,
+            procedure: procedure
+          ] do
       service_name = service.name
       rpc_name = procedure.name
 
       fn_name = procedure.fn_name
-      fn_args = Enum.map(procedure.parameters, fn p ->
-        String.to_atom(p.name)
-        |> Macro.var(__MODULE__)
-      end)
-      arg_types = Enum.map(procedure.parameters, fn p -> p.type end) |> Macro.escape
-      return_type = procedure.return_type |> Macro.escape
+
+      fn_args =
+        Enum.map(procedure.parameters, fn p ->
+          String.to_atom(p.name)
+          |> Macro.var(__MODULE__)
+        end)
+
+      arg_types = Enum.map(procedure.parameters, fn p -> p.type end) |> Macro.escape()
+      return_type = procedure.return_type |> Macro.escape()
 
       @doc false
-      def rpc_procedure(unquote(fn_name)), do: unquote(procedure |> Macro.escape)
+      def rpc_procedure(unquote(fn_name)), do: unquote(procedure |> Macro.escape())
 
       @doc SpaceEx.Doc.procedure(procedure)
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
@@ -109,6 +114,7 @@ defmodule SpaceEx.Gen do
 
   # FIXME: need to move this out to a better module
   def encode_args([], []), do: []
+
   def encode_args([arg | args], [type | types]) do
     value = SpaceEx.Types.encode(arg, type)
     [value | encode_args(args, types)]
@@ -116,6 +122,7 @@ defmodule SpaceEx.Gen do
 
   # FIXME: need to move this out to a better module
   def decode_return("", nil), do: :ok
+
   def decode_return(value, type) do
     SpaceEx.Types.decode(value, type)
   end

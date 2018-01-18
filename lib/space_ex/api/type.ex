@@ -8,17 +8,15 @@ defmodule SpaceEx.API.Type do
   end
 
   def parse(%{"code" => code} = opts) do
-    parse_special(code, opts) ||
-      Type.Raw.parse(code) ||
-        Type.Protobuf.parse(code) ||
-          raise "Unknown type: #{code}"
+    parse_special(code, opts) || Type.Raw.parse(code) || Type.Protobuf.parse(code) ||
+      raise "Unknown type: #{code}"
   end
 
   @nested_types %{
     "SET" => Type.Set,
     "LIST" => Type.List,
     "TUPLE" => Type.Tuple,
-    "DICTIONARY" => Type.Dictionary,
+    "DICTIONARY" => Type.Dictionary
   }
 
   defp parse_nested(code, subtypes) do
@@ -29,7 +27,7 @@ defmodule SpaceEx.API.Type do
   @special_types %{
     "CLASS" => Type.Class,
     "ENUMERATION" => Type.Enumeration,
-    "PROCEDURE_CALL" => Type.ProcedureCall,
+    "PROCEDURE_CALL" => Type.ProcedureCall
   }
 
   defp parse_special(code, opts) do

@@ -5,9 +5,10 @@ defmodule SpaceEx.Types.Encoders do
   @moduledoc false
 
   def encode(value, %Type.Raw{module: module}) do
-    <<_first_byte, rest :: bitstring>> =
+    <<_first_byte, rest::bitstring>> =
       module.new(value: value)
       |> module.encode
+
     rest
   end
 
@@ -19,7 +20,7 @@ defmodule SpaceEx.Types.Encoders do
     items = Enum.map(value, &encode(&1, subtype))
 
     Protobufs.List.new(items: items)
-    |> Protobufs.List.encode
+    |> Protobufs.List.encode()
   end
 
   def encode(value, %Type.Tuple{subtypes: subtypes}) do
@@ -28,7 +29,7 @@ defmodule SpaceEx.Types.Encoders do
       |> encode_tuple(subtypes)
 
     Protobufs.Tuple.new(items: items)
-    |> Protobufs.Tuple.encode
+    |> Protobufs.Tuple.encode()
   end
 
   def encode(%SpaceEx.Procedure{} = proc, %Type.ProcedureCall{}) do
@@ -41,9 +42,9 @@ defmodule SpaceEx.Types.Encoders do
     Protobufs.ProcedureCall.new(
       service: proc.service,
       procedure: proc.procedure,
-      arguments: args,
+      arguments: args
     )
-    |> Protobufs.ProcedureCall.encode
+    |> Protobufs.ProcedureCall.encode()
   end
 
   def encode(value, %Type.Enumeration{module: module}) do
@@ -54,6 +55,7 @@ defmodule SpaceEx.Types.Encoders do
   def encode(value, %Type.Class{}), do: value
 
   defp encode_tuple([], []), do: []
+
   defp encode_tuple([item | items], [type | types]) do
     [encode(item, type) | encode_tuple(items, types)]
   end

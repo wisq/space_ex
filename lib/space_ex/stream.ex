@@ -69,7 +69,7 @@ defmodule SpaceEx.Stream do
       id: nil,
       conn: nil,
       result: nil,
-      waitlist: [],
+      waitlist: []
     )
   end
 
@@ -78,7 +78,7 @@ defmodule SpaceEx.Stream do
     id: nil,
     conn: nil,
     pid: nil,
-    decoder: nil,
+    decoder: nil
   )
 
   @doc """
@@ -141,6 +141,7 @@ defmodule SpaceEx.Stream do
   defmacro stream(function_call, opts \\ []) do
     quote do
       require SpaceEx.Procedure
+
       SpaceEx.Procedure.create(unquote(function_call))
       |> SpaceEx.Stream.create(unquote(opts))
     end
@@ -200,9 +201,10 @@ defmodule SpaceEx.Stream do
   A timeout usually indicates that the stream was created with `start: false`,
   and it was not subsequently started before the timeout expired.
   """
-    
+
   def get(stream, timeout \\ 5000) do
     result = GenServer.call(stream.pid, :get, timeout)
+
     if result.error do
       raise result.error.description
     else
@@ -232,6 +234,7 @@ defmodule SpaceEx.Stream do
 
   def wait(stream, timeout \\ :infinity) do
     result = GenServer.call(stream.pid, :wait, timeout)
+
     if result.error do
       raise result.error.description
     else

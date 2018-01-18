@@ -6,7 +6,7 @@ defmodule SpaceEx do
 
     With kRPC, you can control your rocket using external scripts.  With SpaceEx, you can write those external scripts in Elixir, and enjoy all the wonderful features of the Elixir language and the Erlang VM.
 
-## Usage
+  ## Usage
 
     ```elixir
     # If your kRPC is on the same machine:

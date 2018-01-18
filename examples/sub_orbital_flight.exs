@@ -25,20 +25,25 @@ defmodule SubOrbitalFlight do
 
   alias SpaceEx.KRPC.Expression
   alias SpaceEx.SpaceCenter
+
   alias SpaceEx.SpaceCenter.{
-    Vessel, Control, AutoPilot,
-    Flight, Resources, Orbit,
-    CelestialBody,
+    Vessel,
+    Control,
+    AutoPilot,
+    Flight,
+    Resources,
+    Orbit,
+    CelestialBody
   }
 
   def launch(conn) do
-    vessel    = SpaceCenter.active_vessel(conn)
+    vessel = SpaceCenter.active_vessel(conn)
     autopilot = Vessel.auto_pilot(conn, vessel)
     resources = Vessel.resources(conn, vessel)
-    control   = Vessel.control(conn, vessel)
-    surf_ref  = Vessel.surface_reference_frame(conn, vessel)
-    flight    = Vessel.flight(conn, vessel, surf_ref)
-    orbit     = Vessel.orbit(conn, vessel)
+    control = Vessel.control(conn, vessel)
+    surf_ref = Vessel.surface_reference_frame(conn, vessel)
+    flight = Vessel.flight(conn, vessel, surf_ref)
+    orbit = Vessel.orbit(conn, vessel)
 
     AutoPilot.target_pitch_and_heading(conn, autopilot, 90, 90)
     AutoPilot.engage(conn, autopilot)
@@ -49,37 +54,46 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(conn, control)
 
     # Wait until SRBs exhausted:
-    fuel_amount = Resources.amount(conn, resources, "SolidFuel") |> Procedure.create
-    expr = Expression.less_than(
-      conn,
-      Expression.call(conn, fuel_amount),
-      Expression.constant_float(conn, 0.1)
-    )
-    Event.create(conn, expr) |> Event.wait
+    fuel_amount = Resources.amount(conn, resources, "SolidFuel") |> Procedure.create()
+
+    expr =
+      Expression.less_than(
+        conn,
+        Expression.call(conn, fuel_amount),
+        Expression.constant_float(conn, 0.1)
+      )
+
+    Event.create(conn, expr) |> Event.wait()
 
     IO.puts("Booster separation")
     Control.activate_next_stage(conn, control)
 
     # Wait until above 10,000m altitude:
-    mean_altitude = Flight.mean_altitude(conn, flight) |> Procedure.create
-    expr = Expression.greater_than(
-      conn,
-      Expression.call(conn, mean_altitude),
-      Expression.constant_double(conn, 10_000)
-    )
-    Event.create(conn, expr) |> Event.wait
+    mean_altitude = Flight.mean_altitude(conn, flight) |> Procedure.create()
+
+    expr =
+      Expression.greater_than(
+        conn,
+        Expression.call(conn, mean_altitude),
+        Expression.constant_double(conn, 10_000)
+      )
+
+    Event.create(conn, expr) |> Event.wait()
 
     IO.puts("Gravity turn")
     AutoPilot.target_pitch_and_heading(conn, autopilot, 60, 90)
 
     # Wait until above 100,000 apoapsis:
-    apoapsis_altitude = Orbit.apoapsis_altitude(conn, orbit) |> Procedure.create
-    expr = Expression.greater_than(
-      conn,
-      Expression.call(conn, apoapsis_altitude),
-      Expression.constant_double(conn, 100_000)
-    )
-    Event.create(conn, expr) |> Event.wait
+    apoapsis_altitude = Orbit.apoapsis_altitude(conn, orbit) |> Procedure.create()
+
+    expr =
+      Expression.greater_than(
+        conn,
+        Expression.call(conn, apoapsis_altitude),
+        Expression.constant_double(conn, 100_000)
+      )
+
+    Event.create(conn, expr) |> Event.wait()
 
     IO.puts("Launch stage separation")
     Control.set_throttle(conn, control, 0.0)
@@ -88,13 +102,16 @@ defmodule SubOrbitalFlight do
     AutoPilot.disengage(conn, autopilot)
 
     # Wait until under 1,000m altitude:
-    srf_altitude = Flight.surface_altitude(conn, flight) |> Procedure.create
-    expr = Expression.less_than(
-      conn,
-      Expression.call(conn, srf_altitude),
-      Expression.constant_double(conn, 1_000)
-    )
-    Event.create(conn, expr) |> Event.wait
+    srf_altitude = Flight.surface_altitude(conn, flight) |> Procedure.create()
+
+    expr =
+      Expression.less_than(
+        conn,
+        Expression.call(conn, srf_altitude),
+        Expression.constant_double(conn, 1_000)
+      )
+
+    Event.create(conn, expr) |> Event.wait()
 
     Control.activate_next_stage(conn, control)
 
