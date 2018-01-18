@@ -1,5 +1,4 @@
 defmodule SpaceEx.Event do
-  use GenServer
   alias SpaceEx.{API, Types}
 
   @bool_type API.Type.parse(%{"code" => "BOOL"})

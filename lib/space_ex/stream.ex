@@ -258,6 +258,8 @@ defmodule SpaceEx.Stream do
     GenServer.start_link(__MODULE__, %State{id: stream_id, conn: conn})
   end
 
+  def init(state), do: {:ok, state}
+
   # If stream has no data yet, add caller to waitlist.
   # We'll notify them when the first value comes in.
   def handle_call(:get, from, %State{result: nil} = state) do
