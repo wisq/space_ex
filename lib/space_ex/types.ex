@@ -4,7 +4,7 @@ defmodule SpaceEx.Types do
 
   @moduledoc false
 
-  defdelegate decode(bytes, type), to: SpaceEx.Types.Decoders
+  defdelegate decode(bytes, type, conn), to: SpaceEx.Types.Decoders
   defdelegate encode(value, type), to: SpaceEx.Types.Encoders
 
   def encode_enumeration_value(value) do

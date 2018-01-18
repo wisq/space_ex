@@ -107,7 +107,7 @@ defmodule SpaceEx.Stream do
     end
 
     decoder = fn value ->
-      Types.decode(value, procedure.return_type)
+      Types.decode(value, procedure.return_type, conn)
     end
 
     launch(conn, stream.id, decoder)

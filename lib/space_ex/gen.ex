@@ -107,7 +107,7 @@ defmodule SpaceEx.Gen do
         args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_types))
 
         SpaceEx.Connection.call_rpc!(conn, unquote(service_name), unquote(rpc_name), args)
-        |> SpaceEx.Gen.decode_return(unquote(return_type))
+        |> SpaceEx.Gen.decode_return(unquote(return_type), conn)
       end
     end
   end
@@ -121,9 +121,9 @@ defmodule SpaceEx.Gen do
   end
 
   # FIXME: need to move this out to a better module
-  def decode_return("", nil), do: :ok
+  def decode_return("", nil, _conn), do: :ok
 
-  def decode_return(value, type) do
-    SpaceEx.Types.decode(value, type)
+  def decode_return(value, type, conn) do
+    SpaceEx.Types.decode(value, type, conn)
   end
 end

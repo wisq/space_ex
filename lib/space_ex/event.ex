@@ -73,5 +73,5 @@ defmodule SpaceEx.Event do
     # But maybe keep stream pid alive so this continues to return true immediately.
   end
 
-  defp decode_event(value), do: Types.decode(value, @bool_type)
+  defp decode_event(value), do: Types.decode(value, @bool_type, nil)
 end

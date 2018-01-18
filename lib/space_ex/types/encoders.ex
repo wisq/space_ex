@@ -1,6 +1,6 @@
 defmodule SpaceEx.Types.Encoders do
   alias SpaceEx.API.Type
-  alias SpaceEx.Protobufs
+  alias SpaceEx.{Protobufs, ObjectReference}
 
   @moduledoc false
 
@@ -51,8 +51,10 @@ defmodule SpaceEx.Types.Encoders do
     module.atom_to_wire(value)
   end
 
-  # TODO: struct containing both reference (`bytes`) and conn
-  def encode(value, %Type.Class{}), do: value
+  def encode(value, %Type.Class{name: class}) do
+    %ObjectReference{class: ^class, id: id} = value
+    id
+  end
 
   defp encode_tuple([], []), do: []
 
