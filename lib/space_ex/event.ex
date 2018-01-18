@@ -1,6 +1,8 @@
 defmodule SpaceEx.Event do
   use GenServer
-  require SpaceEx.Types
+  alias SpaceEx.{API, Types}
+
+  @bool_type API.Type.parse(%{"code" => "BOOL"})
 
   @moduledoc """
   Allows for the server to notify us only when a conditional expression becomes true.
@@ -72,5 +74,5 @@ defmodule SpaceEx.Event do
     # But maybe keep stream pid alive so this continues to return true immediately.
   end
 
-  defp decode_event(value), do: SpaceEx.Types.decode(value, :BOOL)
+  defp decode_event(value), do: Types.decode(value, @bool_type)
 end
