@@ -1,6 +1,8 @@
 defmodule SpaceEx.Doc.Indexer do
   alias SpaceEx.API
 
+  @moduledoc false
+
   def build do
     API.services
     |> Enum.map(&index_service/1)

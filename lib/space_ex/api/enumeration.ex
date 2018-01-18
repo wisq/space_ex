@@ -4,6 +4,8 @@ defmodule SpaceEx.API.Enumeration do
   @moduledoc false
 
   defmodule Value do
+    @moduledoc false
+
     defstruct(
       name: nil,
       atom: nil,

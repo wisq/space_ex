@@ -4,6 +4,8 @@ defmodule SpaceEx.API.Procedure do
   @moduledoc false
 
   defmodule Parameter do
+    @moduledoc false
+
     defstruct(
       name: nil,
       index: nil,

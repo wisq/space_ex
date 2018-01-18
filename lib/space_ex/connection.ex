@@ -13,6 +13,12 @@ defmodule SpaceEx.Connection do
   defmodule RPCError do
     defexception [:error, :message]
 
+    @moduledoc """
+    Thrown if an RPC call fails.
+
+    The `error` field contains the raw error object, including server-side backtrace.
+    """
+
     def exception(error) do
       %RPCError{
         error: error,
