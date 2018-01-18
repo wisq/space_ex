@@ -21,6 +21,8 @@ defmodule SpaceEx.Gen do
 
   defmacro __before_compile__(_env) do
     quote location: :keep do
+      @moduledoc SpaceEx.Doc.service(@service)
+
       @service.enumerations
       |> Enum.each(&SpaceEx.Gen.define_enumeration/1)
 
@@ -35,7 +37,7 @@ defmodule SpaceEx.Gen do
   defmacro define_enumeration(enum) do
     quote bind_quoted: [enum: enum] do
       defmodule Module.concat(__MODULE__, enum.name) do
-        #@moduledoc SpaceEx.Doc.enumeration(opts)
+        @moduledoc SpaceEx.Doc.enumeration(enum)
 
         Enum.each(enum.values, &SpaceEx.Gen.define_enumeration_value/1)
       end
@@ -53,7 +55,7 @@ defmodule SpaceEx.Gen do
       @doc false  # Converts a named atom to a raw wire value.
       def value(unquote(atom)), do: unquote(value)
 
-      #@doc SpaceEx.Doc.enumeration_value(opts, name)
+      @doc SpaceEx.Doc.enumeration_value(enum_value)
       def unquote(atom)(), do: unquote(atom)
     end
   end
@@ -64,7 +66,7 @@ defmodule SpaceEx.Gen do
       class: class,
     ] do
       defmodule Module.concat(__MODULE__, class.name) do
-        #@moduledoc SpaceEx.Doc.class(opts)
+        @moduledoc SpaceEx.Doc.class(class)
 
         class.procedures
         |> Enum.each(&SpaceEx.Gen.define_procedure(service, &1))
@@ -88,7 +90,7 @@ defmodule SpaceEx.Gen do
       arg_types = Enum.map(procedure.parameters, fn p -> p.type end) |> Macro.escape
       return_type = procedure.return_type |> Macro.escape
 
-      #@doc SpaceEx.Doc.procedure(opts)
+      @doc SpaceEx.Doc.procedure(procedure)
       def unquote(fn_name)(conn, unquote_splicing(fn_args)) do
         args = SpaceEx.Gen.encode_args(unquote(fn_args), unquote(arg_types))
 

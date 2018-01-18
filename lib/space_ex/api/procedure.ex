@@ -15,13 +15,15 @@ defmodule SpaceEx.API.Procedure do
   defstruct(
     name: nil,
     fn_name: nil,
+    doc_name: nil,
     documentation: nil,
     parameters: nil,
     return_type: nil,
   )
 
   def parse({name, json}, class_name) do
-    fn_name = make_fn_name(name, class_name)
+    doc_name = strip_rpc_name(name, class_name)
+    fn_name = make_fn_name(doc_name)
 
     parameters =
       Map.fetch!(json, "parameters")
@@ -38,23 +40,27 @@ defmodule SpaceEx.API.Procedure do
     %Procedure{
       name: name,
       fn_name: fn_name,
+      doc_name: doc_name,
       documentation: Map.fetch!(json, "documentation"),
       parameters: parameters,
       return_type: return_type,
     }
   end
 
-  defp make_fn_name(rpc_name, nil) do
-    SpaceEx.Util.to_snake_case(rpc_name)
-    |> String.replace(~r{^(?:get|static)_}, "")
+  defp make_fn_name(stripped_name) do
+    SpaceEx.Util.to_snake_case(stripped_name)
     |> String.to_atom
   end
 
-  defp make_fn_name(rpc_name, class_name) do
+  defp strip_rpc_name(rpc_name, nil) do
+    String.replace(rpc_name, ~r{^(?:get|static)_}, "")
+  end
+
+  defp strip_rpc_name(rpc_name, class_name) do
     prefix = "#{class_name}_"
     case String.split_at(rpc_name, String.length(prefix)) do
       {^prefix, suffix} ->
-        make_fn_name(suffix, nil)
+        strip_rpc_name(suffix, nil)
 
       _ -> raise "Unexpected function #{rpc_name} for class #{class_name}"
     end

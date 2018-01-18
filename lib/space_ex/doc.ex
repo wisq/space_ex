@@ -1,30 +1,84 @@
+defmodule SpaceEx.Doc.Indexer do
+  alias SpaceEx.API
+
+  def build do
+    API.services
+    |> Enum.map(&index_service/1)
+    |> List.flatten
+    |> Map.new
+  end
+
+  defp index_service(service) do
+    [
+      service.enumerations
+      |> Enum.map(&index_enumeration(service, &1)),
+
+      service.procedures
+      |> Enum.map(&index_procedure(service.name, &1)),
+
+      service.classes
+      |> Enum.map(&index_class(service, &1)),
+    ]
+  end
+
+  defp index_enumeration(service, enumeration) do
+    module = "#{service.name}.#{enumeration.name}"
+    [
+      {"T:#{module}", "SpaceEx.#{module}"},
+
+      Enum.map(enumeration.values, fn ev ->
+        {"M:#{module}.#{ev.name}", "SpaceEx.#{module}.#{ev.atom}"}
+      end),
+    ]
+  end
+
+  defp index_procedure(module_name, procedure) do
+    arity = Enum.count(procedure.parameters) + 1
+    {
+      "M:#{module_name}.#{procedure.doc_name}", 
+      "SpaceEx.#{module_name}.#{procedure.fn_name}/#{arity}", 
+    }
+  end
+
+  defp index_class(service, class) do
+    module = "#{service.name}.#{class.name}"
+    [
+      {"T:#{module}", "SpaceEx.#{module}"},
+
+      Enum.map(class.procedures, &index_procedure(module, &1)),
+    ]
+  end
+end
+
 defmodule SpaceEx.Doc do
   @moduledoc false
 
-  def service(opts) do
-    extract_documentation(opts)
+  @reference_index SpaceEx.Doc.Indexer.build
+
+  def service(obj) do
+    extract_documentation(obj)
   end
 
-  def class(opts) do
-    extract_documentation(opts)
+  def class(obj) do
+    extract_documentation(obj)
   end
 
-  def procedure(opts) do
-    extract_documentation(opts)
+  def procedure(obj) do
+    extract_documentation(obj)
   end
 
-  def enumeration(opts) do
-    extract_documentation(opts)
+  def enumeration(obj) do
+    extract_documentation(obj)
   end
 
-  def enumeration_value(opts, returns) do
-    doc = extract_documentation(opts)
-    "#{doc}\n\nReturns `#{inspect(returns)}`."
+  def enumeration_value(obj) do
+    doc = extract_documentation(obj)
+    "#{doc}\n\nReturns `#{inspect(obj.atom)}`."
   end
 
-  defp extract_documentation(opts) do
+  defp extract_documentation(obj) do
     text =
-      Map.fetch!(opts, "documentation")
+      obj.documentation
       |> Floki.parse
       |> process_html
       |> Floki.raw_html
@@ -82,12 +136,10 @@ defmodule SpaceEx.Doc do
   defp process_html({"see", opts, _} = element) do
     [{"cref", ref}] = opts
 
-    case ref do
-      <<"M:", spec :: bitstring>> -> find_method_spec(spec)
-
-      <<"T:", spec :: bitstring>> -> "`SpaceEx.#{spec}`"
-
-      _ -> raise "Unknown <see> cref: #{inspect(element)}"
+    if value = Map.get(@reference_index, ref) do
+      "`#{value}`"
+    else
+      raise "Unknown <see> cref: #{inspect(element)}"
     end
   end
 
@@ -105,55 +157,5 @@ defmodule SpaceEx.Doc do
 
   defp split_first_sentence(text) do
     String.split(text, ~r{(?<=\.)\s+}, parts: 2)
-  end
-
-  defp find_method_spec(spec) do
-    found =
-      case String.split(spec, ".") do
-        [service, class, method] ->
-          find_method(service, class, method) ||
-            find_method(service, class, "get_#{method}") ||
-              find_method(service, class, "static_#{method}") ||
-                find_enum_value(service, class, method)
-
-        [service, method] ->
-          find_method(service, nil, method) ||
-            find_method(service, nil, "get_#{method}")
-      end
-
-    if found do
-      found
-    else
-      IO.puts "Cannot resolve documentation cross-reference: #{inspect(spec)}"
-      "`(unknown)`"
-    end
-  end
-
-  defp find_method(service, nil = class, method) do
-    module_name = "SpaceEx.#{service}"
-    find_raw_method(service, method, module_name, class)
-  end
-
-  defp find_method(service, class, method) do
-    module_name = "SpaceEx.#{service}.#{class}"
-    rpc_method = "#{class}_#{method}"
-    find_raw_method(service, rpc_method, module_name, class)
-  end
-
-  def find_raw_method(service, rpc_name, module_name, class) do
-    if arity = SpaceEx.API.rpc_arity(service, rpc_name) do
-      fn_name = SpaceEx.Gen.rpc_function_name(rpc_name, class)
-
-      # arity + 1 because args are (conn, *rpc_args)
-      "`#{module_name}.#{fn_name}/#{arity + 1}`"
-    end
-  end
-
-  defp find_enum_value(service, enum, value) do
-    if SpaceEx.API.enum_value_exists?(service, enum, value) do
-      atom = SpaceEx.Util.to_snake_case(value)
-
-      "`:#{atom}`"
-    end
   end
 end
