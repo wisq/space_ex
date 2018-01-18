@@ -28,6 +28,7 @@ defmodule SpaceEx.API.Type do
 
   @special_types %{
     "CLASS" => Type.Class,
+    "ENUMERATION" => Type.Enumeration,
     "PROCEDURE_CALL" => Type.ProcedureCall,
   }
 

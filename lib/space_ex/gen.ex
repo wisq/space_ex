@@ -1,6 +1,4 @@
 defmodule SpaceEx.Gen do
-  require SpaceEx.Types
-
   @moduledoc false
 
   defmacro __using__(opts) do
@@ -50,13 +48,13 @@ defmodule SpaceEx.Gen do
   defmacro define_enumeration_value(enum_value) do
     quote bind_quoted: [enum_value: enum_value] do
       atom = enum_value.atom
-      value = enum_value.value
+      wire = SpaceEx.Types.encode_enumeration_value(enum_value.value)
 
       @doc false  # Converts a raw wire value to a named atom.
-      def atom(unquote(value)), do: unquote(atom)
+      def wire_to_atom(unquote(wire)), do: unquote(atom)
 
       @doc false  # Converts a named atom to a raw wire value.
-      def value(unquote(atom)), do: unquote(value)
+      def atom_to_wire(unquote(atom)), do: unquote(wire)
 
       @doc SpaceEx.Doc.enumeration_value(enum_value)
       def unquote(atom)(), do: unquote(atom)

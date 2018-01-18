@@ -46,6 +46,10 @@ defmodule SpaceEx.Types.Encoders do
     |> Protobufs.ProcedureCall.encode
   end
 
+  def encode(value, %Type.Enumeration{module: module}) do
+    module.atom_to_wire(value)
+  end
+
   # TODO: struct containing both reference (`bytes`) and conn
   def encode(value, %Type.Class{}), do: value
 

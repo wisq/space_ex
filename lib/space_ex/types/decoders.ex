@@ -54,6 +54,10 @@ defmodule SpaceEx.Types.Decoders do
     end)
   end
 
+  def decode(bytes, %Type.Enumeration{module: module}) do
+    module.wire_to_atom(bytes)
+  end
+
   # TODO: struct containing both reference (`bytes`) and conn
   def decode(bytes, %Type.Class{}), do: bytes
 
