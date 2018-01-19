@@ -27,7 +27,7 @@ defmodule SpaceEx.Procedure do
   call1 = SpaceEx.Procedure.create(SpaceEx.SpaceCenter.ut(conn))
   # You can also use pipelining:
   call2 =
-    SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
+    SpaceEx.SpaceCenter.Flight.mean_altitude(flight)
     |> SpaceEx.Procedure.create()
   ```
 

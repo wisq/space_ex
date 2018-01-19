@@ -155,7 +155,7 @@ defmodule SpaceEx.Stream do
 
   ```elixir
   stream =
-    SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
+    SpaceEx.SpaceCenter.Flight.mean_altitude(flight)
     |> SpaceEx.Stream.stream()
 
   SpaceEx.Stream.get(stream)  # 76.64177794696297
@@ -183,7 +183,7 @@ defmodule SpaceEx.Stream do
 
   ```elixir
   {stream, altitude} =
-    SpaceEx.SpaceCenter.Flight.mean_altitude(conn, flight)
+    SpaceEx.SpaceCenter.Flight.mean_altitude(flight)
     |> SpaceEx.Stream.stream_fn()
 
   altitude.() |> IO.inspect  # 76.64177794696297
@@ -250,7 +250,7 @@ defmodule SpaceEx.Stream do
   ## Example
 
   ```elixir
-  paused = SpaceEx.SpaceCenter.paused(conn) |> SpaceEx.Stream.stream
+  paused = SpaceEx.SpaceCenter.paused(conn) |> SpaceEx.Stream.stream()
 
   SpaceEx.Stream.wait(paused)  # returns true/false the next time you un/pause
   ```

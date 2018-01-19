@@ -15,14 +15,14 @@ defmodule SpaceEx do
   # conn = SpaceEx.Connection.connect!(host: "1.2.3.4")
 
   vessel = SpaceEx.SpaceCenter.active_vessel(conn)
-  control = SpaceEx.SpaceCenter.Vessel.control(conn, vessel)
+  control = SpaceEx.SpaceCenter.Vessel.control(vessel)
 
   SpaceEx.KRPC.set_paused(conn, false)
 
   IO.puts("Burning for 1 second ...")
-  SpaceEx.SpaceCenter.Control.set_throttle(conn, control, 1.0)
+  SpaceEx.SpaceCenter.Control.set_throttle(control, 1.0)
   Process.sleep(1_000)
-  SpaceEx.SpaceCenter.Control.set_throttle(conn, control, 0.0)
+  SpaceEx.SpaceCenter.Control.set_throttle(control, 0.0)
   IO.puts("Burn complete.")
 
   SpaceEx.KRPC.set_paused(conn, true)
