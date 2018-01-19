@@ -90,6 +90,7 @@ defmodule SpaceEx.Gen do
       value_var = Macro.var(:value, __MODULE__)
 
       {def_args, arg_vars, arg_encode_ast} = SpaceEx.Gen.args_builder(procedure, conn_var)
+      guard_ast = SpaceEx.Gen.guard_clause(def_args)
 
       arg_types =
         (procedure.positional_params ++ procedure.optional_params)
@@ -101,7 +102,7 @@ defmodule SpaceEx.Gen do
       return_decode_ast = SpaceEx.Gen.return_decoder(return_type, value_var, conn_var)
 
       @doc SpaceEx.Doc.procedure(procedure)
-      def unquote(fn_name)(unquote_splicing(def_args)) do
+      def unquote(fn_name)(unquote_splicing(def_args)) when unquote(guard_ast) do
         unquote_splicing(arg_encode_ast)
 
         unquote(value_var) =
@@ -116,7 +117,7 @@ defmodule SpaceEx.Gen do
       end
 
       @doc false
-      def unquote(:"rpc_#{fn_name}")(unquote_splicing(def_args)) do
+      def unquote(:"rpc_#{fn_name}")(unquote_splicing(def_args)) when unquote(guard_ast) do
         unquote_splicing(arg_encode_ast)
 
         %SpaceEx.Procedure{
@@ -236,6 +237,17 @@ defmodule SpaceEx.Gen do
   def return_decoder(type, value_var, conn_var) do
     quote do
       SpaceEx.Types.decode(unquote(value_var), unquote(type), unquote(conn_var))
+    end
+  end
+
+  def guard_clause(args) do
+    case List.last(args) do
+      # Search for `opts \\ []` and extract `opts` variable.
+      {:\\, _, [{:opts, _, _} = opts_var, []]} ->
+        quote do: is_list(unquote(opts_var))
+
+      _ ->
+        quote do: true
     end
   end
 end
