@@ -38,23 +38,22 @@ defmodule SubOrbitalFlight do
 
   def launch(conn) do
     vessel = SpaceCenter.active_vessel(conn)
-    autopilot = Vessel.auto_pilot(conn, vessel)
-    resources = Vessel.resources(conn, vessel)
-    control = Vessel.control(conn, vessel)
-    surf_ref = Vessel.surface_reference_frame(conn, vessel)
-    flight = Vessel.flight(conn, vessel, surf_ref)
-    orbit = Vessel.orbit(conn, vessel)
+    autopilot = Vessel.auto_pilot(vessel)
+    resources = Vessel.resources(vessel)
+    control = Vessel.control(vessel)
+    flight = Vessel.flight(vessel)
+    orbit = Vessel.orbit(vessel)
 
-    AutoPilot.target_pitch_and_heading(conn, autopilot, 90, 90)
-    AutoPilot.engage(conn, autopilot)
-    Control.set_throttle(conn, control, 1.0)
+    AutoPilot.target_pitch_and_heading(autopilot, 90, 90)
+    AutoPilot.engage(autopilot)
+    Control.set_throttle(control, 1.0)
     Process.sleep(1)
 
     IO.puts("Launch!")
-    Control.activate_next_stage(conn, control)
+    Control.activate_next_stage(control)
 
     # Wait until SRBs exhausted:
-    fuel_amount = Resources.amount(conn, resources, "SolidFuel") |> Procedure.create()
+    fuel_amount = Resources.amount(resources, "SolidFuel") |> Procedure.create()
 
     expr =
       Expression.less_than(
@@ -66,10 +65,10 @@ defmodule SubOrbitalFlight do
     Event.create(conn, expr) |> Event.wait()
 
     IO.puts("Booster separation")
-    Control.activate_next_stage(conn, control)
+    Control.activate_next_stage(control)
 
     # Wait until above 10,000m altitude:
-    mean_altitude = Flight.mean_altitude(conn, flight) |> Procedure.create()
+    mean_altitude = Flight.mean_altitude(flight) |> Procedure.create()
 
     expr =
       Expression.greater_than(
@@ -81,10 +80,10 @@ defmodule SubOrbitalFlight do
     Event.create(conn, expr) |> Event.wait()
 
     IO.puts("Gravity turn")
-    AutoPilot.target_pitch_and_heading(conn, autopilot, 60, 90)
+    AutoPilot.target_pitch_and_heading(autopilot, 60, 90)
 
     # Wait until above 100,000 apoapsis:
-    apoapsis_altitude = Orbit.apoapsis_altitude(conn, orbit) |> Procedure.create()
+    apoapsis_altitude = Orbit.apoapsis_altitude(orbit) |> Procedure.create()
 
     expr =
       Expression.greater_than(
@@ -96,13 +95,13 @@ defmodule SubOrbitalFlight do
     Event.create(conn, expr) |> Event.wait()
 
     IO.puts("Launch stage separation")
-    Control.set_throttle(conn, control, 0.0)
+    Control.set_throttle(control, 0.0)
     Process.sleep(1_000)
-    Control.activate_next_stage(conn, control)
-    AutoPilot.disengage(conn, autopilot)
+    Control.activate_next_stage(control)
+    AutoPilot.disengage(autopilot)
 
     # Wait until under 1,000m altitude:
-    srf_altitude = Flight.surface_altitude(conn, flight) |> Procedure.create()
+    srf_altitude = Flight.surface_altitude(flight) |> Procedure.create()
 
     expr =
       Expression.less_than(
@@ -113,20 +112,20 @@ defmodule SubOrbitalFlight do
 
     Event.create(conn, expr) |> Event.wait()
 
-    Control.activate_next_stage(conn, control)
+    Control.activate_next_stage(control)
 
-    kerbin = Orbit.body(conn, orbit)
-    kerbin_frame = CelestialBody.reference_frame(conn, kerbin)
-    kerbin_flight = Vessel.flight(conn, vessel, kerbin_frame)
+    kerbin = Orbit.body(orbit)
+    kerbin_frame = CelestialBody.reference_frame(kerbin)
+    kerbin_flight = Vessel.flight(vessel, reference_frame: kerbin_frame)
 
     wait_until(fn ->
-      surface_altitude = Flight.surface_altitude(conn, flight)
+      surface_altitude = Flight.surface_altitude(flight)
       alti = :erlang.float_to_binary(surface_altitude, decimals: 1)
       IO.puts("Altitude = #{alti} meters")
 
       Process.sleep(1_000)
       # Break if vertical speed reaches zero (or positive).
-      vertical_speed = Flight.vertical_speed(conn, kerbin_flight)
+      vertical_speed = Flight.vertical_speed(kerbin_flight)
       vertical_speed > -0.1
     end)
 

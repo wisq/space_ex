@@ -39,33 +39,32 @@ defmodule LaunchIntoOrbit do
 
   def launch(conn) do
     vessel = SpaceCenter.active_vessel(conn)
-    autopilot = Vessel.auto_pilot(conn, vessel)
-    control = Vessel.control(conn, vessel)
-    surf_ref = Vessel.surface_reference_frame(conn, vessel)
-    flight = Vessel.flight(conn, vessel, surf_ref)
-    orbit = Vessel.orbit(conn, vessel)
+    autopilot = Vessel.auto_pilot(vessel)
+    control = Vessel.control(vessel)
+    flight = Vessel.flight(vessel)
+    orbit = Vessel.orbit(vessel)
 
     # Set up streams for telemetry
     {_, fn_ut} = SpaceCenter.ut(conn) |> SpaceEx.Stream.stream_fn()
 
     {_, fn_altitude} =
-      Flight.mean_altitude(conn, flight)
+      Flight.mean_altitude(flight)
       |> SpaceEx.Stream.stream_fn()
 
     {_, fn_apoapsis} =
-      Orbit.apoapsis_altitude(conn, orbit)
+      Orbit.apoapsis_altitude(orbit)
       |> SpaceEx.Stream.stream_fn()
 
-    stage_2_resources = Vessel.resources_in_decouple_stage(conn, vessel, 2, false)
+    stage_2_resources = Vessel.resources_in_decouple_stage(vessel, 2, cumulative: false)
 
     {_, fn_srb_fuel} =
-      Resources.amount(conn, stage_2_resources, "SolidFuel")
+      Resources.amount(stage_2_resources, "SolidFuel")
       |> SpaceEx.Stream.stream_fn()
 
     # Pre-launch setup
-    Control.set_sas(conn, control, false)
-    Control.set_rcs(conn, control, false)
-    Control.set_throttle(conn, control, 1.0)
+    Control.set_sas(control, false)
+    Control.set_rcs(control, false)
+    Control.set_throttle(control, 1.0)
 
     # Countdown...
     IO.puts("3...")
@@ -77,9 +76,9 @@ defmodule LaunchIntoOrbit do
     IO.puts("Launch!")
 
     # Activate the first stage
-    Control.activate_next_stage(conn, control)
-    AutoPilot.engage(conn, autopilot)
-    AutoPilot.target_pitch_and_heading(conn, autopilot, 90, 90)
+    Control.activate_next_stage(control)
+    AutoPilot.engage(autopilot)
+    AutoPilot.target_pitch_and_heading(autopilot, 90, 90)
 
     # Upon return, we should be at 90% of apoapsis altitude.
     ascent_loop(
@@ -92,14 +91,14 @@ defmodule LaunchIntoOrbit do
     )
 
     # Disable engines when target apoapsis is reached
-    Control.set_throttle(conn, control, 0.25)
+    Control.set_throttle(control, 0.25)
 
     wait_until(fn ->
       fn_apoapsis.() >= @target_altitude
     end)
 
     IO.puts("Target apoapsis reached")
-    Control.set_throttle(conn, control, 0.0)
+    Control.set_throttle(control, 0.0)
 
     # Wait until out of atmosphere
     IO.puts("Coasting out of atmosphere")
@@ -110,49 +109,49 @@ defmodule LaunchIntoOrbit do
 
     # Plan circularization burn (using vis-viva equation)
     IO.puts("Planning circularization burn")
-    kerbin = Orbit.body(conn, orbit)
-    mu = CelestialBody.gravitational_parameter(conn, kerbin)
+    kerbin = Orbit.body(orbit)
+    mu = CelestialBody.gravitational_parameter(kerbin)
     # Note: You can't use fn_apoapsis.() here,
     # because we need the apo from the _centre_ of Kerbin.
-    r = Orbit.apoapsis(conn, orbit)
-    a1 = Orbit.semi_major_axis(conn, orbit)
+    r = Orbit.apoapsis(orbit)
+    a1 = Orbit.semi_major_axis(orbit)
     a2 = r
     v1 = :math.sqrt(mu * (2.0 / r - 1.0 / a1))
     v2 = :math.sqrt(mu * (2.0 / r - 1.0 / a2))
     delta_v = v2 - v1
-    time_to_apo = Orbit.time_to_apoapsis(conn, orbit)
+    time_to_apo = Orbit.time_to_apoapsis(orbit)
     node_ut = fn_ut.() + time_to_apo
     # `node` is an Elixir builtin, but it's not a reserved word, so.
-    node = Control.add_node(conn, control, node_ut, delta_v, 0, 0)
+    node = Control.add_node(control, node_ut, prograde: delta_v)
 
     # Calculate burn time (using rocket equation)
-    f = Vessel.available_thrust(conn, vessel)
-    isp = Vessel.specific_impulse(conn, vessel)
+    f = Vessel.available_thrust(vessel)
+    isp = Vessel.specific_impulse(vessel)
     isp = isp * 9.82
-    m0 = Vessel.mass(conn, vessel)
+    m0 = Vessel.mass(vessel)
     m1 = m0 / :math.exp(delta_v / isp)
     flow_rate = f / isp
     burn_time = (m0 - m1) / flow_rate
 
     # Orientate ship
     IO.puts("Orientating ship for circularization burn")
-    node_frame = Node.reference_frame(conn, node)
-    AutoPilot.set_reference_frame(conn, autopilot, node_frame)
-    AutoPilot.set_target_direction(conn, autopilot, {0, 1, 0})
-    AutoPilot.engage(conn, autopilot)
-    AutoPilot.wait(conn, autopilot)
+    node_frame = Node.reference_frame(node)
+    AutoPilot.set_reference_frame(autopilot, node_frame)
+    AutoPilot.set_target_direction(autopilot, {0, 1, 0})
+    AutoPilot.engage(autopilot)
+    AutoPilot.wait(autopilot)
 
     # Wait until burn
     IO.puts("Waiting until circularization burn")
     burn_ut = node_ut - burn_time / 2.0
     lead_time = 5
-    SpaceCenter.warp_to(conn, burn_ut - lead_time, 1000, 1000)
+    SpaceCenter.warp_to(conn, burn_ut - lead_time)
 
     # Execute burn
     IO.puts("Ready to execute burn")
 
     {_, fn_time_to_apoapsis} =
-      Orbit.time_to_apoapsis(conn, orbit)
+      Orbit.time_to_apoapsis(orbit)
       |> SpaceEx.Stream.stream_fn()
 
     wait_until(fn ->
@@ -160,22 +159,22 @@ defmodule LaunchIntoOrbit do
     end)
 
     IO.puts("Executing burn")
-    Control.set_throttle(conn, control, 1.0)
+    Control.set_throttle(control, 1.0)
     round((burn_time - 0.2) * 1000) |> Process.sleep()
 
     IO.puts("Fine tuning")
-    Control.set_throttle(conn, control, 0.05)
+    Control.set_throttle(control, 0.05)
 
     {_, fn_remaining_delta_v} =
-      Node.remaining_delta_v(conn, node)
+      Node.remaining_delta_v(node)
       |> SpaceEx.Stream.stream_fn()
 
     wait_until(fn ->
       fn_remaining_delta_v.() <= 0.2
     end)
 
-    Control.set_throttle(conn, control, 0.0)
-    Node.remove(conn, node)
+    Control.set_throttle(control, 0.0)
+    Node.remove(node)
 
     IO.puts("Launch complete")
   end
@@ -199,7 +198,7 @@ defmodule LaunchIntoOrbit do
         new_turn_angle = frac * 90.0
 
         if abs(new_turn_angle - turn_angle) > 0.5 do
-          AutoPilot.target_pitch_and_heading(conn, autopilot, 90 - new_turn_angle, 90)
+          AutoPilot.target_pitch_and_heading(autopilot, 90 - new_turn_angle, 90)
           new_turn_angle
         end
       end || turn_angle
@@ -207,7 +206,7 @@ defmodule LaunchIntoOrbit do
     # Separate SRBs when finished
     srbs_separated =
       if !srbs_separated && fn_srb_fuel.() < 0.1 do
-        Control.activate_next_stage(conn, control)
+        Control.activate_next_stage(control)
         IO.puts("SRBs separated")
         true
       else
