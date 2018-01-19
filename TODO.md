@@ -1,5 +1,11 @@
 # To-do list
 
+## Expression builder
+
+It'd be nice to have some minor macros / DSL to build expressions.  They're currently fairly ugly due to the constant need for `conn` arguments.
+
+Even just a macro to automatically insert `conn` arguments would be cool, but I think we can do better — e.g. automatically creating procedures for `call` expressions.
+
 ## Tests
 
 Considering the API is automatically generated based on JSON definitions, the protocol is raw binary over TCP, and the server requires a running instance of a graphically intensive game with manual input required to set it up, I don't think SpaceEx will ever have full end-to-end integration tests, or particularly high test coverage across the entire API.

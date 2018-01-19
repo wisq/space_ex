@@ -6,11 +6,6 @@
 # imperative kRPC scripts can be translated literally into SpaceEx scripts.
 # Better versions will follow.
 #
-# There have been some syntax improvements since this script was originally
-# ported, some of which should allow the code to be cleaned up somewhat, but
-# that cleanup is still pending.  I'll do a cleanup pass once we've reached a
-# stable v1.0.0 API.
-#
 # This script should be used with the included "launch_into_orbit.craft" craft,
 # due to the hardcoded fuel checks and stage numbers.
 
@@ -32,9 +27,13 @@ defmodule LaunchIntoOrbit do
     Node
   }
 
+  # Begin pitching over at 250m altitude.
   @turn_start_altitude 250
+  # We should be fully pitched over and aimed at the horizon at 45km.
   @turn_end_altitude 45_000
+  # Aim for a circular orbit at 150km altitude.
   @target_altitude 150_000
+  # The atmosphere ends at 70km, but give it 500m margin.
   @atmosphere_height 70_500
 
   def launch(conn) do
@@ -55,10 +54,9 @@ defmodule LaunchIntoOrbit do
       Orbit.apoapsis_altitude(orbit)
       |> SpaceEx.Stream.stream_fn()
 
-    stage_2_resources = Vessel.resources_in_decouple_stage(vessel, 2, cumulative: false)
-
     {_, fn_srb_fuel} =
-      Resources.amount(stage_2_resources, "SolidFuel")
+      Vessel.resources_in_decouple_stage(vessel, 2, cumulative: false)
+      |> Resources.amount("SolidFuel")
       |> SpaceEx.Stream.stream_fn()
 
     # Pre-launch setup
@@ -139,7 +137,39 @@ defmodule LaunchIntoOrbit do
     AutoPilot.set_reference_frame(autopilot, node_frame)
     AutoPilot.set_target_direction(autopilot, {0, 1, 0})
     AutoPilot.engage(autopilot)
-    AutoPilot.wait(autopilot)
+
+    # The original script uses `AutoPilot.wait` here,
+    # but I don't generally recommend using that function.
+    # On some occasions, it returns immediately, without
+    # waiting at all.  Other times, it can't quite get
+    # the orientation right, and waits forever.
+    # Better to just monitor the error directly.
+    {_, error_fn} = AutoPilot.error(autopilot) |> SpaceEx.Stream.stream_fn()
+
+    Stream.repeatedly(fn ->
+      # The sleep is important; it makes the time math work, below.
+      Process.sleep(100)
+      error_fn.()
+    end)
+    |> Enum.reduce_while([], fn err, errors ->
+      errors = [err | errors]
+
+      if Enum.count(errors) < 30 do
+        # Not enough samples; we want 3 seconds worth.
+        {:cont, errors}
+      else
+        last_3_secs = Enum.take(errors, 30)
+
+        if Enum.all?(last_3_secs, &(abs(&1) < 0.5)) do
+          # We've maintained under half a degree of error
+          # for the past three seconds.  Any remaining
+          # error can be corrected during the lead time.
+          {:halt, :ok}
+        else
+          {:cont, last_3_secs}
+        end
+      end
+    end)
 
     # Wait until burn
     IO.puts("Waiting until circularization burn")
@@ -160,6 +190,7 @@ defmodule LaunchIntoOrbit do
 
     IO.puts("Executing burn")
     Control.set_throttle(control, 1.0)
+    # Remember that Process.sleep() expects integer milliseconds, not a float.
     round((burn_time - 0.2) * 1000) |> Process.sleep()
 
     IO.puts("Fine tuning")
@@ -191,7 +222,7 @@ defmodule LaunchIntoOrbit do
       ) do
     altitude = fn_altitude.()
 
-    # Gravity turn
+    # Pitch-over maneuver, or "gravity turn" (not really).
     turn_angle =
       if altitude > @turn_start_altitude && altitude < @turn_end_altitude do
         frac = (altitude - @turn_start_altitude) / (@turn_end_altitude - @turn_start_altitude)
@@ -242,9 +273,10 @@ conn = SpaceEx.Connection.connect!(name: "Launch into orbit", host: "192.168.68.
 
 try do
   LaunchIntoOrbit.launch(conn)
+  Process.sleep(1_000)
 after
-  # If the script dies, the ship will just keep doing whatever it's doing, but
-  # without any control or autopilot guidance.  Pausing on completion, but
-  # especially on error, makes it clear when a human should take over.
+  # If the script dies, the ship will just keep doing whatever it's doing,
+  # but without any control or autopilot guidance.  Pausing on completion,
+  # but especially on error, makes it clear when a human should take over.
   SpaceEx.KRPC.set_paused(conn, true)
 end

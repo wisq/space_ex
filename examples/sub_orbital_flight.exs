@@ -21,12 +21,14 @@
 defmodule SubOrbitalFlight do
   require SpaceEx.Procedure
 
-  alias SpaceEx.{Procedure, Event}
+  alias SpaceEx.{
+    SpaceCenter,
+    KRPC.Expression,
+    Procedure,
+    Event
+  }
 
-  alias SpaceEx.KRPC.Expression
-  alias SpaceEx.SpaceCenter
-
-  alias SpaceEx.SpaceCenter.{
+  alias SpaceCenter.{
     Vessel,
     Control,
     AutoPilot,
@@ -35,6 +37,17 @@ defmodule SubOrbitalFlight do
     Orbit,
     CelestialBody
   }
+
+  # Aim for a maximum altitude of 100km.
+  @target_apoapsis 100_000
+  # Begin pitch-over to 60 degrees at 10km altitude.
+  # The original script calls this a gravity turn, but it's really not.
+  # ("Gravity turn" may be the most misused term in the Kerbal community.)
+  @pitch_over_altitude 10_000
+  # Deploy parachutes at 1500m.
+  # The original script has them deploy at 1000m,
+  # but I find this is often too late.
+  @parachute_altitude 1_500
 
   def launch(conn) do
     vessel = SpaceCenter.active_vessel(conn)
@@ -47,7 +60,7 @@ defmodule SubOrbitalFlight do
     AutoPilot.target_pitch_and_heading(autopilot, 90, 90)
     AutoPilot.engage(autopilot)
     Control.set_throttle(control, 1.0)
-    Process.sleep(1)
+    Process.sleep(1_000)
 
     IO.puts("Launch!")
     Control.activate_next_stage(control)
@@ -67,29 +80,29 @@ defmodule SubOrbitalFlight do
     IO.puts("Booster separation")
     Control.activate_next_stage(control)
 
-    # Wait until above 10,000m altitude:
+    # Wait until above target altitude:
     mean_altitude = Flight.mean_altitude(flight) |> Procedure.create()
 
     expr =
       Expression.greater_than(
         conn,
         Expression.call(conn, mean_altitude),
-        Expression.constant_double(conn, 10_000)
+        Expression.constant_double(conn, @pitch_over_altitude)
       )
 
     Event.create(conn, expr) |> Event.wait()
 
-    IO.puts("Gravity turn")
+    IO.puts("Pitching over to 60 degrees")
     AutoPilot.target_pitch_and_heading(autopilot, 60, 90)
 
-    # Wait until above 100,000 apoapsis:
+    # Wait until above target apoapsis:
     apoapsis_altitude = Orbit.apoapsis_altitude(orbit) |> Procedure.create()
 
     expr =
       Expression.greater_than(
         conn,
         Expression.call(conn, apoapsis_altitude),
-        Expression.constant_double(conn, 100_000)
+        Expression.constant_double(conn, @target_apoapsis)
       )
 
     Event.create(conn, expr) |> Event.wait()
@@ -107,15 +120,14 @@ defmodule SubOrbitalFlight do
       Expression.less_than(
         conn,
         Expression.call(conn, srf_altitude),
-        Expression.constant_double(conn, 1_000)
+        Expression.constant_double(conn, @parachute_altitude)
       )
 
     Event.create(conn, expr) |> Event.wait()
 
     Control.activate_next_stage(control)
 
-    kerbin = Orbit.body(orbit)
-    kerbin_frame = CelestialBody.reference_frame(kerbin)
+    kerbin_frame = Orbit.body(orbit) |> CelestialBody.reference_frame()
     kerbin_flight = Vessel.flight(vessel, reference_frame: kerbin_frame)
 
     wait_until(fn ->
@@ -143,9 +155,10 @@ conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight", host: "192.168.68
 
 try do
   SubOrbitalFlight.launch(conn)
+  Process.sleep(1_000)
 after
-  # If the script dies, the ship will just keep doing whatever it's doing, but
-  # without any control or autopilot guidance.  Pausing on completion, but
-  # especially on error, makes it clear when a human should take over.
+  # If the script dies, the ship will just keep doing whatever it's doing,
+  # but without any control or autopilot guidance.  Pausing on completion,
+  # but especially on error, makes it clear when a human should take over.
   SpaceEx.KRPC.set_paused(conn, true)
 end
