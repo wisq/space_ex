@@ -116,8 +116,11 @@ defmodule SpaceEx.Stream do
   # Used by both Stream and Event.
   @doc false
   def launch(conn, stream_id, decoder) do
-    {:ok, pid} = start_link(conn, stream_id)
-    StreamConnection.register_stream(conn, stream_id, pid)
+    pid =
+      case start_link(conn, stream_id) do
+        {:ok, pid} -> pid
+        {:error, {:already_started, pid}} -> pid
+      end
 
     %Stream{id: stream_id, conn: conn, pid: pid, decoder: decoder}
   end
@@ -255,7 +258,11 @@ defmodule SpaceEx.Stream do
 
   @doc false
   def start_link(conn, stream_id) do
-    GenServer.start_link(__MODULE__, %State{id: stream_id, conn: conn})
+    GenServer.start_link(
+      __MODULE__,
+      %State{id: stream_id, conn: conn},
+      name: {:via, StreamConnection.Registry, {conn.stream_pid, stream_id}}
+    )
   end
 
   def init(state), do: {:ok, state}

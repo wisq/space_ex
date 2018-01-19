@@ -1,6 +1,5 @@
 defmodule SpaceEx.StreamConnection do
   use GenServer
-  alias SpaceEx.Connection
 
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
@@ -19,6 +18,24 @@ defmodule SpaceEx.StreamConnection do
       streams: %{},
       buffer: <<>>
     )
+  end
+
+  defmodule Registry do
+    import Kernel, except: [send: 2]
+
+    def whereis_name({stconn_pid, stream_id}) do
+      GenServer.call(stconn_pid, {:whereis, stream_id})
+    end
+
+    def register_name({stconn_pid, stream_id}, pid) do
+      GenServer.call(stconn_pid, {:register, stream_id, pid})
+    end
+
+    def unregister_name({stconn_pid, stream_id}) do
+      GenServer.call(stconn_pid, {:unregister, stream_id})
+    end
+
+    def send(name, msg), do: whereis_name(name) |> send(msg)
   end
 
   def connect!(info, client_id) do
@@ -74,23 +91,35 @@ defmodule SpaceEx.StreamConnection do
     end
   end
 
-  def register_stream(%Connection{stream_pid: stconn_pid}, stream_id, pid) do
-    register_stream(stconn_pid, stream_id, pid)
-  end
-
-  def register_stream(stconn_pid, stream_id, pid) when is_pid(stconn_pid) do
-    GenServer.call(stconn_pid, {:register, stream_id, pid})
+  def handle_call({:whereis, stream_id}, _from, state) do
+    {:reply, Map.get(state.streams, stream_id, :undefined), state}
   end
 
   def handle_call({:register, stream_id, pid}, _from, state) do
     streams = state.streams
 
     if Map.has_key?(streams, stream_id) do
-      {:reply, {:error, :already_registered}, state}
+      {:reply, :no, state}
     else
       new_streams = Map.put(streams, stream_id, pid)
-      {:reply, {:ok, stream_id}, %State{state | streams: new_streams}}
+      Process.monitor(pid)
+      {:reply, :yes, %State{state | streams: new_streams}}
     end
+  end
+
+  def handle_call({:unregister, stream_id}, _from, state) do
+    new_streams = Map.delete(state.streams, stream_id)
+    {:reply, :ok, %State{state | streams: new_streams}}
+  end
+
+  def handle_info({:DOWN, _ref, :process, dead_pid, _reason}, state) do
+    new_streams =
+      Enum.reject(state.streams, fn {_, pid} ->
+        pid == dead_pid
+      end)
+      |> Map.new()
+
+    {:noreply, %State{state | streams: new_streams}}
   end
 
   def handle_info({:tcp, sock, bytes}, %State{socket: sock} = state) do
