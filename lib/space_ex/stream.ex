@@ -7,12 +7,6 @@ defmodule SpaceEx.Stream do
   Enables data to be streamed as it changes, instead of polled repeatedly.
 
   Streams are an efficient way to repeatedly retrieve data from the game.
-
-  To set up a stream, you can use `SpaceEx.Stream.stream/2`.
-
-  Alternatively, you can create `SpaceEx.Procedure` that references the
-  procedure you want to run, and then pass that to `SpaceEx.Stream.create/2`.
-
   In most situations where you find yourself asking for the same piece of data
   over and over, you're probably better off using a stream.  This will reduce
   the load on both ends and make your code run faster.
@@ -20,6 +14,15 @@ defmodule SpaceEx.Stream do
   However, if your code checks the value infrequently (e.g. once per second or
   less), but the value is changing constantly (altitude, current time, etc.),
   you should consider either using polling, or reducing the stream's rate.
+
+  ## Creating streams
+
+  To set up a stream, you can use the `SpaceEx.Stream.stream/2` macro to wrap a
+  procedure call.
+
+  Alternatively, you can use `SpaceEx.Procedure.create/1` to create a reference
+  to the procedure you want to run, and then pass that to
+  `SpaceEx.Stream.create/2`.
 
   ## Example usage
 
