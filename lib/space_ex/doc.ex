@@ -52,6 +52,8 @@ defmodule SpaceEx.Doc.Indexer do
 end
 
 defmodule SpaceEx.Doc do
+  alias SpaceEx.Util
+
   @moduledoc false
 
   @reference_index SpaceEx.Doc.Indexer.build()
@@ -110,6 +112,7 @@ defmodule SpaceEx.Doc do
 
   defp process_html({"param", opts, contents}) do
     [{"name", name}] = opts
+    name = Util.to_snake_case(name)
     ["\n * `#{name}` — "] ++ process_html(contents) ++ ["\n"]
   end
 
