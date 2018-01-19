@@ -38,12 +38,14 @@ defmodule SpaceEx.StreamConnection do
     def send(name, msg), do: whereis_name(name) |> send(msg)
   end
 
-  def connect!(info, client_id) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, [info, client_id])
+  def connect!(info, client_id, conn_pid) do
+    {:ok, pid} = GenServer.start_link(__MODULE__, [info, client_id, conn_pid])
     pid
   end
 
-  def init([info, client_id]) do
+  def init([info, client_id, conn_pid]) do
+    Process.link(conn_pid)
+
     sock = Socket.TCP.connect!(info.host, info.stream_port, packet: :raw)
 
     request =

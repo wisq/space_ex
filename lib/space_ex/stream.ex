@@ -24,6 +24,9 @@ defmodule SpaceEx.Stream do
   to the procedure you want to run, and then pass that to
   `SpaceEx.Stream.create/2`.
 
+  Generally, multiple requests to stream the exact same data will be detected
+  by the kRPC server, and each request will return the same stream.
+
   ## Example usage
 
   ```elixir
@@ -263,12 +266,17 @@ defmodule SpaceEx.Stream do
   def start_link(conn, stream_id) do
     GenServer.start_link(
       __MODULE__,
-      %State{id: stream_id, conn: conn},
+      {%State{id: stream_id, conn: conn}, self()},
       name: {:via, StreamConnection.Registry, {conn.stream_pid, stream_id}}
     )
   end
 
-  def init(state), do: {:ok, state}
+  def init({%State{conn: conn} = state, launching_pid}) do
+    # Re-home this process to the StreamConnection itself.
+    Process.link(conn.stream_pid)
+    Process.unlink(launching_pid)
+    {:ok, state}
+  end
 
   # If stream has no data yet, add caller to waitlist.
   # We'll notify them when the first value comes in.
