@@ -19,6 +19,9 @@ Major (and very breaking) overhaul to function arguments.
 
 ### Stream changes
 
+* New stream functions added:
+  * `SpaceEx.Stream.start/2`
+  * `SpaceEx.Stream.remove/2`
 * Multiple attempts to stream the same data will no longer result in hanging behaviour.
   * Instead, they'll all reuse the same `Stream` process.
 * Streams are no longer linked to the process that creates them.
@@ -27,6 +30,10 @@ Major (and very breaking) overhaul to function arguments.
 * The `StreamConnection` process is now linked to the `Connection` process.
   * They were previously "linked by proxy" via the process that created them, but became unlinked if that process exited normally.
   * Now, the `Connection`, `StreamConnection`, and all `Stream` processes are linked, and an error in any will take the whole connection stack down.
+* Streams are now "bonded" to any process that requests their creation, even if they're being reused.
+  * Calling `remove/2` will terminate the bond.
+  * The stream will automatically shut itself down (and request removal from the server) if all bonds call `remove/2` or terminate.
+* `Event.remove` added; delegates to `Stream.remove`.
 
 ### Other changes
 

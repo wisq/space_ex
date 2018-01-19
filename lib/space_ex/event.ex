@@ -1,5 +1,5 @@
 defmodule SpaceEx.Event do
-  alias SpaceEx.{API, Types}
+  alias SpaceEx.{API, Types, Stream, KRPC}
 
   @bool_type API.Type.parse(%{"code" => "BOOL"})
 
@@ -36,15 +36,15 @@ defmodule SpaceEx.Event do
   """
 
   def create(conn, expression, opts \\ []) do
-    event = SpaceEx.KRPC.add_event(conn, expression)
+    event = KRPC.add_event(conn, expression)
     stream_id = event.stream.id
 
     if rate = opts[:rate] do
-      SpaceEx.KRPC.set_stream_rate(conn, stream_id, rate)
+      KRPC.set_stream_rate(conn, stream_id, rate)
     end
 
-    stream = SpaceEx.Stream.launch(conn, stream_id, &decode_event/1)
-    SpaceEx.KRPC.start_stream(conn, stream_id)
+    stream = Stream.launch(conn, stream_id, &decode_event/1)
+    KRPC.start_stream(conn, stream_id)
     stream
   end
 
@@ -68,10 +68,15 @@ defmodule SpaceEx.Event do
     # Don't use Stream.wait here, because it may have already received the
     # "true" value if the condition was true immediately.  The only thing we
     # care about is that the stream has received its first value.
-    SpaceEx.Stream.get(event, timeout)
-    # TODO: Unregister stream from server and StreamConnection?
-    # But maybe keep stream pid alive so this continues to return true immediately.
+    Stream.get(event, timeout)
   end
+
+  @doc """
+  Detach from an event, and shut down the underlying stream if possible.
+
+  See `SpaceEx.Stream.remove/1`.
+  """
+  defdelegate remove(event), to: SpaceEx.Stream
 
   defp decode_event(value), do: Types.decode(value, @bool_type, nil)
 end

@@ -24,8 +24,21 @@ defmodule SpaceEx.Stream do
   to the procedure you want to run, and then pass that to
   `SpaceEx.Stream.create/2`.
 
+  ## Stream lifecycle
+
   Generally, multiple requests to stream the exact same data will be detected
   by the kRPC server, and each request will return the same stream.
+
+  This would ordinarily be a problem for a multi-process environment like
+  Erlang. If one process calls `shutdown/1`, it might remove a stream that
+  other processes are currently using.
+
+  To prevent this, when you create a stream, you also create a bond between
+  that stream and your current process.  Calling `shutdown/1` will break that
+  bond, but the stream will only actually shut down if *all* bonded processes
+  are no longer alive.
+
+  Streams will also automatically shut down if all bonded processes terminate.
 
   ## Example usage
 
@@ -75,7 +88,8 @@ defmodule SpaceEx.Stream do
       id: nil,
       conn: nil,
       result: nil,
-      waitlist: []
+      waitlist: [],
+      bonds: MapSet.new()
     )
   end
 
@@ -128,6 +142,7 @@ defmodule SpaceEx.Stream do
         {:error, {:already_started, pid}} -> pid
       end
 
+    GenServer.call(pid, {:bond, self()})
     %Stream{id: stream_id, conn: conn, pid: pid, decoder: decoder}
   end
 
@@ -262,6 +277,29 @@ defmodule SpaceEx.Stream do
     KRPC.set_stream_rate(stream.conn, stream.stream_id, rate || 0)
   end
 
+  @doc """
+  Start a previously added stream.
+
+  If a stream is created with `start: false`, you can use this function to
+  choose when to start receiving data.
+  """
+
+  def start(stream) do
+    KRPC.start_stream(stream.conn, stream.stream_id)
+  end
+
+  @doc """
+  Detach from a stream, and shut it down if possible.
+
+  Streams will not shut down until all processes that depend on this stream
+  have exited or have called this function.  This is to prevent streams
+  unexpectedly closing for all processes, just because one of them is done.
+  """
+
+  def remove(stream) do
+    GenServer.call(stream.pid, {:unbond, self()})
+  end
+
   @doc false
   def start_link(conn, stream_id) do
     GenServer.start_link(
@@ -295,6 +333,16 @@ defmodule SpaceEx.Stream do
     {:noreply, %State{state | waitlist: waitlist}}
   end
 
+  def handle_call({:bond, pid}, _from, state) do
+    Process.monitor(pid)
+    new_bonds = MapSet.put(state.bonds, pid)
+    {:reply, :ok, %State{state | bonds: new_bonds}}
+  end
+
+  def handle_call({:unbond, pid}, _from, state) do
+    {:reply, :ok, %State{state | bonds: remove_bond(state.bonds, pid)}}
+  end
+
   def handle_info({:stream_result, id, result}, %State{id: id} = state) do
     if result == state.result do
       {:noreply, state}
@@ -302,5 +350,25 @@ defmodule SpaceEx.Stream do
       Enum.each(state.waitlist, &GenServer.reply(&1, result))
       {:noreply, %State{state | result: result}}
     end
+  end
+
+  def handle_info({:DOWN, _ref, :process, dead_pid, _reason}, state) do
+    {:noreply, %State{state | bonds: remove_bond(state.bonds, dead_pid)}}
+  end
+
+  def handle_info(:shutdown, state) do
+    # Final check to make sure we haven't gained new bonds.
+    if Enum.any?(state.bonds, &Process.alive?/1) do
+      {:noreply, state}
+    else
+      KRPC.remove_stream(state.conn, state.id)
+      exit(:normal)
+    end
+  end
+
+  defp remove_bond(bonds, pid) do
+    new_bonds = MapSet.delete(bonds, pid)
+    if Enum.empty?(new_bonds), do: send(self(), :shutdown)
+    new_bonds
   end
 end
