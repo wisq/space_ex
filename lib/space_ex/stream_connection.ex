@@ -23,6 +23,8 @@ defmodule SpaceEx.StreamConnection do
   defmodule Registry do
     import Kernel, except: [send: 2]
 
+    @moduledoc false
+
     def whereis_name({stconn_pid, stream_id}) do
       GenServer.call(stconn_pid, {:whereis, stream_id})
     end
