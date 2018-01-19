@@ -119,6 +119,7 @@ defmodule SpaceEx.Connection do
 
   def connect!(opts), do: struct!(Info, opts) |> connect!
 
+  @doc false
   def init({info, launching_pid}) do
     Process.monitor(launching_pid)
 

@@ -309,6 +309,7 @@ defmodule SpaceEx.Stream do
     )
   end
 
+  @doc false
   def init({%State{conn: conn} = state, launching_pid}) do
     # Re-home this process to the StreamConnection itself.
     Process.link(conn.stream_pid)
