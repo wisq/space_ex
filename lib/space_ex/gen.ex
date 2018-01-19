@@ -21,7 +21,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro __before_compile__(_env) do
-    quote location: :keep do
+    quote do
       @moduledoc SpaceEx.Doc.service(@service)
 
       @doc false
