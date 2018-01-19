@@ -83,13 +83,12 @@ defmodule SpaceEx.StreamConnection do
   end
 
   def handle_call({:register, stream_id, pid}, _from, state) do
-    stream_pids = Map.get(state.streams, stream_id, MapSet.new())
+    streams = state.streams
 
-    if pid in stream_pids do
+    if Map.has_key?(streams, stream_id) do
       {:reply, {:error, :already_registered}, state}
     else
-      new_stream_pids = MapSet.put(stream_pids, pid)
-      new_streams = Map.put(state.streams, stream_id, new_stream_pids)
+      new_streams = Map.put(streams, stream_id, pid)
       {:reply, {:ok, stream_id}, %State{state | streams: new_streams}}
     end
   end
@@ -125,10 +124,8 @@ defmodule SpaceEx.StreamConnection do
       nil ->
         :error
 
-      pids ->
-        Enum.each(pids, fn pid ->
-          send(pid, {:stream_result, id, stream_result.result})
-        end)
+      pid when is_pid(pid) ->
+        send(pid, {:stream_result, id, stream_result.result})
     end
   end
 

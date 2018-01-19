@@ -117,7 +117,7 @@ defmodule SpaceEx.Stream do
   @doc false
   def launch(conn, stream_id, decoder) do
     {:ok, pid} = start_link(conn, stream_id)
-    {:ok, stream_id} = StreamConnection.register_stream(conn, stream_id, pid)
+    StreamConnection.register_stream(conn, stream_id, pid)
 
     %Stream{id: stream_id, conn: conn, pid: pid, decoder: decoder}
   end
