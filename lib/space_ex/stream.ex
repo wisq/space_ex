@@ -100,7 +100,7 @@ defmodule SpaceEx.Stream do
     conn = procedure.conn
     start = opts[:start] || true
 
-    stream = KRPC.add_stream(conn, procedure, start)
+    stream = KRPC.add_stream(conn, procedure, start: start)
 
     if rate = opts[:rate] do
       KRPC.set_stream_rate(conn, stream.id, rate)

@@ -33,11 +33,9 @@ defmodule SpaceEx.Doc.Indexer do
   end
 
   defp index_procedure(module_name, procedure) do
-    arity = Enum.count(procedure.parameters) + 1
-
     {
       "M:#{module_name}.#{procedure.doc_name}",
-      "SpaceEx.#{module_name}.#{procedure.fn_name}/#{arity}"
+      "SpaceEx.#{module_name}.#{procedure.fn_name}/#{procedure.fn_arity}"
     }
   end
 

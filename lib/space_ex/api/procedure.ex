@@ -17,10 +17,13 @@ defmodule SpaceEx.API.Procedure do
   defstruct(
     name: nil,
     fn_name: nil,
+    fn_arity: nil,
     doc_name: nil,
     documentation: nil,
-    parameters: nil,
-    return_type: nil
+    return_type: nil,
+    positional_params: nil,
+    optional_params: nil,
+    is_object_method: nil
   )
 
   def parse({name, json}, class_name) do
@@ -32,6 +35,10 @@ defmodule SpaceEx.API.Procedure do
       |> Enum.with_index()
       |> Enum.map(&parse_parameter/1)
 
+    {mandatory, optional} = Enum.split_with(parameters, fn p -> is_nil(p.default) end)
+    is_method = is_object_method?(mandatory)
+    fn_arity = get_fn_arity(mandatory, optional, is_method: is_method)
+
     return_type =
       if t = Map.get(json, "return_type") do
         Type.parse(t)
@@ -42,12 +49,33 @@ defmodule SpaceEx.API.Procedure do
     %Procedure{
       name: name,
       fn_name: fn_name,
+      fn_arity: fn_arity,
       doc_name: doc_name,
       documentation: Map.fetch!(json, "documentation"),
-      parameters: parameters,
-      return_type: return_type
+      return_type: return_type,
+      positional_params: mandatory,
+      optional_params: optional,
+      is_object_method: is_method
     }
   end
+
+  defp is_object_method?(params) do
+    Enum.any?(params, fn
+      %Parameter{name: "this", index: 0} -> true
+      _ -> false
+    end)
+  end
+
+  # Add one for `conn` parameter (at start).
+  defp get_fn_arity(mandatory, optional, is_method: false),
+    do: get_fn_arity(mandatory, optional) + 1
+
+  # No extra parameters.
+  defp get_fn_arity(mandatory, optional, is_method: true), do: get_fn_arity(mandatory, optional)
+  # No extra parameters.
+  defp get_fn_arity(mandatory, []), do: Enum.count(mandatory)
+  # Add one for `opts` parameter (at end).
+  defp get_fn_arity(mandatory, _optional), do: Enum.count(mandatory) + 1
 
   defp make_fn_name(stripped_name) do
     SpaceEx.Util.to_snake_case(stripped_name)

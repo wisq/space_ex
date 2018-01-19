@@ -1,5 +1,4 @@
 defmodule SpaceEx.Gen do
-  alias SpaceEx.API
   alias SpaceEx.Util
 
   @moduledoc false
@@ -23,9 +22,6 @@ defmodule SpaceEx.Gen do
   defmacro __before_compile__(_env) do
     quote do
       @moduledoc SpaceEx.Doc.service(@service)
-
-      @doc false
-      def rpc_service_name(), do: @service.name
 
       @service.enumerations
       |> Enum.each(&SpaceEx.Gen.define_enumeration/1)
@@ -74,9 +70,6 @@ defmodule SpaceEx.Gen do
       defmodule Module.concat(__MODULE__, class.name) do
         @moduledoc SpaceEx.Doc.class(class)
 
-        @doc false
-        def rpc_service_name(), do: unquote(service.name)
-
         class.procedures
         |> Enum.each(&SpaceEx.Gen.define_procedure(service, &1))
       end
@@ -94,66 +87,60 @@ defmodule SpaceEx.Gen do
       fn_name = procedure.fn_name
 
       conn_var = Macro.var(:conn, __MODULE__)
+      value_var = Macro.var(:value, __MODULE__)
+
       {def_args, arg_vars, arg_encode_ast} = SpaceEx.Gen.args_builder(procedure, conn_var)
 
-      arg_types = Enum.map(procedure.parameters, fn p -> p.type end) |> Macro.escape()
-      return_type = procedure.return_type |> Macro.escape()
+      arg_types =
+        (procedure.positional_params ++ procedure.optional_params)
+        |> Enum.sort_by(fn p -> p.index end)
+        |> Enum.map(fn p -> p.type end)
+        |> Macro.escape()
 
-      @doc false
-      def rpc_procedure(unquote(fn_name)), do: unquote(procedure |> Macro.escape())
+      return_type = procedure.return_type |> Macro.escape()
+      return_decode_ast = SpaceEx.Gen.return_decoder(return_type, value_var, conn_var)
 
       @doc SpaceEx.Doc.procedure(procedure)
       def unquote(fn_name)(unquote_splicing(def_args)) do
         unquote_splicing(arg_encode_ast)
 
-        SpaceEx.Connection.call_rpc!(
-          unquote(conn_var),
-          unquote(service_name),
-          unquote(rpc_name),
-          unquote(arg_vars)
-        )
-        |> SpaceEx.Gen.decode_return(unquote(return_type), unquote(conn_var))
+        unquote(value_var) =
+          SpaceEx.Connection.call_rpc!(
+            unquote(conn_var),
+            unquote(service_name),
+            unquote(rpc_name),
+            unquote(arg_vars)
+          )
+
+        unquote(return_decode_ast)
+      end
+
+      @doc false
+      def unquote(:"rpc_#{fn_name}")(unquote_splicing(def_args)) do
+        unquote_splicing(arg_encode_ast)
+
+        %SpaceEx.Procedure{
+          conn: unquote(conn_var),
+          service: unquote(service_name),
+          procedure: unquote(rpc_name),
+          args: unquote(arg_vars),
+          return_type: unquote(return_type)
+        }
       end
     end
   end
 
   def args_builder(procedure, conn_var) do
-    {mandatory, optional} = Enum.split_with(procedure.parameters, fn p -> is_nil(p.default) end)
-
-    is_method =
-      Enum.any?(mandatory, fn
-        %API.Procedure.Parameter{name: "this", index: 0} -> true
-        _ -> false
-      end)
-
-    build_args_with_conn(mandatory, optional, conn_var, is_method: is_method)
+    build_positional_args(procedure.positional_params)
+    |> add_optional_args(procedure.optional_params)
+    |> add_conn_var(conn_var, procedure.is_object_method)
   end
 
-  # Not a method: Add `conn` to the start of the function args list.
-  defp build_args_with_conn(mandatory, optional, conn_var, is_method: false) do
-    {def_args, arg_vars, arg_encode_ast} = build_args_for_params(mandatory, optional)
-
-    def_args = [conn_var | def_args]
-
-    {def_args, arg_vars, arg_encode_ast}
-  end
-
-  # Is an object method: Extract `conn` from `this.conn`.
-  defp build_args_with_conn(mandatory, optional, conn_var, is_method: true) do
-    {def_args, arg_vars, arg_encode_ast} = build_args_for_params(mandatory, optional)
-
-    extract_conn = quote do: unquote(conn_var) = this.conn
-    arg_encode_ast = [extract_conn | arg_encode_ast]
-
-    {def_args, arg_vars, arg_encode_ast}
-  end
-
-  # No optional params: Just build positional params.
-  defp build_args_for_params(mandatory, []) do
-    arg_vars = variables_for_params(mandatory)
+  defp build_positional_args(params) do
+    arg_vars = variables_for_params(params)
 
     arg_encode_ast =
-      Enum.zip(mandatory, arg_vars)
+      Enum.zip(params, arg_vars)
       |> Enum.map(fn {param, var} ->
         type = param.type |> Macro.escape()
 
@@ -165,20 +152,16 @@ defmodule SpaceEx.Gen do
     {arg_vars, arg_vars, arg_encode_ast}
   end
 
-  # Optional params:
-  #
   # * Add `opts \\ []` to function definition.
   # * Create a variable for each param, and encode the param
   #   into it (if supplied), or use the default.
   # * Complain if we get any opts that we don't recognise.
-  defp build_args_for_params(mandatory, optional) do
-    {def_args, arg_vars, arg_encode_ast} = build_args_for_params(mandatory, [])
-
-    new_vars = variables_for_params(optional)
-    atoms = atoms_for_params(optional)
+  defp add_optional_args({def_args, arg_vars, arg_encode_ast}, params) do
+    new_vars = variables_for_params(params)
+    atoms = atoms_for_params(params)
 
     new_encodes =
-      Enum.zip([optional, new_vars, atoms])
+      Enum.zip([params, new_vars, atoms])
       |> Enum.map(fn {param, var, atom} ->
         type = param.type |> Macro.escape()
 
@@ -204,11 +187,31 @@ defmodule SpaceEx.Gen do
         end
       end
 
-    def_args = def_args ++ [quote(do: opts \\ [])]
-    arg_vars = arg_vars ++ new_vars
-    arg_encode_ast = arg_encode_ast ++ new_encodes ++ [reject_unknown]
+    {
+      def_args ++ [quote(do: opts \\ [])],
+      arg_vars ++ new_vars,
+      arg_encode_ast ++ new_encodes ++ [reject_unknown]
+    }
+  end
 
-    {def_args, arg_vars, arg_encode_ast}
+  # Not a method: Add `conn` to the start of the function args list.
+  defp add_conn_var({def_args, arg_vars, arg_encode_ast}, conn_var, false) do
+    {
+      [conn_var | def_args],
+      arg_vars,
+      arg_encode_ast
+    }
+  end
+
+  # Is an object method: Extract `conn` from `this.conn`.
+  defp add_conn_var({def_args, arg_vars, arg_encode_ast}, conn_var, true) do
+    extract_conn = quote do: unquote(conn_var) = this.conn
+
+    {
+      def_args,
+      arg_vars,
+      [extract_conn | arg_encode_ast]
+    }
   end
 
   defp variables_for_params(params) do
@@ -223,18 +226,16 @@ defmodule SpaceEx.Gen do
     end)
   end
 
-  # FIXME: need to move this out to a better module
-  def encode_args([], []), do: []
-
-  def encode_args([arg | args], [type | types]) do
-    value = SpaceEx.Types.encode(arg, type)
-    [value | encode_args(args, types)]
+  def return_decoder(nil, value_var, _conn) do
+    quote do
+      "" = unquote(value_var)
+      :ok
+    end
   end
 
-  # FIXME: need to move this out to a better module
-  def decode_return("", nil, _conn), do: :ok
-
-  def decode_return(value, type, conn) do
-    SpaceEx.Types.decode(value, type, conn)
+  def return_decoder(type, value_var, conn_var) do
+    quote do
+      SpaceEx.Types.decode(unquote(value_var), unquote(type), unquote(conn_var))
+    end
   end
 end
