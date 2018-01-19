@@ -2,12 +2,6 @@
 
 ## Cleanups
 
-### Hide/rename core I/O functions
-
-Certain functions like `KRPC.add_stream` should probably be marked as `@doc false` (or otherwise flagged as "don't use this"), because their behaviour is provided by core classes.
-
-Of course, we can't just get rid of those functions, because they're actually used by the functionality in question.  But we can potentially rename them.
-
 ## Tests
 
 Considering the API is automatically generated based on JSON definitions, the protocol is raw binary over TCP, and the server requires a running instance of a graphically intensive game with manual input required to set it up, I don't think SpaceEx will ever have full end-to-end integration tests, or particularly high test coverage across the entire API.

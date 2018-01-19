@@ -7,6 +7,7 @@ defmodule SpaceEx.Gen do
     quote bind_quoted: [opts: opts] do
       @service_name opts[:name] || SpaceEx.Util.module_basename(__MODULE__)
       @service SpaceEx.API.service_data(@service_name)
+      @service_overrides opts[:overrides] || %{}
       @before_compile SpaceEx.Gen
     end
   end
@@ -70,6 +71,8 @@ defmodule SpaceEx.Gen do
       defmodule Module.concat(__MODULE__, class.name) do
         @moduledoc SpaceEx.Doc.class(class)
 
+        @service_overrides %{}
+
         class.procedures
         |> Enum.each(&SpaceEx.Gen.define_procedure(service, &1))
       end
@@ -101,7 +104,14 @@ defmodule SpaceEx.Gen do
       return_type = procedure.return_type |> Macro.escape()
       return_decode_ast = SpaceEx.Gen.return_decoder(return_type, value_var, conn_var)
 
-      @doc SpaceEx.Doc.procedure(procedure)
+      overrides = Map.get(@service_overrides, fn_name, [])
+
+      if :nodoc in overrides do
+        @doc false
+      else
+        @doc SpaceEx.Doc.procedure(procedure)
+      end
+
       def unquote(fn_name)(unquote_splicing(def_args)) when unquote(guard_ast) do
         unquote_splicing(arg_encode_ast)
 
