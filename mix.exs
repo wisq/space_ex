@@ -64,8 +64,10 @@ defmodule SpaceEx.Mixfile do
       {:exprotobuf, "~> 1.2.9"},
       {:socket, "~> 0.3"},
       {:poison, "~> 3.1"},
+      {:floki, "~> 0.19.0"},
+
       {:ex_doc, "~> 0.10", only: :dev},
-      {:floki, "~> 0.19.0"}
+      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false}
     ]
   end
 end
