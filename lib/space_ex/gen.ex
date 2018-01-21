@@ -163,6 +163,9 @@ defmodule SpaceEx.Gen do
     {arg_vars, arg_vars, arg_encode_ast}
   end
 
+  # If there are no optional args, then this is a noop.
+  defp add_optional_args(details, []), do: details
+
   # * Add `opts \\ []` to function definition.
   # * Create a variable for each param, and encode the param
   #   into it (if supplied), or use the default.
