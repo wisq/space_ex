@@ -23,6 +23,13 @@ defmodule SpaceEx.Types.Encoders do
     |> Protobufs.List.encode()
   end
 
+  def encode(value, %Type.Set{subtype: subtype}) do
+    items = Enum.map(value, &encode(&1, subtype))
+
+    Protobufs.List.new(items: items)
+    |> Protobufs.List.encode()
+  end
+
   def encode(value, %Type.Tuple{subtypes: subtypes}) do
     items =
       Tuple.to_list(value)
