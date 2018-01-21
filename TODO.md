@@ -10,6 +10,18 @@ It'd be nice to have some minor macros / DSL to build expressions.  They're curr
 
 Even just a macro to automatically insert `conn` arguments would be cool, but I think we can do better — e.g. automatically creating procedures for `call` expressions.
 
+## Decide on `Connection` lifecycle
+
+Currently, the `Connection` process monitors the process that launched it, and terminates when that process exits.  It does so via a `GenServer` return value of `:stop`, which has the advantage of being an abnormal exit (so it shuts down the entire `Connection` / `StreamConnection` / `Stream`(s) stack), but the disadvantage(?) of outputting an informational error message.  This runs somewhat contrary to how connections typically work in Elixir — `Port`s will typically just silently close when the process using them terminates (I think?).
+
+At some point, I should probably decide on a better way to deal with the launching process terminating — it should either _silently_ shut down the entire stack, or do nothing and leave the connection open.  I'm leaning towards the latter, but it might be better to just include a startup option that chooses between the two behaviours.
+
+Also, it remains to be seen what happens to the stream connection when the main connection terminates.  I would expect the server to terminate it.
+
+Connections need to handle unexpected server terminations better in general; currently, they just blow up with a `handle_info` match error.  Which is okay, since the proper behaviour should probably be "loudly blow up (unless this is a planned shutdown)" and this qualifies, but it could be friendlier.
+
+Finally, we could probably use a `Connection.close` function.
+
 ## Tests
 
 Considering the API is automatically generated based on JSON definitions, the protocol is raw binary over TCP, and the server requires a running instance of a graphically intensive game with manual input required to set it up, I don't think SpaceEx will ever have full end-to-end integration tests, or particularly high test coverage across the entire API.
