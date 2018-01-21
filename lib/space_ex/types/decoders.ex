@@ -10,7 +10,9 @@ defmodule SpaceEx.Types.Decoders do
     {Protobufs.Raw.String, "dummy"},
     {Protobufs.Raw.Float, 1.23},
     {Protobufs.Raw.Double, 1.23},
-    {Protobufs.Raw.SInt32, 123}
+    {Protobufs.Raw.SInt32, 123},
+    {Protobufs.Raw.UInt32, 123},
+    {Protobufs.Raw.UInt64, 123}
   ]
   |> Enum.each(fn {module, example} ->
     <<first_byte, _::binary>> =

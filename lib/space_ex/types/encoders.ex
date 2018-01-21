@@ -39,6 +39,19 @@ defmodule SpaceEx.Types.Encoders do
     |> Protobufs.Tuple.encode()
   end
 
+  def encode(value, %Type.Dictionary{key_type: key_type, value_type: value_type}) do
+    entries =
+      Enum.map(value, fn {k, v} ->
+        Protobufs.DictionaryEntry.new(
+          key: encode(k, key_type),
+          value: encode(v, value_type)
+        )
+      end)
+
+    Protobufs.Dictionary.new(entries: entries)
+    |> Protobufs.Dictionary.encode()
+  end
+
   def encode(%SpaceEx.Procedure{} = proc, %Type.ProcedureCall{}) do
     args =
       Enum.with_index(proc.args)
