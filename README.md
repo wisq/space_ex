@@ -51,9 +51,9 @@ SpaceEx.KRPC.set_paused(conn, true)
 
 This will connect to your kRPC game, unpause it if needed, burn the engines for one second, and then pause it again.
 
-More examples can be found in the [examples directory](examples/).
+More examples can be found in the [examples directory](https://github.com/wisq/space_ex/tree/master/examples).
 
-Be aware that this library is very new, and the syntax is changing day by day.  I expect to release v1.0.0 within a week or so, at which point the API will be considered stable.  For a list of what's planned, see the [to-do list](TODO.md).
+Be aware that this library is very new, and the syntax is changing day by day.  I expect to release v1.0.0 within a week or so, at which point the API will be considered stable.  For a list of what's planned, see the [to-do list](https://github.com/wisq/space_ex/blob/master/TODO.md).
 
 ## Documentation
 
@@ -63,6 +63,6 @@ Full documentation can be found at [https://hexdocs.pm/space_ex](https://hexdocs
 
 Copyright © 2018, Adrian Irving-Beer.
 
-SpaceEx is released under the [Apache 2 License](LICENSE) and is provided with **no warranty**.  But, let's face it — if anything goes wrong, the worst that can likely happen is that your rocket crashes and Jeb dies.
+SpaceEx is released under the [Apache 2 License](https://github.com/wisq/space_ex/blob/master/LICENSE) and is provided with **no warranty**.  But, let's face it — if anything goes wrong, the worst that can likely happen is that your rocket crashes and Jeb dies.
 
 SpaceEx is in no way associated with the launching of real rockets, and has no affiliations with any companies that do real rocketry, as kickass as they (and their CEO) may be.
