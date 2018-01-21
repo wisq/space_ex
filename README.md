@@ -6,6 +6,9 @@ kRPC is a mod for [Kerbal Space Program](https://kerbalspaceprogram.com/), the r
 
 With kRPC, you can control your rocket using external scripts.  With SpaceEx, you can write those external scripts in [Elixir](https://elixir-lang.org/), and enjoy all the wonderful features of the Elixir language and the Erlang VM.
 
+[![Build Status](https://travis-ci.org/wisq/space_ex.svg?branch=master)](https://travis-ci.org/wisq/space_ex)
+[![Hex.pm Version](http://img.shields.io/hexpm/v/space_ex.svg?style=flat)](https://hex.pm/packages/space_ex)
+
 ## Installation
 
 SpaceEx is [available on hex.pm](https://hex.pm/packages/space_ex).
