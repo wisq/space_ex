@@ -151,7 +151,7 @@ defmodule SubOrbitalFlight do
   end
 end
 
-conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight", host: "192.168.68.6")
+conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight")
 
 try do
   SubOrbitalFlight.launch(conn)

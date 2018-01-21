@@ -269,7 +269,7 @@ defmodule LaunchIntoOrbit do
   end
 end
 
-conn = SpaceEx.Connection.connect!(name: "Launch into orbit", host: "192.168.68.6")
+conn = SpaceEx.Connection.connect!(name: "Launch into orbit")
 
 try do
   LaunchIntoOrbit.launch(conn)
