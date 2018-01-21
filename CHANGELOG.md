@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.1
+
+* Fixed a bug that was causing **every** function to have an `opts` argument, even if it didn't have any optional args.
+* Fixed a crash when a `Connection` tries to terminate because its parent process has exited.  Now it should crash *correctly*. 🙂
+* Added some tests.  More to come.
+
 ## v0.5.0
 
 Major (and very breaking) overhaul to function arguments.
