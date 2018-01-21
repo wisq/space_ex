@@ -1,15 +1,21 @@
 language: elixir
 sudo: false
 elixir:
-- 1.5
-- 1.6
+  - 1.5
+  - 1.6
 otp_release:
-- 19.3
-- 20.2
+  - 19.3
+  - 20.2
 env:
-- MIX_ENV=test
+  - MIX_ENV=test
+cache:
+  directories:
+    - _build/test/lib
+    - deps
+before_cache:
+  - rm -rf _build/test/lib/space_ex
 notifications:
   slack:
     on_success: change
     rooms:
-    - secure: YjZf9mqkI3qq4dMXPOATBUHsw2JZnsahcMyWiKau7Sr/8/dpLLizCnt41qYarpu9lRUVzstLfOGjn0VqKR9CTrH906jPDMOp8Cd14w30h6phG7rEZEF9IhJwxwpHGzNJDxthDA9Vky4oh8z4qVDZGhIvsa/ApUCDSGwkuEPp6ZKdXmFLlvXHKkJZuqN1wsxLexNrl2mk40I7rpZepnfU8ivcfVd1SGcEmUecanlR0X/bH5+N0XFVogkNOm87IP8Q7T8Z/7BU030UtOjRWPW/Z+UUTLEdAnmJTV4mtmGm5nqNaq9quZK0QPBVzixsvCjdM6/YwDwhECPTmhA6/vRPZCNklmodYPbEn9h+s+r7x0oCe4wUuh67yOThrh382yUqCB+b07/woQa+0WS1KUm2zMwgBYDRqv5o0NiA1Juf53KCWS1piBQkxB+sXjFoh+iphqWkSXAa0lpus/BP28iLtoioMr5Psjgl6IFCplZRdyDwFTo6UIiwz7wraSxDEb35iFMXwxbKxX0bWm2ObisXFBpI+L3mbQurm56th5Sj5qpj0D7Js4OoWVZEw3Y32QeRc17WSgqwhKgwJpE4fG6aWDP7OS2SuBQJ2SPS4Jtskn7Bk0JMYUk2tOJ+tcfsay1Zic+vGbxG+gtdiv37QzmCBxEsK+qqeVcgAkPJ69OT090=
+      - secure: YjZf9mqkI3qq4dMXPOATBUHsw2JZnsahcMyWiKau7Sr/8/dpLLizCnt41qYarpu9lRUVzstLfOGjn0VqKR9CTrH906jPDMOp8Cd14w30h6phG7rEZEF9IhJwxwpHGzNJDxthDA9Vky4oh8z4qVDZGhIvsa/ApUCDSGwkuEPp6ZKdXmFLlvXHKkJZuqN1wsxLexNrl2mk40I7rpZepnfU8ivcfVd1SGcEmUecanlR0X/bH5+N0XFVogkNOm87IP8Q7T8Z/7BU030UtOjRWPW/Z+UUTLEdAnmJTV4mtmGm5nqNaq9quZK0QPBVzixsvCjdM6/YwDwhECPTmhA6/vRPZCNklmodYPbEn9h+s+r7x0oCe4wUuh67yOThrh382yUqCB+b07/woQa+0WS1KUm2zMwgBYDRqv5o0NiA1Juf53KCWS1piBQkxB+sXjFoh+iphqWkSXAa0lpus/BP28iLtoioMr5Psjgl6IFCplZRdyDwFTo6UIiwz7wraSxDEb35iFMXwxbKxX0bWm2ObisXFBpI+L3mbQurm56th5Sj5qpj0D7Js4OoWVZEw3Y32QeRc17WSgqwhKgwJpE4fG6aWDP7OS2SuBQJ2SPS4Jtskn7Bk0JMYUk2tOJ+tcfsay1Zic+vGbxG+gtdiv37QzmCBxEsK+qqeVcgAkPJ69OT090=
