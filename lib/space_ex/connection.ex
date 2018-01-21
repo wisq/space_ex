@@ -238,7 +238,7 @@ defmodule SpaceEx.Connection do
   end
 
   def handle_info({:DOWN, _ref, :process, dead_pid, _reason}, state) do
-    {:stop, "Launching process #{dead_pid} has exited", state}
+    {:stop, "Launching process #{inspect(dead_pid)} has exited", state}
   end
 
   defp dispatch_replies(queue, buffer) do
