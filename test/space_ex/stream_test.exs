@@ -99,7 +99,7 @@ defmodule SpaceEx.StreamTest do
     assert reason == "SpaceEx.StreamConnection socket has closed"
   end
 
-  test "stream process removes itself and exits if all launching processes call `remove/1`" do
+  test "stream process removes itself and exits if ALL launching processes call `remove/1`" do
     state = MockConnection.start()
 
     me = self()
@@ -150,7 +150,7 @@ defmodule SpaceEx.StreamTest do
     Enum.each(pids, &send(&1, :exit))
   end
 
-  test "stream process removes itself and exits if all launching processes exit" do
+  test "stream process removes itself and exits if ALL launching processes exit" do
     state = MockConnection.start()
 
     me = self()
