@@ -11,7 +11,8 @@ defmodule SpaceEx.Mixfile do
       docs: docs(),
       description: description(),
       package: package(),
-      elixirc_paths: elixirc_paths(Mix.env())
+      elixirc_paths: elixirc_paths(Mix.env()),
+      preferred_cli_env: ["git.test": :test]
     ]
   end
 
@@ -71,7 +72,8 @@ defmodule SpaceEx.Mixfile do
       {:poison, "~> 3.1"},
       {:floki, "~> 0.19.0"},
       {:ex_doc, "~> 0.10", only: :dev},
-      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false}
+      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
+      {:briefly, "~> 0.3", only: :test, runtime: false}
     ]
   end
 end
