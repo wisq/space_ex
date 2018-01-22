@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.6.0
+
+* Rework `SpaceEx.Connection` lifecycle.
+  * No longer linked (in the strict Erlang sense) to the launching process.
+  * Still monitors launching process and exits when it does.
+  * `SpaceEx.StreamConnection` also exits when connection does, even if exiting normally.
+* Add `SpaceEx.Connection.connect/1`, the Erlang-style version of `connect!`.
+  * This required the above lifecycle changes, since we had to switch from `GenServer.start_link` to `GenServer.start`.
+* Add `SpaceEx.Connection.close/1`.
+* Add connection tests.
+
 ## v0.5.1
 
 * Fixed a bug that was causing **every** function to have an `opts` argument, even if it didn't have any optional args.
