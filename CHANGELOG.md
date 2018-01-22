@@ -2,14 +2,19 @@
 
 ## v0.6.0
 
-* Rework `SpaceEx.Connection` lifecycle.
-  * No longer linked (in the strict Erlang sense) to the launching process.
-  * Still monitors launching process and exits when it does.
-  * `SpaceEx.StreamConnection` also exits when connection does, even if exiting normally.
-* Add `SpaceEx.Connection.connect/1`, the Erlang-style version of `connect!`.
-  * This required the above lifecycle changes, since we had to switch from `GenServer.start_link` to `GenServer.start`.
-* Add `SpaceEx.Connection.close/1`.
-* Add connection tests.
+* API changes:
+  * Add `SpaceEx.Connection.connect/1`, the Erlang-style version of `connect!`.
+  * Add `SpaceEx.Connection.close/1`.
+* Connection process lifecycle changes:
+  * The `Connection` process is no longer linked (in the strict Erlang sense) to the launching process.
+  * It still monitors the launching process and exits when it does.
+  * The `StreamConnection` process monitors the `Connection` process.
+  * The `Stream` processes monitor the `StreamConnection` process.
+  * All this is to account for my prior lack of knowledge re: how `Process.link` handles `exit(:normal)`.
+* Add tests:
+  * `Connection`
+  * `StreamConnection`
+  * `Stream`
 
 ## v0.5.1
 
