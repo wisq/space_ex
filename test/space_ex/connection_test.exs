@@ -66,7 +66,7 @@ defmodule SpaceEx.ConnectionTest do
     {:ok, stream_listener} = :gen_tcp.listen(0, ip: @localhost)
     {:ok, stream_port} = :inet.port(stream_listener)
 
-    bg_conn = start_supervised!(BackgroundConnection)
+    {:ok, bg_conn} = start_supervised(BackgroundConnection)
 
     BackgroundConnection.connect(
       bg_conn,
