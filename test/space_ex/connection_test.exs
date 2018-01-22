@@ -7,6 +7,7 @@ defmodule SpaceEx.ConnectionTest do
   alias SpaceEx.Connection
 
   alias SpaceEx.Protobufs.{
+    ConnectionResponse,
     Request,
     Response,
     ProcedureResult
@@ -16,6 +17,46 @@ defmodule SpaceEx.ConnectionTest do
     state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
 
     assert %Connection{} = state.conn
+  end
+
+  test "connect!/1 throws error if server returns error" do
+    response =
+      ConnectionResponse.new(
+        status: :WRONG_TYPE,
+        message: "message from the server"
+      )
+
+    state = start_connection() |> accept_rpc(response)
+
+    assert_receive {:connect_error, error}
+    assert String.contains?(error.message, "message from the server")
+
+    rpc_socket = state.rpc_socket
+    assert_receive {:tcp_closed, ^rpc_socket}
+  end
+
+  test "close/1" do
+    state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
+
+    Connection.close(state.conn)
+
+    rpc_socket = state.rpc_socket
+    assert_receive {:tcp_closed, ^rpc_socket}
+
+    stream_socket = state.stream_socket
+    assert_receive {:tcp_closed, ^stream_socket}
+  end
+
+  test "connection closes if launching process exits" do
+    state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
+
+    BackgroundConnection.shutdown(state.bg_conn)
+
+    rpc_socket = state.rpc_socket
+    assert_receive {:tcp_closed, ^rpc_socket}
+
+    stream_socket = state.stream_socket
+    assert_receive {:tcp_closed, ^stream_socket}
   end
 
   test "call_rpc/4" do

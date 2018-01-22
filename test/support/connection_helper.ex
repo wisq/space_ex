@@ -24,14 +24,24 @@ defmodule SpaceEx.ConnectionHelper do
       GenServer.cast(pid, {:call_rpc, self(), service, procedure, args})
     end
 
+    def shutdown(pid) do
+      GenServer.call(pid, :shutdown)
+    end
+
     def init([]) do
       {:ok, nil}
     end
 
     def handle_cast({:connect, reply_pid, opts}, _state) do
-      conn = Connection.connect!(opts)
-      send(reply_pid, {:connected, conn})
-      {:noreply, conn}
+      try do
+        conn = Connection.connect!(opts)
+        send(reply_pid, {:connected, conn})
+        {:noreply, conn}
+      rescue
+        error ->
+          send(reply_pid, {:connect_error, error})
+          {:noreply, nil}
+      end
     end
 
     def handle_cast({:call_rpc, reply_pid, service, procedure, args}, conn) do
@@ -41,6 +51,11 @@ defmodule SpaceEx.ConnectionHelper do
       end)
 
       {:noreply, conn}
+    end
+
+    def handle_call(:shutdown, from, _state) do
+      GenServer.reply(from, :ok)
+      exit(:normal)
     end
   end
 
@@ -64,7 +79,9 @@ defmodule SpaceEx.ConnectionHelper do
     {:ok, stream_listener} = :gen_tcp.listen(0, ip: @localhost)
     {:ok, stream_port} = :inet.port(stream_listener)
 
-    {:ok, bg_conn} = start_supervised(BackgroundConnection)
+    {:ok, bg_conn} = start_supervised(BackgroundConnection, restart: :temporary)
+    # Or, for debugging:
+    # {:ok, bg_conn} = BackgroundConnection.start_link(nil)
 
     BackgroundConnection.connect(
       bg_conn,

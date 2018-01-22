@@ -12,8 +12,9 @@ defmodule SpaceEx.StreamConnection do
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:socket]
+    @enforce_keys [:conn_pid, :socket]
     defstruct(
+      conn_pid: nil,
       socket: nil,
       streams: %{},
       buffer: <<>>
@@ -47,6 +48,7 @@ defmodule SpaceEx.StreamConnection do
 
   def init([info, client_id, conn_pid]) do
     Process.link(conn_pid)
+    Process.monitor(conn_pid)
 
     sock = Socket.TCP.connect!(info.host, info.stream_port, packet: :raw)
 
@@ -66,7 +68,7 @@ defmodule SpaceEx.StreamConnection do
     end
 
     Socket.active(sock)
-    {:ok, %State{socket: sock}}
+    {:ok, %State{socket: sock, conn_pid: conn_pid}}
   end
 
   defp send_message(sock, message) do
@@ -117,13 +119,18 @@ defmodule SpaceEx.StreamConnection do
   end
 
   def handle_info({:DOWN, _ref, :process, dead_pid, _reason}, state) do
-    new_streams =
-      Enum.reject(state.streams, fn {_, pid} ->
-        pid == dead_pid
-      end)
-      |> Map.new()
+    if dead_pid == state.conn_pid do
+      # Connection has died, so shut ourselves down too.
+      exit(:normal)
+    else
+      new_streams =
+        Enum.reject(state.streams, fn {_, pid} ->
+          pid == dead_pid
+        end)
+        |> Map.new()
 
-    {:noreply, %State{state | streams: new_streams}}
+      {:noreply, %State{state | streams: new_streams}}
+    end
   end
 
   def handle_info({:tcp, sock, bytes}, %State{socket: sock} = state) do
