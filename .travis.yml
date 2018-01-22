@@ -19,6 +19,7 @@ cache:
 before_cache:
   - rm -rf _build/test/lib/space_ex
 notifications:
+  email: false
   slack:
     on_success: change
     rooms:
