@@ -1,10 +1,6 @@
 defmodule SpaceEx.ConnectionTest do
   use ExUnit.Case, async: true
-
   @moduletag :capture_log
-
-  import SpaceEx.ConnectionHelper
-  alias SpaceEx.ConnectionHelper.BackgroundConnection
 
   alias SpaceEx.Connection
 
@@ -14,6 +10,9 @@ defmodule SpaceEx.ConnectionTest do
     Response,
     ProcedureResult
   }
+
+  import SpaceEx.Test.ConnectionHelper
+  alias SpaceEx.Test.ConnectionHelper.BackgroundConnection
 
   test "connect!/1" do
     state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()

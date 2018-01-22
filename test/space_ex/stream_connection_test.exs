@@ -3,9 +3,6 @@ defmodule SpaceEx.StreamConnectionTest do
 
   @moduletag :capture_log
 
-  import SpaceEx.ConnectionHelper
-  # alias SpaceEx.ConnectionHelper.BackgroundConnection
-
   alias SpaceEx.StreamConnection
 
   alias SpaceEx.Protobufs.{
@@ -13,6 +10,8 @@ defmodule SpaceEx.StreamConnectionTest do
     StreamResult,
     ProcedureResult
   }
+
+  import SpaceEx.Test.ConnectionHelper
 
   test "stream results are delivered to registered process" do
     state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()

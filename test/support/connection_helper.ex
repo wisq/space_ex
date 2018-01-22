@@ -1,4 +1,4 @@
-defmodule SpaceEx.ConnectionHelper do
+defmodule SpaceEx.Test.ConnectionHelper do
   :ok = Application.ensure_started(:ex_unit)
   import ExUnit.{Assertions, Callbacks}
   alias SpaceEx.Connection
