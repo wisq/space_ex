@@ -1,6 +1,8 @@
 defmodule SpaceEx.StreamConnectionTest do
   use ExUnit.Case, async: true
 
+  @moduletag :capture_log
+
   import SpaceEx.ConnectionHelper
   # alias SpaceEx.ConnectionHelper.BackgroundConnection
 
@@ -70,7 +72,6 @@ defmodule SpaceEx.StreamConnectionTest do
     assert_receive {:stream_result, 123, ^result1}
   end
 
-  @tag :capture_log
   test "connection closes if server closes stream socket" do
     state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
 
