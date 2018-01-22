@@ -100,6 +100,17 @@ defmodule SpaceEx.ConnectionHelper do
     }
   end
 
+  def start_stream_listener do
+    {:ok, stream_listener} = :gen_tcp.listen(0, ip: @localhost)
+    {:ok, stream_port} = :inet.port(stream_listener)
+
+    %{
+      stream_listener: stream_listener,
+      stream_port: stream_port,
+      client_id: "bogus"
+    }
+  end
+
   def accept_rpc(state, response \\ nil) do
     response = response || ConnectionResponse.new(status: :OK, client_identifier: state.client_id)
 
