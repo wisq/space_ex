@@ -10,10 +10,10 @@ defmodule SpaceEx.Test.MockConnection do
   }
 
   import SpaceEx.Test.ConnectionHelper
+  import ExUnit.Callbacks
 
   def start do
-    # {:ok, pid} = start_supervised(__MODULE__)
-    {:ok, conn_pid} = start_link(nil)
+    {:ok, conn_pid} = start_supervised(__MODULE__, restart: :temporary)
 
     # Establish StreamConnection:
     state = start_stream_listener()
@@ -57,6 +57,10 @@ defmodule SpaceEx.Test.MockConnection do
     |> List.flatten()
   end
 
+  def close(conn) do
+    GenServer.call(conn.pid, :close, 100)
+  end
+
   defmodule State do
     defstruct(requests: [], replies: [], stream_pid: nil)
   end
@@ -84,6 +88,11 @@ defmodule SpaceEx.Test.MockConnection do
 
   def handle_call(:get_stream_pid, _from, state) do
     {:reply, state.stream_pid, state}
+  end
+
+  def handle_call(:close, from, _state) do
+    GenServer.reply(from, :ok)
+    exit(:normal)
   end
 
   def handle_cast({:create_stream_connection, port, client_id}, state) do
