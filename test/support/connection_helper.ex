@@ -57,7 +57,7 @@ defmodule SpaceEx.ConnectionHelper do
     :ok = :gen_tcp.send(socket, [byte_size(message) | :binary.bin_to_list(message)])
   end
 
-  def setup_connection do
+  def start_connection do
     {:ok, rpc_listener} = :gen_tcp.listen(0, ip: @localhost)
     {:ok, rpc_port} = :inet.port(rpc_listener)
 
@@ -75,38 +75,53 @@ defmodule SpaceEx.ConnectionHelper do
 
     client_id = Enum.map(1..16, fn _ -> Enum.random(1..255) end) |> :binary.list_to_bin()
 
-    [rpc_socket, stream_socket] =
-      [
-        {rpc_listener, :RPC},
-        {stream_listener, :STREAM}
-      ]
-      |> Enum.map(fn {listener, request_type} ->
-        {:ok, socket} = :gen_tcp.accept(listener, 500)
-
-        assert request = assert_receive_message(socket) |> ConnectionRequest.decode()
-        assert request.type == request_type
-
-        if request_type == :RPC do
-          assert request.client_name == "test connection"
-        else
-          assert request.client_identifier == client_id
-        end
-
-        ConnectionResponse.new(status: :OK, client_identifier: client_id)
-        |> ConnectionResponse.encode()
-        |> send_message(socket)
-
-        socket
-      end)
-
-    assert_receive {:connected, conn}
-    assert conn.client_id == client_id
-
-    [
-      conn: conn,
+    %{
       bg_conn: bg_conn,
-      rpc_socket: rpc_socket,
-      stream_socket: stream_socket
-    ]
+      rpc_listener: rpc_listener,
+      stream_listener: stream_listener,
+      client_id: client_id
+    }
+  end
+
+  def accept_rpc(state, response \\ nil) do
+    response = response || ConnectionResponse.new(status: :OK, client_identifier: state.client_id)
+
+    socket = accept_client(:RPC, state.rpc_listener, state.client_id, response)
+
+    Map.put(state, :rpc_socket, socket)
+  end
+
+  def accept_stream(state, response \\ nil) do
+    response = response || ConnectionResponse.new(status: :OK)
+
+    socket = accept_client(:STREAM, state.stream_listener, state.client_id, response)
+
+    Map.put(state, :stream_socket, socket)
+  end
+
+  def assert_connected(state) do
+    assert_receive {:connected, conn}
+    assert conn.client_id == state.client_id
+
+    Map.put(state, :conn, conn)
+  end
+
+  defp accept_client(request_type, listener, client_id, response) do
+    {:ok, socket} = :gen_tcp.accept(listener, 500)
+
+    assert request = assert_receive_message(socket) |> ConnectionRequest.decode()
+    assert request.type == request_type
+
+    if request_type == :RPC do
+      assert request.client_name == "test connection"
+    else
+      assert request.client_identifier == client_id
+    end
+
+    response
+    |> ConnectionResponse.encode()
+    |> send_message(socket)
+
+    socket
   end
 end

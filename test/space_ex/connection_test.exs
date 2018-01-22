@@ -12,15 +12,15 @@ defmodule SpaceEx.ConnectionTest do
     ProcedureResult
   }
 
-  setup do
-    {:ok, setup_connection()}
-  end
+  test "connect!/1" do
+    state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
 
-  test "connect!/1", state do
     assert %Connection{} = state.conn
   end
 
-  test "call_rpc/4", state do
+  test "call_rpc/4" do
+    state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
+
     BackgroundConnection.call_rpc(state.bg_conn, "SomeService", "SomeProcedure", ["arg1", "arg2"])
 
     assert request = assert_receive_message(state.rpc_socket) |> Request.decode()
@@ -43,7 +43,9 @@ defmodule SpaceEx.ConnectionTest do
     assert_receive {:called, {:ok, "some value"}}
   end
 
-  test "call_rpc/4 allows multiple concurrent pipelined requests", state do
+  test "call_rpc/4 allows multiple concurrent pipelined requests" do
+    state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
+
     # Don't try to lump all the calls together without `assert_receive_message`,
     # or else you'll just get a single TCP packet with all three combined.
     Enum.each(1..3, fn _ ->
