@@ -59,6 +59,26 @@ defmodule SpaceEx.ConnectionTest do
     assert_receive {:tcp_closed, ^stream_socket}
   end
 
+  @tag :capture_log
+  test "connection closes if server closes RPC socket" do
+    state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
+
+    conn_pid = state.conn.pid
+    stream_pid = state.conn.stream_pid
+    conn_ref = Process.monitor(conn_pid)
+    stream_ref = Process.monitor(stream_pid)
+
+    :ok = :gen_tcp.close(state.rpc_socket)
+
+    assert_receive {:DOWN, ^conn_ref, :process, ^conn_pid, "SpaceEx.Connection socket has closed"}
+
+    assert_receive {:DOWN, ^stream_ref, :process, ^stream_pid,
+                    "SpaceEx.Connection socket has closed"}
+
+    stream_socket = state.stream_socket
+    assert_receive {:tcp_closed, ^stream_socket}
+  end
+
   test "call_rpc/4" do
     state = start_connection() |> accept_rpc() |> accept_stream() |> assert_connected()
 

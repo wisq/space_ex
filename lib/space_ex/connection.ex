@@ -274,6 +274,10 @@ defmodule SpaceEx.Connection do
     {:noreply, %State{state | reply_queue: queue, buffer: buffer}}
   end
 
+  def handle_info({:tcp_closed, socket}, %State{socket: socket} = state) do
+    {:stop, "SpaceEx.Connection socket has closed", state}
+  end
+
   def handle_info({:DOWN, _ref, :process, _dead_pid, _reason}, _state) do
     # Launching process has died, shut ourselves down.
     exit(:normal)

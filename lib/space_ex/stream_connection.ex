@@ -50,47 +50,47 @@ defmodule SpaceEx.StreamConnection do
     Process.link(conn_pid)
     Process.monitor(conn_pid)
 
-    sock = Socket.TCP.connect!(info.host, info.stream_port, packet: :raw)
+    socket = Socket.TCP.connect!(info.host, info.stream_port, packet: :raw)
 
     request =
       ConnectionRequest.new(type: :STREAM, client_identifier: client_id)
       |> ConnectionRequest.encode()
 
-    send_message(sock, request)
+    send_message(socket, request)
 
     response =
-      recv_message(sock)
+      recv_message(socket)
       |> ConnectionResponse.decode()
 
     case response.status do
-      :OK -> sock
+      :OK -> socket
       _ -> raise "kRPC streaming connection failed: #{inspect(response.message)}"
     end
 
-    Socket.active(sock)
-    {:ok, %State{socket: sock, conn_pid: conn_pid}}
+    Socket.active(socket)
+    {:ok, %State{socket: socket, conn_pid: conn_pid}}
   end
 
-  defp send_message(sock, message) do
+  defp send_message(socket, message) do
     size =
       byte_size(message)
       |> :gpb.encode_varint()
 
-    Socket.Stream.send!(sock, size <> message)
+    Socket.Stream.send!(socket, size <> message)
   end
 
   # Only called during initialisation.
   # After that, the socket is in active mode,
   # and all replies come via handle_info messages.
-  defp recv_message(sock, buffer \\ <<>>) do
-    case Socket.Stream.recv!(sock, 1) do
+  defp recv_message(socket, buffer \\ <<>>) do
+    case Socket.Stream.recv!(socket, 1) do
       <<1::size(1), _::bitstring>> = byte ->
         # high bit set, varint incomplete
-        recv_message(sock, buffer <> byte)
+        recv_message(socket, buffer <> byte)
 
       <<0::size(1), _::bitstring>> = byte ->
         {size, ""} = :gpb.decode_varint(buffer <> byte)
-        Socket.Stream.recv!(sock, size)
+        Socket.Stream.recv!(socket, size)
 
       nil ->
         raise "kRPC connection closed"
@@ -133,12 +133,16 @@ defmodule SpaceEx.StreamConnection do
     end
   end
 
-  def handle_info({:tcp, sock, bytes}, %State{socket: sock} = state) do
+  def handle_info({:tcp, socket, bytes}, %State{socket: socket} = state) do
     buffer =
       (state.buffer <> bytes)
       |> dispatch_updates(state.streams)
 
     {:noreply, %State{state | buffer: buffer}}
+  end
+
+  def handle_info({:tcp_closed, socket}, %State{socket: socket} = state) do
+    {:stop, "SpaceEx.StreamConnection socket has closed", state}
   end
 
   defp dispatch_updates(buffer, streams) do
