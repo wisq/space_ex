@@ -31,8 +31,8 @@ defmodule SpaceEx.Util.Connection do
     case safe_decode_varint(buffer) do
       {size, leftover} ->
         case leftover do
-          <<reply::bytes-size(size), buffer::binary>> ->
-            {:ok, reply, buffer}
+          <<message::bytes-size(size), new_buffer::binary>> ->
+            {:ok, message, new_buffer}
 
           _ ->
             {:error, :incomplete}
