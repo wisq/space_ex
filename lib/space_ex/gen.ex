@@ -88,14 +88,11 @@ defmodule SpaceEx.Gen do
       rpc_name = procedure.name
       fn_name = procedure.fn_name
 
-      conn_var = Macro.var(:conn, __MODULE__)
-      value_var = Macro.var(:value, __MODULE__)
-
-      {def_args, arg_vars, arg_encode_ast} = SpaceEx.Gen.args_builder(procedure, conn_var)
+      {def_args, arg_vars, arg_encode_ast} = SpaceEx.Gen.args_builder(procedure)
       guard_ast = SpaceEx.Gen.guard_clause(def_args)
 
       return_type = procedure.return_type |> Macro.escape()
-      return_decode_ast = SpaceEx.Gen.return_decoder(return_type, value_var, conn_var)
+      return_decode_ast = SpaceEx.Gen.return_decoder(return_type)
 
       overrides = Map.get(@service_overrides, fn_name, [])
 
@@ -108,9 +105,9 @@ defmodule SpaceEx.Gen do
       def unquote(fn_name)(unquote_splicing(def_args)) when unquote(guard_ast) do
         unquote_splicing(arg_encode_ast)
 
-        unquote(value_var) =
+        var!(value) =
           SpaceEx.Connection.call_rpc!(
-            unquote(conn_var),
+            var!(conn),
             unquote(service_name),
             unquote(rpc_name),
             unquote(arg_vars)
@@ -124,7 +121,7 @@ defmodule SpaceEx.Gen do
         unquote_splicing(arg_encode_ast)
 
         %SpaceEx.Procedure{
-          conn: unquote(conn_var),
+          conn: var!(conn),
           service: unquote(service_name),
           procedure: unquote(rpc_name),
           args: unquote(arg_vars),
@@ -149,10 +146,10 @@ defmodule SpaceEx.Gen do
   #   AST to convert `def_args` into `arg_vars`.
   #   Will call `Type.encode` as needed.
   #
-  def args_builder(procedure, conn_var) do
+  def args_builder(procedure) do
     build_positional_args(procedure.positional_params)
     |> add_optional_args(procedure.optional_params)
-    |> add_conn_var(conn_var, procedure.is_object_method)
+    |> add_conn_var(procedure.is_object_method)
   end
 
   # Build {def_args, arg_vars, arg_encode_ast} for the mandatory, positional vars.
@@ -222,17 +219,17 @@ defmodule SpaceEx.Gen do
   # Derive the `conn` var -- either AS the first arg, or VIA the first arg.
 
   # Not a method: Add `conn` to the start of the function args list.
-  defp add_conn_var({def_args, arg_vars, arg_encode_ast}, conn_var, false) do
+  defp add_conn_var({def_args, arg_vars, arg_encode_ast}, false) do
     {
-      [conn_var | def_args],
+      [Macro.var(:conn, nil) | def_args],
       arg_vars,
       arg_encode_ast
     }
   end
 
   # Is an object method: Extract `conn` from `this.conn`.
-  defp add_conn_var({def_args, arg_vars, arg_encode_ast}, conn_var, true) do
-    extract_conn = quote do: unquote(conn_var) = this.conn
+  defp add_conn_var({def_args, arg_vars, arg_encode_ast}, true) do
+    extract_conn = quote do: var!(conn) = this.conn
 
     {
       def_args,
@@ -258,17 +255,17 @@ defmodule SpaceEx.Gen do
   # Returns AST for decoding the return value from `call_rpc`.
   #
   # No type: Check that we got zero bytes, then just return `:ok`.
-  def return_decoder(nil, value_var, _conn_var) do
+  def return_decoder(nil) do
     quote do
-      <<>> = unquote(value_var)
+      <<>> = var!(value)
       :ok
     end
   end
 
   # A return type: Decode it.
-  def return_decoder(type, value_var, conn_var) do
+  def return_decoder(type) do
     quote do
-      SpaceEx.Types.decode(unquote(value_var), unquote(type), unquote(conn_var))
+      SpaceEx.Types.decode(var!(value), unquote(type), var!(conn))
     end
   end
 
