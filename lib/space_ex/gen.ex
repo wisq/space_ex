@@ -64,7 +64,8 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro define_class(service, class) do
-    quote location: :keep, bind_quoted: [
+    quote location: :keep,
+          bind_quoted: [
             service: service,
             class: class
           ] do
@@ -80,7 +81,8 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro define_procedure(service, procedure) do
-    quote location: :keep, bind_quoted: [
+    quote location: :keep,
+          bind_quoted: [
             service: service,
             procedure: procedure
           ] do
