@@ -4,7 +4,7 @@ defmodule SpaceEx.Gen do
   @moduledoc false
 
   defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
+    quote location: :keep, bind_quoted: [opts: opts] do
       @service_name opts[:name] || SpaceEx.Util.module_basename(__MODULE__)
       @service SpaceEx.API.service_data(@service_name)
       @service_overrides opts[:overrides] || %{}
@@ -13,7 +13,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro generate_service(name) do
-    quote bind_quoted: [name: name] do
+    quote location: :keep, bind_quoted: [name: name] do
       defmodule Module.concat(SpaceEx, name) do
         use SpaceEx.Gen, name: name
       end
@@ -21,7 +21,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro __before_compile__(_env) do
-    quote do
+    quote location: :keep do
       @moduledoc SpaceEx.Doc.service(@service)
 
       @service.enumerations
@@ -36,7 +36,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro define_enumeration(enum) do
-    quote bind_quoted: [enum: enum] do
+    quote location: :keep, bind_quoted: [enum: enum] do
       defmodule Module.concat(__MODULE__, enum.name) do
         @moduledoc SpaceEx.Doc.enumeration(enum)
 
@@ -46,7 +46,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro define_enumeration_value(enum_value) do
-    quote bind_quoted: [enum_value: enum_value] do
+    quote location: :keep, bind_quoted: [enum_value: enum_value] do
       atom = enum_value.atom
       wire = SpaceEx.Types.encode_enumeration_value(enum_value.value)
 
@@ -64,7 +64,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro define_class(service, class) do
-    quote bind_quoted: [
+    quote location: :keep, bind_quoted: [
             service: service,
             class: class
           ] do
@@ -80,7 +80,7 @@ defmodule SpaceEx.Gen do
   end
 
   defmacro define_procedure(service, procedure) do
-    quote bind_quoted: [
+    quote location: :keep, bind_quoted: [
             service: service,
             procedure: procedure
           ] do
@@ -164,7 +164,7 @@ defmodule SpaceEx.Gen do
       |> Enum.map(fn {param, var} ->
         type = param.type |> Macro.escape()
 
-        quote do
+        quote location: :keep do
           unquote(var) = SpaceEx.Types.encode(unquote(var), unquote(type))
         end
       end)
@@ -190,7 +190,7 @@ defmodule SpaceEx.Gen do
       |> Enum.map(fn {param, var, atom} ->
         type = param.type |> Macro.escape()
 
-        quote do
+        quote location: :keep do
           unquote(var) =
             if Keyword.has_key?(opts, unquote(atom)) do
               SpaceEx.Types.encode(opts[unquote(atom)], unquote(type))
@@ -201,7 +201,7 @@ defmodule SpaceEx.Gen do
       end)
 
     reject_unknown =
-      quote do
+      quote location: :keep do
         case Keyword.keys(opts) |> Enum.reject(fn key -> key in unquote(atoms) end) do
           [] ->
             :ok
@@ -232,7 +232,7 @@ defmodule SpaceEx.Gen do
 
   # Is an object method: Extract `conn` from `this.conn`.
   defp add_conn_var({def_args, arg_vars, arg_encode_ast}, conn_var, true) do
-    extract_conn = quote do: unquote(conn_var) = this.conn
+    extract_conn = quote location: :keep, do: unquote(conn_var) = this.conn
 
     {
       def_args,
@@ -259,7 +259,7 @@ defmodule SpaceEx.Gen do
   #
   # No type: Check that we got zero bytes, then just return `:ok`.
   def return_decoder(nil, value_var, _conn_var) do
-    quote do
+    quote location: :keep do
       <<>> = unquote(value_var)
       :ok
     end
@@ -267,7 +267,7 @@ defmodule SpaceEx.Gen do
 
   # A return type: Decode it.
   def return_decoder(type, value_var, conn_var) do
-    quote do
+    quote location: :keep do
       SpaceEx.Types.decode(unquote(value_var), unquote(type), unquote(conn_var))
     end
   end
@@ -284,10 +284,10 @@ defmodule SpaceEx.Gen do
     case List.last(args) do
       # Search for `opts \\ []` and extract `opts` variable.
       {:\\, _, [{:opts, _, _} = opts_var, []]} ->
-        quote do: is_list(unquote(opts_var))
+        quote location: :keep, do: is_list(unquote(opts_var))
 
       _ ->
-        quote do: true
+        quote location: :keep, do: true
     end
   end
 end
