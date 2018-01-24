@@ -1,20 +1,38 @@
 # Changelog
 
 ## v0.6.0
+ 
+### User-facing
 
-* API changes:
-  * Add `SpaceEx.Connection.connect/1`, the Erlang-style version of `connect!`.
-  * Add `SpaceEx.Connection.close/1`.
+* Add `SpaceEx.Connection.connect/1`, the Erlang-style version of `connect!`.
+* Add `SpaceEx.Connection.close/1`.
 * Connection process lifecycle changes:
-  * The `Connection` process is no longer linked (in the strict Erlang sense) to the launching process.
-  * It still monitors the launching process and exits when it does.
-  * The `StreamConnection` process monitors the `Connection` process.
-  * The `Stream` processes monitor the `StreamConnection` process.
-  * All this is to account for my prior lack of knowledge re: how `Process.link` handles `exit(:normal)`.
-* Add tests:
+  * The concept is still the same, but we handle exits (particularly `exit(:normal)`) better.
+  * The entire `Connection`, `StreamConnection`, and all active `Stream`s should exit together now, either cleanly or on error.
+  * We still link the `Connection` process to the launching process.
+* Connections will now handle server disconnects better.
+  * They'll still blow up, of course, but with a meaningful message.
+* Fixed some URLs in the docs.
+
+### Internal
+
+* Add tests for core classes:
   * `Connection`
   * `StreamConnection`
   * `Stream`
+  * `Event`
+* Add selective mocked tests for API calls:
+  * `KRPC`
+  * `SpaceCenter`
+* Add some missing encoders and decoders.
+  * These aren't used in the API, but they offer symmetry, e.g. encoding values we know how to decode and vice versa.
+  * Tests added as well.
+* Rework parts of `SpaceEx.Gen`.
+  * We no longer have to pass `conn_var` and `value_var` around.
+  * Only three `var!(x)`s required; the rest are bare.
+  * We use `location: :keep` on every `quote`, so stack traces will be more sensible now.
+* Added Travis CI testing.
+  * We can now guarantee compatibility with Elixir 1.5/1.6, and OTP 18/19/20.
 
 ## v0.5.1
 

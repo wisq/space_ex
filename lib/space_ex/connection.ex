@@ -108,7 +108,7 @@ defmodule SpaceEx.Connection do
 
   def connect(%Info{} = info) do
     # We avoid start_link since otherwise, if `init/1` fails, we get an EXIT signal.
-    # The connection will link to us at the end of `init/1`.
+    # Instead, we link to the connection below.
     case GenServer.start(__MODULE__, {info, self()}) do
       {:error, reason} ->
         {:error, reason}
