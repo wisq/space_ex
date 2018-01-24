@@ -65,6 +65,7 @@ defmodule SpaceEx.Connection do
     defstruct(
       socket: nil,
       client_id: nil,
+      stream_pid: nil,
       reply_queue: :queue.new(),
       buffer: <<>>
     )
@@ -111,16 +112,16 @@ defmodule SpaceEx.Connection do
       {:error, reason} ->
         {:error, reason}
 
-      {:ok, pid} ->
-        client_id = GenServer.call(pid, :client_id)
-        stream_pid = StreamConnection.connect!(info, client_id, pid)
+      {:ok, conn_pid} ->
+        Process.link(conn_pid)
+        details = GenServer.call(conn_pid, :get_details)
 
         {:ok,
          %Connection{
-           pid: pid,
-           stream_pid: stream_pid,
+           pid: conn_pid,
            info: info,
-           client_id: client_id
+           stream_pid: details.stream_pid,
+           client_id: details.client_id
          }}
     end
   end
@@ -151,16 +152,28 @@ defmodule SpaceEx.Connection do
   end
 
   @doc false
-  def init({info, launching_pid}) do
+  def init({info, _launching_pid}) do
     Process.flag(:trap_exit, true)
 
-    socket = Socket.TCP.connect!(info.host, info.port, packet: :raw)
+    establish_rpc_connection(info)
+    |> establish_stream_connection(info)
+  end
 
-    request =
-      ConnectionRequest.new(type: :RPC, client_name: info.name || whoami())
-      |> ConnectionRequest.encode()
+  defp establish_rpc_connection(info) do
+    case Socket.TCP.connect(info.host, info.port, packet: :raw) do
+      {:ok, socket} ->
+        negotiate_rpc_handshake(info, socket)
 
-    send_message(socket, request)
+      {:error, code} ->
+        message = :inet.format_error(code)
+        {:stop, "#{__MODULE__} failed to connect to #{info.host} port #{info.port}: #{message}"}
+    end
+  end
+
+  defp negotiate_rpc_handshake(info, socket) do
+    ConnectionRequest.new(type: :RPC, client_name: info.name || whoami())
+    |> ConnectionRequest.encode()
+    |> send_message(socket)
 
     response =
       recv_message(socket)
@@ -169,19 +182,24 @@ defmodule SpaceEx.Connection do
     case response.status do
       :OK ->
         Socket.active(socket)
-
-        {:ok,
-         %State{
-           socket: socket,
-           client_id: response.client_identifier
-         }}
+        client_id = response.client_identifier
+        {:ok, %State{socket: socket, client_id: client_id}}
 
       _ ->
-        {:stop, response.message}
+        {:stop, "#{__MODULE__} was rejected by kRPC server: #{response.message}"}
     end
   end
 
-  defp send_message(socket, message) do
+  defp establish_stream_connection({:stop, _} = err, _info), do: err
+
+  defp establish_stream_connection({:ok, state}, info) do
+    case StreamConnection.connect(info, state.client_id, self()) do
+      {:ok, pid} -> {:ok, %State{state | stream_pid: pid}}
+      {:error, message} -> {:stop, message}
+    end
+  end
+
+  defp send_message(message, socket) do
     size =
       byte_size(message)
       |> :gpb.encode_varint()
@@ -251,8 +269,17 @@ defmodule SpaceEx.Connection do
     end
   end
 
+  def handle_call(:get_details, _from, state) do
+    details = %{
+      client_id: state.client_id,
+      stream_pid: state.stream_pid
+    }
+
+    {:reply, details, state}
+  end
+
   def handle_call({:rpc, bytes}, from, state) do
-    send_message(state.socket, bytes)
+    send_message(bytes, state.socket)
     queue = :queue.in(from, state.reply_queue)
 
     {:noreply, %State{state | reply_queue: queue}}

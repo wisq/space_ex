@@ -97,7 +97,7 @@ defmodule SpaceEx.Test.MockConnection do
 
   def handle_cast({:create_stream_connection, port, client_id}, state) do
     info = %Connection.Info{stream_port: port}
-    pid = StreamConnection.connect!(info, client_id, self())
+    {:ok, pid} = StreamConnection.connect(info, client_id, self())
     {:noreply, %State{state | stream_pid: pid}}
   end
 end

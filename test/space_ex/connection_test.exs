@@ -28,7 +28,7 @@ defmodule SpaceEx.ConnectionTest do
     :gen_tcp.close(state.rpc_listener)
 
     assert_receive {:connect_error, error}
-    assert String.contains?(error.message, "connection refused")
+    assert error.message =~ "connection refused"
   end
 
   test "connect!/1 throws error if server returns error" do

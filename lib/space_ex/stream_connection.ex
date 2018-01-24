@@ -40,37 +40,50 @@ defmodule SpaceEx.StreamConnection do
     def send(name, msg), do: whereis_name(name) |> send(msg)
   end
 
-  def connect!(info, client_id, conn_pid) do
-    {:ok, pid} = GenServer.start_link(__MODULE__, [info, client_id, conn_pid])
-    pid
+  def connect(info, client_id, conn_pid) do
+    GenServer.start_link(__MODULE__, [info, client_id, conn_pid])
   end
 
   def init([info, client_id, conn_pid]) do
     Process.link(conn_pid)
     Process.flag(:trap_exit, true)
 
-    socket = Socket.TCP.connect!(info.host, info.stream_port, packet: :raw)
+    establish_stream_connection(info, client_id)
+  end
 
-    request =
-      ConnectionRequest.new(type: :STREAM, client_identifier: client_id)
-      |> ConnectionRequest.encode()
+  defp establish_stream_connection(info, client_id) do
+    case Socket.TCP.connect(info.host, info.stream_port, packet: :raw) do
+      {:ok, socket} ->
+        negotiate_stream_handshake(client_id, socket)
 
-    send_message(socket, request)
+      {:error, code} ->
+        message = :inet.format_error(code)
+
+        {:stop,
+         "#{__MODULE__} failed to connect to #{info.host} port #{info.stream_port}: #{message}"}
+    end
+  end
+
+  defp negotiate_stream_handshake(client_id, socket) do
+    ConnectionRequest.new(type: :STREAM, client_identifier: client_id)
+    |> ConnectionRequest.encode()
+    |> send_message(socket)
 
     response =
       recv_message(socket)
       |> ConnectionResponse.decode()
 
     case response.status do
-      :OK -> socket
-      _ -> raise "kRPC streaming connection failed: #{inspect(response.message)}"
-    end
+      :OK ->
+        Socket.active(socket)
+        {:ok, %State{socket: socket}}
 
-    Socket.active(socket)
-    {:ok, %State{socket: socket}}
+      _ ->
+        {:stop, "#{__MODULE__} was rejected by kRPC server: #{response.message}"}
+    end
   end
 
-  defp send_message(socket, message) do
+  defp send_message(message, socket) do
     size =
       byte_size(message)
       |> :gpb.encode_varint()
