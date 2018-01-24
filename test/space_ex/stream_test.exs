@@ -17,7 +17,7 @@ defmodule SpaceEx.StreamTest do
   import SpaceEx.Test.ConnectionHelper, only: [send_message: 2]
 
   test "stream/1 calls KRPC.add_stream with encoded ProcedureCall" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
 
     Protobufs.Stream.new(id: 123)
     |> Protobufs.Stream.encode()
@@ -41,7 +41,7 @@ defmodule SpaceEx.StreamTest do
   end
 
   test "stream/1 creates new Stream process that receives stream updates" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
 
     Protobufs.Stream.new(id: 456)
     |> Protobufs.Stream.encode()
@@ -69,7 +69,7 @@ defmodule SpaceEx.StreamTest do
   end
 
   test "stream process exits if connection is closed" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
 
     Protobufs.Stream.new(id: 456)
     |> Protobufs.Stream.encode()
@@ -84,7 +84,7 @@ defmodule SpaceEx.StreamTest do
   end
 
   test "stream process exits if server closes stream socket" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
 
     Protobufs.Stream.new(id: 456)
     |> Protobufs.Stream.encode()
@@ -100,7 +100,7 @@ defmodule SpaceEx.StreamTest do
   end
 
   test "stream process removes itself and exits if ALL launching processes call `remove/1`" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
 
     me = self()
 
@@ -151,7 +151,7 @@ defmodule SpaceEx.StreamTest do
   end
 
   test "stream process removes itself and exits if ALL launching processes exit" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
 
     me = self()
 

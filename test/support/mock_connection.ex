@@ -1,6 +1,7 @@
 defmodule SpaceEx.Test.MockConnection do
   use GenServer
 
+  alias SpaceEx.Test.MockStreamConnection
   alias SpaceEx.{Connection, StreamConnection}
 
   alias SpaceEx.Protobufs.{
@@ -12,7 +13,7 @@ defmodule SpaceEx.Test.MockConnection do
   import SpaceEx.Test.ConnectionHelper
   import ExUnit.Callbacks
 
-  def start do
+  def start(real_stream: true) do
     {:ok, conn_pid} = start_supervised(__MODULE__, restart: :temporary)
 
     # Establish StreamConnection:
@@ -28,6 +29,21 @@ defmodule SpaceEx.Test.MockConnection do
       info: nil,
       client_id: state.client_id
     })
+  end
+
+  def start() do
+    {:ok, conn_pid} = start_supervised(__MODULE__, restart: :temporary)
+
+    stream_pid = MockStreamConnection.start()
+
+    %{
+      conn: %SpaceEx.Connection{
+        pid: conn_pid,
+        stream_pid: stream_pid,
+        info: nil,
+        client_id: "fake"
+      }
+    }
   end
 
   def start_link(_arg) do

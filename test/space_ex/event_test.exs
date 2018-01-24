@@ -16,7 +16,7 @@ defmodule SpaceEx.EventTest do
   import SpaceEx.Test.ConnectionHelper, only: [send_message: 2]
 
   test "create/2 calls KRPC.add_event with encoded Expression" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
     conn = state.conn
 
     # To create an expression, the only reply we need is a server-side ID.
@@ -56,7 +56,7 @@ defmodule SpaceEx.EventTest do
   end
 
   test "wait/1 blocks until event stream receives FIRST result" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
     conn = state.conn
 
     # Create a dummy Expression reference.
@@ -96,7 +96,7 @@ defmodule SpaceEx.EventTest do
   # it's important to make sure that `Event.create/2` triggers the same bonding logic
   # as `Stream.create/2` et al.
   test "event stream process removes itself and exits if ALL launching processes call `remove/1`" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
     conn = state.conn
 
     # Create a dummy Expression reference.
@@ -170,7 +170,7 @@ defmodule SpaceEx.EventTest do
   end
 
   test "event stream process removes itself and exits if ALL launching processes exit" do
-    state = MockConnection.start()
+    state = MockConnection.start(real_stream: true)
     conn = state.conn
 
     # Create a dummy Expression reference.
