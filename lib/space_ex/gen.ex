@@ -86,7 +86,6 @@ defmodule SpaceEx.Gen do
           ] do
       service_name = service.name
       rpc_name = procedure.name
-
       fn_name = procedure.fn_name
 
       conn_var = Macro.var(:conn, __MODULE__)
@@ -94,12 +93,6 @@ defmodule SpaceEx.Gen do
 
       {def_args, arg_vars, arg_encode_ast} = SpaceEx.Gen.args_builder(procedure, conn_var)
       guard_ast = SpaceEx.Gen.guard_clause(def_args)
-
-      arg_types =
-        (procedure.positional_params ++ procedure.optional_params)
-        |> Enum.sort_by(fn p -> p.index end)
-        |> Enum.map(fn p -> p.type end)
-        |> Macro.escape()
 
       return_type = procedure.return_type |> Macro.escape()
       return_decode_ast = SpaceEx.Gen.return_decoder(return_type, value_var, conn_var)
