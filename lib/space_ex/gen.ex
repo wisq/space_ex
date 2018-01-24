@@ -134,12 +134,28 @@ defmodule SpaceEx.Gen do
     end
   end
 
+  #
+  # Returns {def_args, arg_vars, arg_encode_ast}
+  #
+  # def_args:
+  #   One variable per FUNCTION argument, in `def` format (including `\\`).
+  #   These will be used via `def x(def_args)` and `def rpc_x(def_args)`.
+  #
+  # arg_vars:
+  #   One variable per RPC PROCEDURE argument,
+  #   These will be the `args` sent to `Connection.call_rpc`.
+  #
+  # arg_encode_ast:
+  #   AST to convert `def_args` into `arg_vars`.
+  #   Will call `Type.encode` as needed.
+  #
   def args_builder(procedure, conn_var) do
     build_positional_args(procedure.positional_params)
     |> add_optional_args(procedure.optional_params)
     |> add_conn_var(conn_var, procedure.is_object_method)
   end
 
+  # Build {def_args, arg_vars, arg_encode_ast} for the mandatory, positional vars.
   defp build_positional_args(params) do
     arg_vars = variables_for_params(params)
 
@@ -155,6 +171,8 @@ defmodule SpaceEx.Gen do
 
     {arg_vars, arg_vars, arg_encode_ast}
   end
+
+  # Build {def_args, arg_vars, arg_encode_ast} for the optional (`opts \\ []`) vars.
 
   # If there are no optional args, then this is a noop.
   defp add_optional_args(details, []), do: details
@@ -201,6 +219,8 @@ defmodule SpaceEx.Gen do
     }
   end
 
+  # Derive the `conn` var -- either AS the first arg, or VIA the first arg.
+
   # Not a method: Add `conn` to the start of the function args list.
   defp add_conn_var({def_args, arg_vars, arg_encode_ast}, conn_var, false) do
     {
@@ -221,11 +241,13 @@ defmodule SpaceEx.Gen do
     }
   end
 
+  # Create a list of variables for a list of API.Procedure.Parameters.
   defp variables_for_params(params) do
     atoms_for_params(params)
     |> Enum.map(&Macro.var(&1, __MODULE__))
   end
 
+  # Create a list of snake_case atoms for a list of API.Procedure.Parameters.
   defp atoms_for_params(params) do
     Enum.map(params, fn p ->
       Util.to_snake_case(p.name)
@@ -233,18 +255,30 @@ defmodule SpaceEx.Gen do
     end)
   end
 
-  def return_decoder(nil, value_var, _conn) do
+  # Returns AST for decoding the return value from `call_rpc`.
+  #
+  # No type: Check that we got zero bytes, then just return `:ok`.
+  def return_decoder(nil, value_var, _conn_var) do
     quote do
-      "" = unquote(value_var)
+      <<>> = unquote(value_var)
       :ok
     end
   end
 
+  # A return type: Decode it.
   def return_decoder(type, value_var, conn_var) do
     quote do
       SpaceEx.Types.decode(unquote(value_var), unquote(type), unquote(conn_var))
     end
   end
+
+  # We add a guard to make sure users don't get confused
+  # and do e.g. `Vessel.flight(vessel, ref_frame)`
+  # when they should do `Vessel.flight(vessel, reference_frame: ref_frame)`.
+  #
+  # If there's an `opts \\ []` in our `def_args`, then guard on it being a list.
+  #
+  # Otherwise, return a `true` (noop) guard.
 
   def guard_clause(args) do
     case List.last(args) do
