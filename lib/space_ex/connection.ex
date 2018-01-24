@@ -1,5 +1,6 @@
 defmodule SpaceEx.Connection do
   use GenServer
+  import SpaceEx.Util.Connection
   alias SpaceEx.{Connection, StreamConnection}
 
   alias SpaceEx.Protobufs.{
@@ -199,32 +200,6 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  defp send_message(message, socket) do
-    size =
-      byte_size(message)
-      |> :gpb.encode_varint()
-
-    Socket.Stream.send!(socket, size <> message)
-  end
-
-  # Only called during initialisation.
-  # After that, the socket is in active mode,
-  # and all replies come via handle_info messages.
-  defp recv_message(socket, buffer \\ <<>>) do
-    case Socket.Stream.recv!(socket, 1) do
-      <<1::size(1), _::bitstring>> = byte ->
-        # high bit set, varint incomplete
-        recv_message(socket, buffer <> byte)
-
-      <<0::size(1), _::bitstring>> = byte ->
-        {size, ""} = :gpb.decode_varint(buffer <> byte)
-        Socket.Stream.recv!(socket, size)
-
-      nil ->
-        raise "kRPC connection closed"
-    end
-  end
-
   @doc false
   def call_rpc(%Connection{pid: pid}, service, procedure, args) do
     args =
@@ -311,7 +286,7 @@ defmodule SpaceEx.Connection do
   end
 
   defp dispatch_replies(queue, buffer) do
-    case extract_reply(buffer) do
+    case extract_message(buffer) do
       {:ok, reply, new_buffer} ->
         new_queue = dispatch_reply(queue, reply)
         dispatch_replies(new_queue, new_buffer)
@@ -326,36 +301,6 @@ defmodule SpaceEx.Connection do
     GenServer.reply(from, reply)
     queue
   end
-
-  defp extract_reply(buffer) do
-    case safe_decode_varint(buffer) do
-      {size, leftover} ->
-        case leftover do
-          <<reply::bytes-size(size), buffer::binary>> ->
-            {:ok, reply, buffer}
-
-          _ ->
-            {:error, :incomplete}
-        end
-
-      nil ->
-        {:error, :incomplete}
-    end
-  end
-
-  defp safe_decode_varint(bytes) do
-    if has_varint?(bytes) do
-      :gpb.decode_varint(bytes)
-    else
-      nil
-    end
-  end
-
-  defp has_varint?(<<>>), do: false
-  # high bit unset, varint complete
-  defp has_varint?(<<0::size(1), _::bitstring>>), do: true
-  # high bit set, varint incomplete
-  defp has_varint?(<<1::size(1), _::size(7), rest::bitstring>>), do: has_varint?(rest)
 
   defp whoami do
     os_pid = System.get_pid()
