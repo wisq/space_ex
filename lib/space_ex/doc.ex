@@ -83,6 +83,7 @@ defmodule SpaceEx.Doc do
       |> Floki.parse()
       |> process_html
       |> Floki.raw_html()
+      |> HtmlEntities.decode()
       |> String.trim()
 
     split_first_sentence(text)

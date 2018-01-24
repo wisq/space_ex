@@ -12,7 +12,9 @@
   * We still link the `Connection` process to the launching process.
 * Connections will now handle server disconnects better.
   * They'll still blow up, of course, but with a meaningful message.
-* Fixed some URLs in the docs.
+* Updated docs:
+  * Used absolute URLs, so links work whether on HexDocs or GitHub.
+  * Fixed code-quoted HTML entities showing up, e.g. for `SpaceEx.SpaceCenter.launch_vessel/4`.
 
 ### Internal
 
