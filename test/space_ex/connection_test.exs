@@ -20,6 +20,17 @@ defmodule SpaceEx.ConnectionTest do
     assert %Connection{} = state.conn
   end
 
+  test "connect!/1 throws error if connection is refused" do
+    # Get a listener port (so we know the port is available) ...
+    state = start_connection()
+
+    # But then close the listener port without accepting.
+    :gen_tcp.close(state.rpc_listener)
+
+    assert_receive {:connect_error, error}
+    assert String.contains?(error.message, "connection refused")
+  end
+
   test "connect!/1 throws error if server returns error" do
     response =
       ConnectionResponse.new(
