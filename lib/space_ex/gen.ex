@@ -229,7 +229,7 @@ defmodule SpaceEx.Gen do
 
   # Is an object method: Extract `conn` from `this.conn`.
   defp add_conn_var({def_args, arg_vars, arg_encode_ast}, true) do
-    extract_conn = quote do: var!(conn) = this.conn
+    extract_conn = quote do: var!(conn) = var!(this).conn
 
     {
       def_args,
@@ -241,7 +241,7 @@ defmodule SpaceEx.Gen do
   # Create a list of variables for a list of API.Procedure.Parameters.
   defp variables_for_params(params) do
     atoms_for_params(params)
-    |> Enum.map(&Macro.var(&1, __MODULE__))
+    |> Enum.map(&Macro.var(&1, nil))
   end
 
   # Create a list of snake_case atoms for a list of API.Procedure.Parameters.
