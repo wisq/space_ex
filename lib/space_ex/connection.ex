@@ -152,7 +152,7 @@ defmodule SpaceEx.Connection do
 
   @doc false
   def init({info, launching_pid}) do
-    Process.monitor(launching_pid)
+    Process.flag(:trap_exit, true)
 
     socket = Socket.TCP.connect!(info.host, info.port, packet: :raw)
 
@@ -278,9 +278,9 @@ defmodule SpaceEx.Connection do
     {:stop, "SpaceEx.Connection socket has closed", state}
   end
 
-  def handle_info({:DOWN, _ref, :process, _dead_pid, _reason}, _state) do
-    # Launching process has died, shut ourselves down.
-    exit(:normal)
+  def handle_info({:EXIT, _dead_pid, reason}, _state) do
+    # Some linked process -- our Connection and/or its launching process -- has died.
+    exit(reason)
   end
 
   defp dispatch_replies(queue, buffer) do
