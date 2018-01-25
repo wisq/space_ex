@@ -4,6 +4,7 @@
  
 ### User-facing
 
+* Renamed `SpaceEx.Procedure` to `ProcedureCall`.
 * Add `SpaceEx.Connection.connect/1`, the Erlang-style version of `connect!`.
 * Add `SpaceEx.Connection.close/1`.
 * Connection process lifecycle changes:
