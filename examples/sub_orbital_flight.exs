@@ -155,6 +155,7 @@ host = System.get_env("KRPC_HOST") || "127.0.0.1"
 conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight", host: host)
 
 try do
+  SpaceEx.KRPC.set_paused(conn, false)
   SubOrbitalFlight.launch(conn)
   Process.sleep(1_000)
 after

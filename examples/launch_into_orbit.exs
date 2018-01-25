@@ -273,6 +273,7 @@ host = System.get_env("KRPC_HOST") || "127.0.0.1"
 conn = SpaceEx.Connection.connect!(name: "Launch into orbit", host: host)
 
 try do
+  SpaceEx.KRPC.set_paused(conn, false)
   LaunchIntoOrbit.launch(conn)
   Process.sleep(1_000)
 after
