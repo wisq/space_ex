@@ -53,7 +53,7 @@ This will connect to your kRPC game, unpause it if needed, burn the engines for 
 
 More examples can be found in the [examples directory](https://github.com/wisq/space_ex/tree/master/examples).
 
-Be aware that this library is very new, and the syntax is changing day by day.  I expect to release v1.0.0 within a week or so, at which point the API will be considered stable.  For a list of what's planned, see the [to-do list](https://github.com/wisq/space_ex/blob/master/TODO.md).
+Although this library is very new, the API has mostly stabilised at this point, and I expect to release v1.0.0 within the next few days.  For a list of what's planned, see the [to-do list](https://github.com/wisq/space_ex/blob/master/TODO.md).
 
 ## Documentation
 
