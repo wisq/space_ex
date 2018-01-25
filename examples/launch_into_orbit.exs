@@ -269,7 +269,8 @@ defmodule LaunchIntoOrbit do
   end
 end
 
-conn = SpaceEx.Connection.connect!(name: "Launch into orbit")
+host = System.get_env("KRPC_HOST") || "127.0.0.1"
+conn = SpaceEx.Connection.connect!(name: "Launch into orbit", host: host)
 
 try do
   LaunchIntoOrbit.launch(conn)

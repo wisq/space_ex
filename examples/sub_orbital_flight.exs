@@ -151,7 +151,8 @@ defmodule SubOrbitalFlight do
   end
 end
 
-conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight")
+host = System.get_env("KRPC_HOST") || "127.0.0.1"
+conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight", host: host)
 
 try do
   SubOrbitalFlight.launch(conn)
