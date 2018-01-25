@@ -2,8 +2,8 @@ defmodule SpaceEx.EventTest do
   use ExUnit.Case, async: true
   @moduletag :capture_log
 
-  require SpaceEx.Procedure
-  alias SpaceEx.{Event, Stream, Procedure, Protobufs, KRPC, KRPC.Expression, Types, API}
+  require SpaceEx.ProcedureCall
+  alias SpaceEx.{Event, Stream, ProcedureCall, Protobufs, KRPC, KRPC.Expression, Types, API}
 
   alias SpaceEx.Protobufs.{
     StreamUpdate,
@@ -24,7 +24,7 @@ defmodule SpaceEx.EventTest do
 
     # Prepare the simplest possible boolean expression.
     # (Yes, this really works.  It's boolean, after all.)
-    paused_call = KRPC.paused(conn) |> Procedure.create()
+    paused_call = KRPC.paused(conn) |> ProcedureCall.create()
     expr = Expression.call(conn, paused_call)
     assert expr.id == <<86>>
 

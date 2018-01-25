@@ -19,12 +19,12 @@
 # craft, due to the hardcoded staging sequence.
 
 defmodule SubOrbitalFlight do
-  require SpaceEx.Procedure
+  require SpaceEx.ProcedureCall
 
   alias SpaceEx.{
     SpaceCenter,
     KRPC.Expression,
-    Procedure,
+    ProcedureCall,
     Event
   }
 
@@ -66,7 +66,7 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(control)
 
     # Wait until SRBs exhausted:
-    fuel_amount = Resources.amount(resources, "SolidFuel") |> Procedure.create()
+    fuel_amount = Resources.amount(resources, "SolidFuel") |> ProcedureCall.create()
 
     expr =
       Expression.less_than(
@@ -81,7 +81,7 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(control)
 
     # Wait until above target altitude:
-    mean_altitude = Flight.mean_altitude(flight) |> Procedure.create()
+    mean_altitude = Flight.mean_altitude(flight) |> ProcedureCall.create()
 
     expr =
       Expression.greater_than(
@@ -96,7 +96,7 @@ defmodule SubOrbitalFlight do
     AutoPilot.target_pitch_and_heading(autopilot, 60, 90)
 
     # Wait until above target apoapsis:
-    apoapsis_altitude = Orbit.apoapsis_altitude(orbit) |> Procedure.create()
+    apoapsis_altitude = Orbit.apoapsis_altitude(orbit) |> ProcedureCall.create()
 
     expr =
       Expression.greater_than(
@@ -114,7 +114,7 @@ defmodule SubOrbitalFlight do
     AutoPilot.disengage(autopilot)
 
     # Wait until under 1,000m altitude:
-    srf_altitude = Flight.surface_altitude(flight) |> Procedure.create()
+    srf_altitude = Flight.surface_altitude(flight) |> ProcedureCall.create()
 
     expr =
       Expression.less_than(

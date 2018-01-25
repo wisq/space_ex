@@ -52,7 +52,7 @@ defmodule SpaceEx.Types.Encoders do
     |> Protobufs.Dictionary.encode()
   end
 
-  def encode(%SpaceEx.Procedure{} = proc, %Type.ProcedureCall{}) do
+  def encode(%SpaceEx.ProcedureCall{} = proc, %Type.ProcedureCall{}) do
     args =
       Enum.with_index(proc.args)
       |> Enum.map(fn {arg, index} ->

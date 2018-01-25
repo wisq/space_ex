@@ -20,7 +20,7 @@ defmodule SpaceEx.Stream do
   To set up a stream, you can use the `SpaceEx.Stream.stream/2` macro to wrap a
   procedure call.
 
-  Alternatively, you can use `SpaceEx.Procedure.create/1` to create a reference
+  Alternatively, you can use `SpaceEx.ProcedureCall.create/1` to create a reference
   to the procedure you want to run, and then pass that to
   `SpaceEx.Stream.create/2`.
 
@@ -52,7 +52,7 @@ defmodule SpaceEx.Stream do
   # Equivalent:
   stream =
     SpaceEx.SpaceCenter.ut(conn)
-    |> SpaceEx.Procedure.create()
+    |> SpaceEx.ProcedureCall.create()
     |> SpaceEx.Stream.create()
 
   SpaceEx.Stream.get(stream)  # 83689.09043863538
@@ -104,7 +104,7 @@ defmodule SpaceEx.Stream do
   @doc """
   Creates a stream, and optionally starts it.
 
-  `procedure` should be a `SpaceEx.Procedure` structure.  The stream's value
+  `procedure` should be a `SpaceEx.ProcedureCall` structure.  The stream's value
   will be the result of calling this procedure over and over (with the same
   arguments each time).
 
@@ -149,7 +149,7 @@ defmodule SpaceEx.Stream do
   @doc """
   Creates a stream directly from function call syntax.
 
-  This is equivalent to calling `SpaceEx.Procedure.create/1` and `SpaceEx.Stream.create/2`.
+  This is equivalent to calling `SpaceEx.ProcedureCall.create/1` and `SpaceEx.Stream.create/2`.
 
   ## Example
 
@@ -164,9 +164,9 @@ defmodule SpaceEx.Stream do
 
   defmacro stream(function_call, opts \\ []) do
     quote do
-      require SpaceEx.Procedure
+      require SpaceEx.ProcedureCall
 
-      SpaceEx.Procedure.create(unquote(function_call))
+      SpaceEx.ProcedureCall.create(unquote(function_call))
       |> SpaceEx.Stream.create(unquote(opts))
     end
   end
@@ -174,7 +174,7 @@ defmodule SpaceEx.Stream do
   @doc """
   Creates a stream and query function directly from function call syntax.
 
-  This is equivalent to calling `SpaceEx.Procedure.create/1`,
+  This is equivalent to calling `SpaceEx.ProcedureCall.create/1`,
   `SpaceEx.Stream.create/2`, and `SpaceEx.Stream.get_fn/1`, all in sequence.
 
   Returns a tuple containing the stream and the getter function.

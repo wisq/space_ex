@@ -141,7 +141,7 @@ defmodule SpaceEx.Gen do
 
         # Well, okay, and this is the OTHER place we need to use var!(x),
         # but the reasons are the same as above.
-        %SpaceEx.Procedure{
+        %SpaceEx.ProcedureCall{
           conn: var!(conn, SpaceEx.Gen),
           service: unquote(service_name),
           procedure: unquote(rpc_name),
