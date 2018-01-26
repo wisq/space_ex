@@ -65,34 +65,31 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(control)
 
     # Wait until SRBs exhausted:
-    expr =
-      ExpressionBuilder.build conn do
-        Resources.amount(resources, "SolidFuel") < float(0.1)
-      end
-
-    Event.create(conn, expr) |> Event.wait()
+    ExpressionBuilder.build conn do
+      Resources.amount(resources, "SolidFuel") < float(0.1)
+    end
+    |> Event.create()
+    |> Event.wait()
 
     IO.puts("Booster separation")
     Control.activate_next_stage(control)
 
     # Wait until above target altitude:
-    expr =
-      ExpressionBuilder.build conn do
-        Flight.mean_altitude(flight) > double(@pitch_over_altitude)
-      end
-
-    Event.create(conn, expr) |> Event.wait()
+    ExpressionBuilder.build conn do
+      Flight.mean_altitude(flight) > double(@pitch_over_altitude)
+    end
+    |> Event.create()
+    |> Event.wait()
 
     IO.puts("Pitching over to 60 degrees")
     AutoPilot.target_pitch_and_heading(autopilot, 60, 90)
 
     # Wait until above target apoapsis:
-    expr =
-      ExpressionBuilder.build conn do
-        Orbit.apoapsis_altitude(orbit) > double(@target_apoapsis)
-      end
-
-    Event.create(conn, expr) |> Event.wait()
+    ExpressionBuilder.build conn do
+      Orbit.apoapsis_altitude(orbit) > double(@target_apoapsis)
+    end
+    |> Event.create()
+    |> Event.wait()
 
     IO.puts("Launch stage separation")
     Control.set_throttle(control, 0.0)
@@ -101,12 +98,11 @@ defmodule SubOrbitalFlight do
     AutoPilot.disengage(autopilot)
 
     # Wait until under 1,000m altitude:
-    expr =
-      ExpressionBuilder.build conn do
-        Flight.surface_altitude(flight) < double(@parachute_altitude)
-      end
-
-    Event.create(conn, expr) |> Event.wait()
+    ExpressionBuilder.build conn do
+      Flight.surface_altitude(flight) < double(@parachute_altitude)
+    end
+    |> Event.create()
+    |> Event.wait()
 
     Control.activate_next_stage(control)
 

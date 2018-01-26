@@ -2,6 +2,9 @@
 
 ## v0.7.0
 
+* Removed the `conn` argument from `SpaceEx.Event.create(conn, expr)`.
+  * It can derive `conn` from `expr`.
+  * This allows for expressions to be pipelined in.
 * Added `SpaceEx.ExpressionBuilder`, a far easier way to create `SpaceEx.KRPC.Expression` objects.
 * Converted `sub_orbital_flight.exs` to use the new expression builder.
 * API documentation now gives details on every RPC function's return value.

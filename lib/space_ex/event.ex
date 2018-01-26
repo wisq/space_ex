@@ -1,5 +1,5 @@
 defmodule SpaceEx.Event do
-  alias SpaceEx.{API, Types, Stream, KRPC}
+  alias SpaceEx.{API, Types, Stream, KRPC, ObjectReference}
 
   @bool_type API.Type.parse(%{"code" => "BOOL"})
 
@@ -35,7 +35,8 @@ defmodule SpaceEx.Event do
   * `:rate` — how often the server checks the condition, per second.  Default: unlimited.
   """
 
-  def create(conn, expression, opts \\ []) do
+  def create(%ObjectReference{} = expression, opts \\ []) do
+    conn = expression.conn
     event = KRPC.add_event(conn, expression)
     stream_id = event.stream.id
 

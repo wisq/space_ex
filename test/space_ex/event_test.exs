@@ -38,7 +38,7 @@ defmodule SpaceEx.EventTest do
     MockConnection.add_result_value("", conn)
 
     # Create the event (which is really just a stream.)
-    assert %Stream{id: 99} = Event.create(conn, expr)
+    assert %Stream{id: 99} = Event.create(expr)
 
     # Now check the requests we got.
     # (Expressions will be tested in their own test module.)
@@ -71,7 +71,7 @@ defmodule SpaceEx.EventTest do
     MockConnection.add_result_value("", conn)
 
     # Create the Event/Stream.
-    assert %Stream{id: 66} = event = Event.create(conn, expr)
+    assert %Stream{id: 66} = event = Event.create(expr)
     assert [_add_event, _start_stream] = MockConnection.dump_calls(conn)
 
     me = self()
@@ -118,7 +118,7 @@ defmodule SpaceEx.EventTest do
 
         pid =
           spawn_link(fn ->
-            assert %Stream{id: 66} = event = Event.create(conn, expr)
+            assert %Stream{id: 66} = event = Event.create(expr)
             send(me, {:stream, index, event})
 
             assert_receive :remove, 1000
@@ -192,7 +192,7 @@ defmodule SpaceEx.EventTest do
 
         pid =
           spawn_link(fn ->
-            assert %Stream{id: 66} = event = Event.create(conn, expr)
+            assert %Stream{id: 66} = event = Event.create(expr)
             send(me, {:stream, index, event})
 
             assert_receive :exit, 1000
