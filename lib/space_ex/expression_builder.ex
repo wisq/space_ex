@@ -11,40 +11,42 @@ defmodule SpaceEx.ExpressionBuilder do
     walk(expr, %{conn: conn, module: module})
   end
 
-  defp walk({:==, _, [a, b]}, opts), do: two_args(:equal, a, b, opts)
-  defp walk({:!=, _, [a, b]}, opts), do: two_args(:not_equal, a, b, opts)
-  defp walk({:>=, _, [a, b]}, opts), do: two_args(:greater_than_or_equal, a, b, opts)
-  defp walk({:<=, _, [a, b]}, opts), do: two_args(:less_than_or_equal, a, b, opts)
-  defp walk({:<, _, [a, b]}, opts), do: two_args(:less_than, a, b, opts)
-  defp walk({:>, _, [a, b]}, opts), do: two_args(:greater_than, a, b, opts)
+  defmodule Syntax do
+    alias SpaceEx.ExpressionBuilder, as: EB
 
-  defp walk({:double, _, [value]}, opts), do: constant(:double, value, opts)
-  defp walk({:string, _, [value]}, opts), do: constant(:string, value, opts)
-  defp walk({:float, _, [value]}, opts), do: constant(:float, value, opts)
-  defp walk({:int, _, [value]}, opts), do: constant(:int, value, opts)
-  defp walk(str, opts) when is_bitstring(str), do: constant(:string, str, opts)
+    def a == b, do: fn opts -> EB.two_args(:equal, a, b, opts) end
+    def a != b, do: fn opts -> EB.two_args(:not_equal, a, b, opts) end
+    def a >= b, do: fn opts -> EB.two_args(:greater_than_or_equal, a, b, opts) end
+    def a <= b, do: fn opts -> EB.two_args(:less_than_or_equal, a, b, opts) end
+    def a < b, do: fn opts -> EB.two_args(:less_than, a, b, opts) end
+    def a > b, do: fn opts -> EB.two_args(:greater_than, a, b, opts) end
 
-  defp walk({:to_int, _, [value]}, opts), do: one_arg(:to_int, value, opts)
-  defp walk({:to_float, _, [value]}, opts), do: one_arg(:to_float, value, opts)
-  defp walk({:to_double, _, [value]}, opts), do: one_arg(:to_double, value, opts)
+    def double(value), do: fn opts -> EB.constant(:double, value, opts) end
+    def string(value), do: fn opts -> EB.constant(:string, value, opts) end
+    def float(value), do: fn opts -> EB.constant(:float, value, opts) end
+    def int(value), do: fn opts -> EB.constant(:int, value, opts) end
 
-  defp walk({:&&, _, [a, b]}, opts), do: two_args(:and, a, b, opts)
-  defp walk({:||, _, [a, b]}, opts), do: two_args(:or, a, b, opts)
-  defp walk({:xor, _, [a, b]}, opts), do: two_args(:exclusive_or, a, b, opts)
-  defp walk({:!, _, [value]}, opts), do: one_arg(:not, value, opts)
+    def to_int(value), do: fn opts -> EB.one_arg(:to_int, value, opts) end
+    def to_float(value), do: fn opts -> EB.one_arg(:to_float, value, opts) end
+    def to_double(value), do: fn opts -> EB.one_arg(:to_double, value, opts) end
 
-  defp walk({:+, _, [a, b]}, opts), do: two_args(:add, a, b, opts)
-  defp walk({:-, _, [a, b]}, opts), do: two_args(:subtract, a, b, opts)
-  defp walk({:*, _, [a, b]}, opts), do: two_args(:multiply, a, b, opts)
-  defp walk({:rem, _, [a, b]}, opts), do: two_args(:modulo, a, b, opts)
-  defp walk({:/, _, [a, b]}, opts), do: two_args(:divide, a, b, opts)
-  defp walk({:power, _, [a, b]}, opts), do: two_args(:power, a, b, opts)
+    def a && b, do: fn opts -> EB.two_args(:and, a, b, opts) end
+    def a || b, do: fn opts -> EB.two_args(:or, a, b, opts) end
+    def xor(a, b), do: fn opts -> EB.two_args(:exclusive_or, a, b, opts) end
+    def !value, do: fn opts -> EB.one_arg(:not, value, opts) end
 
-  defp walk({:<<<, _, [a, b]}, opts), do: two_args(:left_shift, a, b, opts)
-  defp walk({:>>>, _, [a, b]}, opts), do: two_args(:right_shift, a, b, opts)
+    def a + b, do: fn opts -> EB.two_args(:add, a, b, opts) end
+    def a - b, do: fn opts -> EB.two_args(:subtract, a, b, opts) end
+    def a * b, do: fn opts -> EB.two_args(:multiply, a, b, opts) end
+    def rem(a, b), do: fn opts -> EB.two_args(:modulo, a, b, opts) end
+    def a / b, do: fn opts -> EB.two_args(:divide, a, b, opts) end
+    def power(a, b), do: fn opts -> EB.two_args(:power, a, b, opts) end
+
+    def a <<< b, do: fn opts -> EB.two_args(:left_shift, a, b, opts) end
+    def a >>> b, do: fn opts -> EB.two_args(:right_shift, a, b, opts) end
+  end
 
   defp walk({:|>, _, [a, b]}, opts), do: pipeline(a, b, opts)
-
   defp walk({:__block__, _, [inner]}, opts), do: walk(inner, opts)
 
   defp walk({{:., _, _} = function, _, args}, opts) do
@@ -56,6 +58,12 @@ defmodule SpaceEx.ExpressionBuilder do
       )
     end
   end
+
+  defp walk({fn_name, _, args}, opts) when is_atom(fn_name) do
+    apply(Syntax, fn_name, args).(opts)
+  end
+
+  defp walk(str, opts) when is_bitstring(str), do: constant(:string, str, opts)
 
   defp walk(n, _opts) when is_number(n) do
     fns =
@@ -73,7 +81,7 @@ defmodule SpaceEx.ExpressionBuilder do
     raise "Don't know how to build expression: #{Macro.to_string(unknown)}"
   end
 
-  defp one_arg(fn_name, arg, opts) do
+  def one_arg(fn_name, arg, opts) do
     arg = walk(arg, opts)
 
     quote location: :keep do
@@ -81,7 +89,7 @@ defmodule SpaceEx.ExpressionBuilder do
     end
   end
 
-  defp two_args(fn_name, a, b, opts) do
+  def two_args(fn_name, a, b, opts) do
     a = walk(a, opts)
     b = walk(b, opts)
 
@@ -90,7 +98,7 @@ defmodule SpaceEx.ExpressionBuilder do
     end
   end
 
-  defp constant(type, value, opts) do
+  def constant(type, value, opts) do
     fn_name = :"constant_#{type}"
 
     quote location: :keep do
