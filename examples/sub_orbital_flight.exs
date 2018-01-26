@@ -19,12 +19,11 @@
 # craft, due to the hardcoded staging sequence.
 
 defmodule SubOrbitalFlight do
-  require SpaceEx.ProcedureCall
+  use SpaceEx.ExpressionBuilder
 
   alias SpaceEx.{
     SpaceCenter,
-    KRPC.Expression,
-    ProcedureCall,
+    ExpressionBuilder,
     Event
   }
 
@@ -66,14 +65,10 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(control)
 
     # Wait until SRBs exhausted:
-    fuel_amount = Resources.amount(resources, "SolidFuel") |> ProcedureCall.create()
-
     expr =
-      Expression.less_than(
-        conn,
-        Expression.call(conn, fuel_amount),
-        Expression.constant_float(conn, 0.1)
-      )
+      ExpressionBuilder.build conn do
+        Resources.amount(resources, "SolidFuel") < float(0.1)
+      end
 
     Event.create(conn, expr) |> Event.wait()
 
@@ -81,14 +76,10 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(control)
 
     # Wait until above target altitude:
-    mean_altitude = Flight.mean_altitude(flight) |> ProcedureCall.create()
-
     expr =
-      Expression.greater_than(
-        conn,
-        Expression.call(conn, mean_altitude),
-        Expression.constant_double(conn, @pitch_over_altitude)
-      )
+      ExpressionBuilder.build conn do
+        Flight.mean_altitude(flight) > double(@pitch_over_altitude)
+      end
 
     Event.create(conn, expr) |> Event.wait()
 
@@ -96,14 +87,10 @@ defmodule SubOrbitalFlight do
     AutoPilot.target_pitch_and_heading(autopilot, 60, 90)
 
     # Wait until above target apoapsis:
-    apoapsis_altitude = Orbit.apoapsis_altitude(orbit) |> ProcedureCall.create()
-
     expr =
-      Expression.greater_than(
-        conn,
-        Expression.call(conn, apoapsis_altitude),
-        Expression.constant_double(conn, @target_apoapsis)
-      )
+      ExpressionBuilder.build conn do
+        Orbit.apoapsis_altitude(orbit) > double(@target_apoapsis)
+      end
 
     Event.create(conn, expr) |> Event.wait()
 
@@ -114,14 +101,10 @@ defmodule SubOrbitalFlight do
     AutoPilot.disengage(autopilot)
 
     # Wait until under 1,000m altitude:
-    srf_altitude = Flight.surface_altitude(flight) |> ProcedureCall.create()
-
     expr =
-      Expression.less_than(
-        conn,
-        Expression.call(conn, srf_altitude),
-        Expression.constant_double(conn, @parachute_altitude)
-      )
+      ExpressionBuilder.build conn do
+        Flight.surface_altitude(flight) < double(@parachute_altitude)
+      end
 
     Event.create(conn, expr) |> Event.wait()
 
