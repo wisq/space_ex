@@ -22,4 +22,14 @@ defmodule SpaceEx.Util do
     Module.split(mod)
     |> List.last()
   end
+
+  # Join lists, English style.
+  def join_words(list, word \\ "and")
+  def join_words([a], _word), do: a
+  def join_words([a, b], word), do: "#{a} #{word} #{b}"
+
+  def join_words(list, word) do
+    {final, rest} = List.pop_at(list, -1)
+    Enum.join(rest, ", ") <> ", #{word} #{final}"
+  end
 end

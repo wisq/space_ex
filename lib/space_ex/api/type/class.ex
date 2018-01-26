@@ -3,9 +3,10 @@ defmodule SpaceEx.API.Type.Class do
 
   @moduledoc false
 
-  defstruct(name: nil)
+  defstruct(name: nil, module: nil)
 
-  def parse("CLASS", %{"name" => name}) do
-    %Type.Class{name: name}
+  def parse("CLASS", %{"name" => name, "service" => service}) do
+    module = Module.concat([SpaceEx, service, name])
+    %Type.Class{name: name, module: module}
   end
 end

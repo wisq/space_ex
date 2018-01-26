@@ -4,7 +4,7 @@ defmodule SpaceEx.API.Type.Raw do
 
   @moduledoc false
 
-  defstruct(module: nil)
+  defstruct(code: nil, module: nil)
 
   @types Protobufs.Raw.defs()
          |> Enum.map(fn {{:msg, module}, _} -> module end)
@@ -19,7 +19,7 @@ defmodule SpaceEx.API.Type.Raw do
 
   def parse(code) do
     if module = Map.get(@types, code) do
-      %Type.Raw{module: module}
+      %Type.Raw{code: code, module: module}
     else
       nil
     end
