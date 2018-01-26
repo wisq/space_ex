@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0
+
+* Added `SpaceEx.ExpressionBuilder`, a far easier way to create `SpaceEx.KRPC.Expression` objects.
+* Converted `sub_orbital_flight.exs` to use the new expression builder.
+* API documentation now gives details on every RPC function's return value.
+
 ## v0.6.0
  
 ### User-facing
