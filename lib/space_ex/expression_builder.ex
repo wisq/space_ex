@@ -75,7 +75,6 @@ defmodule SpaceEx.ExpressionBuilder do
     end
   end
 
-  defp walk({:|>, _, [a, b]}, opts), do: pipeline(a, b, opts)
   defp walk({:__block__, _, [inner]}, opts), do: walk(inner, opts)
 
   defp walk({{:., _, _} = function, _, args}, opts) do
@@ -122,7 +121,7 @@ defmodule SpaceEx.ExpressionBuilder do
     raise "Don't know how to build expression: #{Macro.to_string(unknown)}"
   end
 
-  defp pipeline(a, {b, b_ctx, b_args}, opts) do
+  def pipeline(a, {b, b_ctx, b_args}, opts) do
     b_args = [a | b_args || []]
     b = {b, b_ctx, b_args}
     walk(b, opts)

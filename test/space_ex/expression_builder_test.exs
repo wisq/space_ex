@@ -3,7 +3,7 @@ defmodule SpaceEx.ExpressionBuilderTest do
   alias SpaceEx.Test.MockExpression
 
   use SpaceEx.ExpressionBuilder
-  alias SpaceEx.{ExpressionBuilder, ProcedureCall, ObjectReference}
+  alias SpaceEx.{ExpressionBuilder, ProcedureCall, ObjectReference, Protobufs}
 
   alias SpaceEx.SpaceCenter
   alias SpaceEx.SpaceCenter.{Vessel, Orbit, Flight, Resources, CelestialBody}
@@ -352,5 +352,43 @@ defmodule SpaceEx.ExpressionBuilderTest do
       |> String.replace(~r/\n\s*/, "")
 
     assert code == expected
+  end
+
+  alias SpaceEx.Test.MockConnection
+
+  test "can pipeline real RPC calls into an expression call" do
+    # In hindsight, it's not totally crazy that this works,
+    # but it blew my mind when I first tried it.
+    state = MockConnection.start()
+    conn = state.conn
+
+    # SpaceCenter.active_vessel ID:
+    MockConnection.add_result_value(<<1>>, conn)
+    # Expression.call ID:
+    MockConnection.add_result_value(<<2>>, conn)
+    # Expression.constant_double ID:
+    MockConnection.add_result_value(<<3>>, conn)
+    # Expression.greater_than_or_equal ID:
+    MockConnection.add_result_value(<<4>>, conn)
+
+    expr =
+      ExpressionBuilder.build conn do
+        SpaceCenter.active_vessel(conn) |> Vessel.max_thrust() >= double(123)
+      end
+
+    assert %ObjectReference{id: <<4>>} = expr
+    assert [_a_v, call, _double, _g_t_e] = calls = MockConnection.dump_calls(conn)
+
+    assert Enum.map(calls, & &1.procedure) == [
+             "get_ActiveVessel",
+             "Expression_static_Call",
+             "Expression_static_ConstantDouble",
+             "Expression_static_GreaterThanOrEqual"
+           ]
+
+    assert [proc_arg] = call.arguments
+    assert proc = Protobufs.ProcedureCall.decode(proc_arg.value)
+    assert proc.procedure == "Vessel_get_MaxThrust"
+    assert [%Protobufs.Argument{value: <<1>>}] = proc.arguments
   end
 end
