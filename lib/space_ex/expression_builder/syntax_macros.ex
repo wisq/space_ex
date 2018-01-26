@@ -1,4 +1,4 @@
-defmodule SpaceEx.ExpressionBuilder.Macros do
+defmodule SpaceEx.ExpressionBuilder.SyntaxMacros do
   @moduledoc false
 
   defmacro def_constant(name, extra_doc \\ nil) do

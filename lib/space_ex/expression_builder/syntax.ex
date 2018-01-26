@@ -1,6 +1,6 @@
 defmodule SpaceEx.ExpressionBuilder.Syntax do
-  require SpaceEx.ExpressionBuilder.Macros
-  import SpaceEx.ExpressionBuilder.Macros
+  require SpaceEx.ExpressionBuilder.SyntaxMacros
+  import SpaceEx.ExpressionBuilder.SyntaxMacros
 
   def_two_args(a == b, :equal)
   def_two_args(a != b, :not_equal)
