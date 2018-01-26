@@ -51,18 +51,27 @@ defmodule SpaceEx.ExpressionBuilderTest do
            } = proc
   end
 
-  test "build simple expression #3" do
+  test "handles string interpolation" do
     conn = :dummy_conn
     vessel = %ObjectReference{conn: conn, id: <<42>>, class: "Vessel"}
 
     # Dunno why you'd do this, but ¯\_(ツ)_/¯
     # I'm sure there must be some use for string constants.
-    expr =
+    expr1 =
       ExpressionBuilder.build conn, module: MockExpression do
-        Vessel.name(vessel) != "Heart of Gold"
+        Vessel.name(vessel) != string("Heart of Gold")
       end
 
-    assert {:not_equal, ^conn, left, right} = expr
+    heart = "Heart"
+    gold = "Gold"
+
+    expr2 =
+      ExpressionBuilder.build conn, module: MockExpression do
+        Vessel.name(vessel) != string("#{heart} of #{gold}")
+      end
+
+    assert expr1 == expr2
+    assert {:not_equal, ^conn, left, right} = expr1
     assert {:call, ^conn, %ProcedureCall{}} = left
     assert {:constant_string, ^conn, "Heart of Gold"} = right
   end
@@ -265,24 +274,22 @@ defmodule SpaceEx.ExpressionBuilderTest do
     assert {:constant_int, ^conn, 32} = int_32
   end
 
-  test "raises helpful error when raw numbers are used" do
-    conn = :dummy_conn
+  defp try_value(value) do
+    quote do
+      require ExpressionBuilder
 
-    try_value = fn value ->
-      quote do
-        require ExpressionBuilder
-
-        ExpressionBuilder.build conn, module: MockExpression do
-          SpaceCenter.ut(unquote(conn)) > unquote(value)
-        end
+      ExpressionBuilder.build conn, module: MockExpression do
+        unquote(value)
       end
-      |> Code.eval_quoted()
-
-      assert "Expected error, got none"
     end
+    |> Code.eval_quoted()
 
+    assert "Expected error, got none"
+  end
+
+  test "raises helpful error when raw floating point numbers are used" do
     try do
-      try_value.(123.456)
+      try_value(123.456)
     rescue
       err ->
         # Should not mention `int(x)` for floats.
@@ -290,14 +297,39 @@ defmodule SpaceEx.ExpressionBuilderTest do
         assert err.message =~ "float(123.456)"
         assert err.message =~ "double(123.456)"
     end
+  end
 
+  test "raises helpful error when raw integers are used" do
     try do
-      try_value.(123)
+      try_value(123)
     rescue
       err ->
         assert err.message =~ "int(123)"
         assert err.message =~ "float(123.0)"
         assert err.message =~ "double(123.0)"
+    end
+  end
+
+  test "raises helpful error when raw strings are used" do
+    try do
+      try_value("space_ex")
+    rescue
+      err -> assert err.message =~ "string(\"space_ex\")"
+    end
+  end
+
+  test "raises helpful error when interpolated strings are used" do
+    try do
+      quote do
+        require ExpressionBuilder
+
+        ExpressionBuilder.build conn, module: MockExpression do
+          "string with #{interpolated} bits"
+        end
+      end
+      |> Code.eval_quoted()
+    rescue
+      err -> assert err.message =~ ~S'string("string with #{interpolated} bits")'
     end
   end
 

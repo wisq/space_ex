@@ -10,8 +10,7 @@ defmodule SpaceEx.ExpressionBuilder.Syntax do
   def_two_args(a > b, :greater_than)
 
   def_constant(:string, [
-    ~S'You can also just use string literals, e.g. `... == "a string"` or `... == "an #{interpolated_string}"`.',
-    "Note that any code inside interpolated strings will not be processed by the ExpressionBuilder; rather, it will be immediately converted to its string form at the time of building."
+    "Note that any code inside interpolated strings will not be processed by the expression builder; rather, it will be immediately converted to its string form at the time of building."
   ])
 
   def_constant(:double)

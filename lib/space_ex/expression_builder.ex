@@ -88,6 +88,11 @@ defmodule SpaceEx.ExpressionBuilder do
     end
   end
 
+  defp walk({:<<>>, _, _} = str, _opts) do
+    str = Macro.to_string(str)
+    raise "Bare strings cannot be used in expressions; please use string(#{str})"
+  end
+
   defp walk({fn_name, _, args} = ast, opts) when is_atom(fn_name) do
     try do
       apply(Syntax, fn_name, args).(opts)
@@ -97,7 +102,9 @@ defmodule SpaceEx.ExpressionBuilder do
     end
   end
 
-  defp walk(str, opts) when is_bitstring(str), do: constant(:string, str, opts)
+  defp walk(str, _opts) when is_bitstring(str) do
+    raise "Bare strings cannot be used in expressions; please use string(#{inspect(str)})"
+  end
 
   defp walk(n, _opts) when is_number(n) do
     fns =
