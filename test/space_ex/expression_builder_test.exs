@@ -300,4 +300,25 @@ defmodule SpaceEx.ExpressionBuilderTest do
         assert err.message =~ "double(123.0)"
     end
   end
+
+  test "can build expressions as strings" do
+    # We don't even need to define `conn` here.
+    code =
+      ExpressionBuilder.build conn, as_string: true do
+        SpaceCenter.ut(conn) > double(123.456)
+      end
+
+    expected =
+      """
+      SpaceEx.KRPC.Expression.greater_than(
+        conn,
+        SpaceEx.KRPC.Expression.call(conn, SpaceCenter.ut(conn) |> SpaceEx.ProcedureCall.create()),
+        SpaceEx.KRPC.Expression.constant_double(conn, 123.456)
+      )
+      """
+      |> String.replace(~r/,\n\s+/, ", ")
+      |> String.replace(~r/\n\s*/, "")
+
+    assert code == expected
+  end
 end

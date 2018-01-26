@@ -1,16 +1,78 @@
 defmodule SpaceEx.ExpressionBuilder do
   alias SpaceEx.ExpressionBuilder.Syntax
 
+  @moduledoc """
+  Much simpler syntax for `SpaceEx.KRPC.Expression`.
+
+  This can be used to streamline the creation of events.  For example, the rather unwieldy syntax
+
+  ```elixir
+  # Wait until under 1,000m altitude:
+  srf_altitude = Flight.surface_altitude(flight) |> ProcedureCall.create()
+
+  expr =
+    Expression.less_than(
+      conn,
+      Expression.call(conn, srf_altitude),
+      Expression.constant_double(conn, 1_000)
+    )
+
+  Event.create(conn, expr) |> Event.wait()
+  ```
+
+  Can be replaced with
+
+  ```
+  use ExpressionBuilder
+
+  expr =
+    ExpressionBuilder.build conn do
+      Flight.surface_altitude(flight) < double(1_000)
+    end
+  ```
+
+  For a full list of supported syntax forms, see `SpaceEx.ExpressionBuilder.Syntax`.
+
+  It's recommended that you include this module via `use`, so that it can issue
+  `require` statements for other modules it uses macros from.
+  """
+
   defmacro __using__([]) do
-    quote do
+    quote location: :keep do
       require SpaceEx.ProcedureCall
     end
   end
 
-  defmacro build(conn, opts \\ [], do: expr) do
+  @doc """
+  Builds a `SpaceEx.KRPC.Expression` based on the supplied block of code.
+
+  Syntax elements are sourced from `SpaceEx.ExpressionBuilder.Syntax`.  See
+  that module for details.
+
+  `opts` may be omitted.  If present, additional options are possible:
+
+  * `opts[:as_string]` — If `true`, the code to generate an expression will be returned as a string.  This may be useful for debugging issues with your expressions.
+  """
+  defmacro build(conn, opts \\ [], block) do
+    # Options may show up in either `opts` or `block`, depending on usage:
+    #
+    # `build(conn, a: b) do x end` -> opts = [a: b], block = [do: x]
+    # `build conn, a: b, do: x` -> opts = [], block = [a: b, do: x]
+    #
+    # So just merge them and treat them as a single unit.
+    opts = Keyword.merge(opts, block)
+    block = Keyword.fetch!(opts, :do)
+
+    # Undocumented, used in test suite:
     module = Keyword.get(opts, :module, SpaceEx.KRPC.Expression)
 
-    walk(expr, %{conn: conn, module: module})
+    ast = walk(block, %{conn: conn, module: module})
+
+    if opts[:as_string] do
+      Macro.to_string(ast)
+    else
+      ast
+    end
   end
 
   defp walk({:|>, _, [a, b]}, opts), do: pipeline(a, b, opts)
