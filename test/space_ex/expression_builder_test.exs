@@ -283,54 +283,54 @@ defmodule SpaceEx.ExpressionBuilderTest do
       end
     end
     |> Code.eval_quoted()
-
-    assert "Expected error, got none"
   end
 
   test "raises helpful error when raw floating point numbers are used" do
-    try do
-      try_value(123.456)
-    rescue
-      err ->
-        # Should not mention `int(x)` for floats.
-        refute err.message =~ "int(123.456)"
-        assert err.message =~ "float(123.456)"
-        assert err.message =~ "double(123.456)"
-    end
+    err =
+      assert_raise(RuntimeError, fn ->
+        try_value(123.456)
+      end)
+
+    # Should not mention `int(x)` for floats.
+    refute err.message =~ "int(123.456)"
+    assert err.message =~ "float(123.456)"
+    assert err.message =~ "double(123.456)"
   end
 
   test "raises helpful error when raw integers are used" do
-    try do
-      try_value(123)
-    rescue
-      err ->
-        assert err.message =~ "int(123)"
-        assert err.message =~ "float(123.0)"
-        assert err.message =~ "double(123.0)"
-    end
+    err =
+      assert_raise(RuntimeError, fn ->
+        try_value(123)
+      end)
+
+    assert err.message =~ "int(123)"
+    assert err.message =~ "float(123.0)"
+    assert err.message =~ "double(123.0)"
   end
 
   test "raises helpful error when raw strings are used" do
-    try do
-      try_value("space_ex")
-    rescue
-      err -> assert err.message =~ "string(\"space_ex\")"
-    end
+    err =
+      assert_raise(RuntimeError, fn ->
+        try_value("space_ex")
+      end)
+
+    assert err.message =~ "string(\"space_ex\")"
   end
 
   test "raises helpful error when interpolated strings are used" do
-    try do
-      quote do
-        require ExpressionBuilder
+    err =
+      assert_raise(RuntimeError, fn ->
+        quote do
+          require ExpressionBuilder
 
-        ExpressionBuilder.build conn, module: MockExpression do
-          "string with #{interpolated} bits"
+          ExpressionBuilder.build conn, module: MockExpression do
+            "string with #{interpolated} bits"
+          end
         end
-      end
-      |> Code.eval_quoted()
-    rescue
-      err -> assert err.message =~ ~S'string("string with #{interpolated} bits")'
-    end
+        |> Code.eval_quoted()
+      end)
+
+    assert err.message =~ ~S'string("string with #{interpolated} bits")'
   end
 
   test "can build expressions as strings" do
