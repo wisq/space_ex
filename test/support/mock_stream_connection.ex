@@ -1,7 +1,8 @@
 defmodule SpaceEx.Test.MockStreamConnection do
   use GenServer
-
   import ExUnit.Callbacks
+
+  alias SpaceEx.StreamConnection
 
   def start do
     {:ok, pid} = start_supervised(__MODULE__, restart: :temporary)
@@ -13,7 +14,15 @@ defmodule SpaceEx.Test.MockStreamConnection do
   end
 
   def init([]) do
-    {:ok, nil}
+    {:ok, %StreamConnection.State{socket: nil}}
+  end
+
+  def handle_call({:whereis, _} = call, from, state) do
+    StreamConnection.handle_call(call, from, state)
+  end
+
+  def handle_call({:register, _, _} = call, from, state) do
+    StreamConnection.handle_call(call, from, state)
   end
 
   # TODO: calls to

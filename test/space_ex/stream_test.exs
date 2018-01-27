@@ -3,7 +3,7 @@ defmodule SpaceEx.StreamTest do
   @moduletag :capture_log
 
   require SpaceEx.Stream
-  alias SpaceEx.{Stream, Protobufs, KRPC}
+  alias SpaceEx.{Stream, Protobufs, KRPC, SpaceCenter}
 
   alias SpaceEx.Protobufs.{
     StreamUpdate,
@@ -196,6 +196,79 @@ defmodule SpaceEx.StreamTest do
     assert remove.service == "KRPC"
     assert remove.procedure == "RemoveStream"
     assert [%Argument{value: <<42>>}] = remove.arguments
+  end
+
+  test "stream(pcall, start: false) and start/1" do
+    state = MockConnection.start()
+
+    # KRPC.add_stream response:
+    Protobufs.Stream.new(id: 23)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    %Stream{id: 23} = stream = SpaceCenter.ut(state.conn) |> Stream.stream(start: false)
+
+    # KRPC.start response:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    assert :ok = Stream.start(stream)
+
+    assert [add_stream, start_stream] = MockConnection.dump_calls(state.conn)
+
+    assert add_stream.service == "KRPC"
+    assert add_stream.procedure == "AddStream"
+    # start: false
+    assert [_expr_arg, %Argument{value: <<0>>}] = add_stream.arguments
+
+    assert start_stream.service == "KRPC"
+    assert start_stream.procedure == "StartStream"
+    assert [%Argument{value: <<23>>}] = start_stream.arguments
+  end
+
+  test "stream/2 with rate option" do
+    state = MockConnection.start()
+
+    # KRPC.add_stream response:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # KRPC.set_stream_rate response:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    %Stream{id: 123} = SpaceCenter.ut(state.conn) |> Stream.stream(rate: 5)
+
+    assert [add_stream, set_rate] = MockConnection.dump_calls(state.conn)
+
+    assert add_stream.service == "KRPC"
+    assert add_stream.procedure == "AddStream"
+    assert set_rate.service == "KRPC"
+    assert set_rate.procedure == "SetStreamRate"
+
+    assert [stream_id_arg, rate_arg] = set_rate.arguments
+    assert %Argument{value: <<123>>} = stream_id_arg
+    # 5.0 as a float
+    assert %Argument{value: <<0, 0, 160, 64>>} = rate_arg
+  end
+
+  test "set_rate/2" do
+    state = MockConnection.start()
+
+    # Dummy Stream:
+    stream = %Stream{id: 23, conn: state.conn, pid: nil, decoder: nil}
+
+    # KRPC.set_stream_rate response:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    assert :ok = Stream.set_rate(stream, 100)
+
+    assert [set_rate] = MockConnection.dump_calls(state.conn)
+    assert set_rate.service == "KRPC"
+    assert set_rate.procedure == "SetStreamRate"
+    assert [stream_id_arg, rate_arg] = set_rate.arguments
+    assert %Argument{value: <<23>>} = stream_id_arg
+    # 100.0 as a float
+    assert %Argument{value: <<0, 0, 200, 66>>} = rate_arg
   end
 
   defp send_stream_result(socket, id, result) do

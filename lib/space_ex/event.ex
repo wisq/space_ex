@@ -1,5 +1,5 @@
 defmodule SpaceEx.Event do
-  alias SpaceEx.{API, Types, Stream, KRPC, ObjectReference}
+  alias SpaceEx.{API, Types, Stream, KRPC, ObjectReference, Protobufs}
 
   @bool_type API.Type.parse(%{"code" => "BOOL"})
 
@@ -32,20 +32,27 @@ defmodule SpaceEx.Event do
 
   ## Options
 
-  * `:rate` — how often the server checks the condition, per second.  Default: unlimited.
+  * `:start` — whether the event stream should be started immediately.  If `false`, you can prepare an event before it becomes needed later.  Default: `true`
+  * `:rate` — how often the server checks the condition, per second.  Default: `0` (unlimited.
   """
 
   def create(%ObjectReference{} = expression, opts \\ []) do
-    conn = expression.conn
-    event = KRPC.add_event(conn, expression)
-    stream_id = event.stream.id
+    start = Keyword.get(opts, :start, true)
+    rate = Keyword.get(opts, :rate, 0)
 
-    if rate = opts[:rate] do
+    conn = expression.conn
+    %Protobufs.Event{stream: %Protobufs.Stream{id: stream_id}} = KRPC.add_event(conn, expression)
+
+    stream = Stream.launch(conn, stream_id, &decode_event/1)
+
+    if rate != 0 do
       KRPC.set_stream_rate(conn, stream_id, rate)
     end
 
-    stream = Stream.launch(conn, stream_id, &decode_event/1)
-    KRPC.start_stream(conn, stream_id)
+    if start do
+      KRPC.start_stream(conn, stream_id)
+    end
+
     stream
   end
 
@@ -71,6 +78,20 @@ defmodule SpaceEx.Event do
     # care about is that the stream has received its first value.
     Stream.get(event, timeout)
   end
+
+  @doc """
+  Start a previously created event.
+
+  See `SpaceEx.Stream.start/1`.
+  """
+  defdelegate start(event), to: SpaceEx.Stream
+
+  @doc """
+  Set the polling rate of an event.
+
+  See `SpaceEx.Stream.set_rate/2`.
+  """
+  defdelegate set_rate(event, rate), to: SpaceEx.Stream
 
   @doc """
   Detach from an event, and shut down the underlying stream if possible.

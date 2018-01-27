@@ -239,6 +239,88 @@ defmodule SpaceEx.EventTest do
     assert [%Argument{value: <<66>>}] = remove.arguments
   end
 
+  test "create(expr, start: false) and start/1" do
+    state = MockConnection.start()
+
+    # Create a dummy Expression reference.
+    type = %API.Type.Class{name: "Expression"}
+    expr = Types.decode(<<42>>, type, state.conn)
+
+    # KRPC.add_stream response:
+    Protobufs.Event.new(stream: Protobufs.Stream.new(id: 23))
+    |> Protobufs.Event.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    assert %Stream{id: 23} = stream = Event.create(expr, start: false)
+    assert [add_event] = MockConnection.dump_calls(state.conn)
+
+    # KRPC.start response:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    assert :ok = Event.start(stream)
+    assert [start_stream] = MockConnection.dump_calls(state.conn)
+
+    assert add_event.service == "KRPC"
+    assert add_event.procedure == "AddEvent"
+    assert [%Argument{value: <<42>>}] = add_event.arguments
+
+    assert start_stream.service == "KRPC"
+    assert start_stream.procedure == "StartStream"
+    assert [%Argument{value: <<23>>}] = start_stream.arguments
+  end
+
+  test "create/2 with rate option sets rate before starting stream" do
+    state = MockConnection.start()
+
+    # Create a dummy Expression reference.
+    type = %API.Type.Class{name: "Expression"}
+    expr = Types.decode(<<42>>, type, state.conn)
+
+    # KRPC.add_event response:
+    Protobufs.Event.new(stream: Protobufs.Stream.new(id: 123))
+    |> Protobufs.Event.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # KRPC.set_stream_rate response:
+    MockConnection.add_result_value(<<>>, state.conn)
+    # KRPC.start_stream response:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    assert %Stream{id: 123} = Event.create(expr, rate: 5)
+
+    assert [add_event, set_rate, start_stream] = MockConnection.dump_calls(state.conn)
+
+    assert add_event.service == "KRPC"
+    assert add_event.procedure == "AddEvent"
+
+    assert set_rate.service == "KRPC"
+    assert set_rate.procedure == "SetStreamRate"
+    # 5.0 as a float
+    assert [%Argument{value: <<123>>}, %Argument{value: <<0, 0, 160, 64>>}] = set_rate.arguments
+
+    assert start_stream.service == "KRPC"
+    assert start_stream.procedure == "StartStream"
+    assert [%Argument{value: <<123>>}] = start_stream.arguments
+  end
+
+  test "set_rate/2" do
+    state = MockConnection.start()
+
+    # Dummy Stream:
+    event = %Stream{id: 76, conn: state.conn, pid: nil, decoder: nil}
+
+    # KRPC.set_stream_rate response:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    assert :ok = Event.set_rate(event, 100)
+
+    assert [call] = MockConnection.dump_calls(state.conn)
+    assert call.service == "KRPC"
+    assert call.procedure == "SetStreamRate"
+    # 100.0 as a float
+    assert [%Argument{value: <<76>>}, %Argument{value: <<0, 0, 200, 66>>}] = call.arguments
+  end
+
   defp send_stream_result(socket, id, result) do
     StreamUpdate.new(results: [StreamResult.new(id: id, result: result)])
     |> StreamUpdate.encode()

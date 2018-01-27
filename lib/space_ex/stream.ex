@@ -117,12 +117,13 @@ defmodule SpaceEx.Stream do
   """
 
   def create(procedure, opts \\ []) do
-    conn = procedure.conn
-    start = opts[:start] || true
+    start = Keyword.get(opts, :start, true)
+    rate = Keyword.get(opts, :rate, 0)
 
+    conn = procedure.conn
     stream = KRPC.add_stream(conn, procedure, start: start)
 
-    if rate = opts[:rate] do
+    if rate != 0 do
       KRPC.set_stream_rate(conn, stream.id, rate)
     end
 
@@ -273,8 +274,8 @@ defmodule SpaceEx.Stream do
   will remove all rate limiting and update as often as possible.
   """
 
-  def set_rate(stream, rate) do
-    KRPC.set_stream_rate(stream.conn, stream.stream_id, rate || 0)
+  def set_rate(%Stream{conn: conn, id: id}, rate) do
+    KRPC.set_stream_rate(conn, id, rate || 0)
   end
 
   @doc """
@@ -284,8 +285,8 @@ defmodule SpaceEx.Stream do
   choose when to start receiving data.
   """
 
-  def start(stream) do
-    KRPC.start_stream(stream.conn, stream.stream_id)
+  def start(%Stream{conn: conn, id: id}) do
+    KRPC.start_stream(conn, id)
   end
 
   @doc """
@@ -296,8 +297,8 @@ defmodule SpaceEx.Stream do
   unexpectedly closing for all processes, just because one of them is done.
   """
 
-  def remove(stream) do
-    GenServer.call(stream.pid, {:unbond, self()})
+  def remove(%Stream{pid: pid}) do
+    GenServer.call(pid, {:unbond, self()})
   end
 
   @doc false

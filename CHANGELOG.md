@@ -2,12 +2,28 @@
 
 ## v0.7.0
 
-* Removed the `conn` argument from `SpaceEx.Event.create(conn, expr)`.
+### API changes
+
+* Removed the `conn` argument from `SpaceEx.Event.create/1`.
   * It can derive `conn` from `expr`.
-  * This allows for expressions to be pipelined in.
+  * This also allows for expressions to be pipelined in.
+* Added the `start: false` option to `SpaceEx.Event.create/2`.
+  * Can be used to create an event but start checking it later.
+* Added `SpaceEx.Event.start/1` to manually start an event stream.
+* Added `SpaceEx.Event.set_rate/2` to set the polling rate of an event.
+
+### Expression builder
+
 * Added `SpaceEx.ExpressionBuilder`, a far easier way to create `SpaceEx.KRPC.Expression` objects.
 * Converted `sub_orbital_flight.exs` to use the new expression builder.
+
+### Other
+
+* Fixed bugs with `SpaceEx.Stream.set_rate/2` and `SpaceEx.Stream.start/1`.
+* Added more tests for `SpaceEx.Stream` and `SpaceEx.Event`.
+* Stricter parameter and return type validation for `SpaceEx.Stream` calls.
 * API documentation now gives details on every RPC function's return value.
+  * This helps users know what constant types to use in Expressions and the ExpressionBuilder.
 
 ## v0.6.0
  
