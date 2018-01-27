@@ -44,20 +44,23 @@ defmodule LaunchIntoOrbit do
     orbit = Vessel.orbit(vessel)
 
     # Set up streams for telemetry
-    {_, fn_ut} = SpaceCenter.ut(conn) |> SpaceEx.Stream.stream_fn()
+    {_, fn_ut} = SpaceCenter.ut(conn) |> SpaceEx.Stream.stream() |> SpaceEx.Stream.with_get_fn()
 
     {_, fn_altitude} =
       Flight.mean_altitude(flight)
-      |> SpaceEx.Stream.stream_fn()
+      |> SpaceEx.Stream.stream()
+      |> SpaceEx.Stream.with_get_fn()
 
     {_, fn_apoapsis} =
       Orbit.apoapsis_altitude(orbit)
-      |> SpaceEx.Stream.stream_fn()
+      |> SpaceEx.Stream.stream()
+      |> SpaceEx.Stream.with_get_fn()
 
     {_, fn_srb_fuel} =
       Vessel.resources_in_decouple_stage(vessel, 2, cumulative: false)
       |> Resources.amount("SolidFuel")
-      |> SpaceEx.Stream.stream_fn()
+      |> SpaceEx.Stream.stream()
+      |> SpaceEx.Stream.with_get_fn()
 
     # Pre-launch setup
     Control.set_sas(control, false)
@@ -144,7 +147,8 @@ defmodule LaunchIntoOrbit do
     # waiting at all.  Other times, it can't quite get
     # the orientation right, and waits forever.
     # Better to just monitor the error directly.
-    {_, error_fn} = AutoPilot.error(autopilot) |> SpaceEx.Stream.stream_fn()
+    {_, error_fn} =
+      AutoPilot.error(autopilot) |> SpaceEx.Stream.stream() |> SpaceEx.Stream.with_get_fn()
 
     Stream.repeatedly(fn ->
       # The sleep is important; it makes the time math work, below.
@@ -182,7 +186,8 @@ defmodule LaunchIntoOrbit do
 
     {_, fn_time_to_apoapsis} =
       Orbit.time_to_apoapsis(orbit)
-      |> SpaceEx.Stream.stream_fn()
+      |> SpaceEx.Stream.stream()
+      |> SpaceEx.Stream.with_get_fn()
 
     wait_until(fn ->
       fn_time_to_apoapsis.() - burn_time / 2.0 <= 0.0
@@ -198,7 +203,8 @@ defmodule LaunchIntoOrbit do
 
     {_, fn_remaining_delta_v} =
       Node.remaining_delta_v(node)
-      |> SpaceEx.Stream.stream_fn()
+      |> SpaceEx.Stream.stream()
+      |> SpaceEx.Stream.with_get_fn()
 
     wait_until(fn ->
       fn_remaining_delta_v.() <= 0.2

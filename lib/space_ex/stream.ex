@@ -173,33 +173,6 @@ defmodule SpaceEx.Stream do
   end
 
   @doc """
-  Creates a stream and query function directly from function call syntax.
-
-  This is equivalent to calling `SpaceEx.ProcedureCall.create/1`,
-  `SpaceEx.Stream.create/2`, and `SpaceEx.Stream.get_fn/1`, all in sequence.
-
-  Returns a tuple containing the stream and the getter function.
-
-  ## Example
-
-  ```elixir
-  {stream, altitude} =
-    SpaceEx.SpaceCenter.Flight.mean_altitude(flight)
-    |> SpaceEx.Stream.stream_fn()
-
-  altitude.() |> IO.inspect  # 76.64177794696297
-  ```
-  """
-
-  defmacro stream_fn(function_call, opts \\ []) do
-    quote do
-      stream = SpaceEx.Stream.stream(unquote(function_call), unquote(opts))
-
-      {stream, SpaceEx.Stream.get_fn(stream)}
-    end
-  end
-
-  @doc """
   Returns an anonymous function that can be used to query the stream.
 
   This function can make code cleaner, by emulating a sort of "magic variable"
@@ -211,6 +184,25 @@ defmodule SpaceEx.Stream do
   def get_fn(stream) do
     fn -> get(stream) end
   end
+
+  @doc """
+  Convenience function to return a stream and a `get_fn/1` function.
+
+  When passed a `stream` object, will return `{stream, get_fn(stream)}`.
+
+  ## Example
+
+  ```elixir
+  {stream, altitude} =
+    SpaceEx.SpaceCenter.Flight.mean_altitude(flight)
+    |> SpaceEx.Stream.stream()
+    |> SpaceEx.Stream.with_get_fn()
+
+  altitude.() |> IO.inspect  # 76.64177794696297
+  ```
+  """
+
+  def with_get_fn(%Stream{} = stream), do: {stream, get_fn(stream)}
 
   @doc """
   Get (and decode) the current value from a stream.

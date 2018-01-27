@@ -271,6 +271,57 @@ defmodule SpaceEx.StreamTest do
     assert %Argument{value: <<0, 0, 200, 66>>} = rate_arg
   end
 
+  test "get_fn/1" do
+    state = MockConnection.start(real_stream: true)
+
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    stream = KRPC.paused(state.conn) |> Stream.stream()
+    get_fn = Stream.get_fn(stream)
+    me = self()
+
+    spawn_link(fn ->
+      send(me, {:first, get_fn.()})
+      send(me, {:second, get_fn.()})
+      send(me, {:third, get_fn.()})
+    end)
+
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # All three will be true, because we're using `get` and not `wait`.
+    assert_receive({:first, true})
+    assert_receive({:second, true})
+    assert_receive({:third, true})
+  end
+
+  test "with_get_fn/1" do
+    state = MockConnection.start(real_stream: true)
+
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    {_stream, get_fn} = KRPC.paused(state.conn) |> Stream.stream() |> Stream.with_get_fn()
+    me = self()
+
+    spawn_link(fn ->
+      send(me, {:first, get_fn.()})
+      send(me, {:second, get_fn.()})
+      send(me, {:third, get_fn.()})
+    end)
+
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # All three will be true, because we're using `get` and not `wait`.
+    assert_receive({:first, true})
+    assert_receive({:second, true})
+    assert_receive({:third, true})
+  end
+
   defp send_stream_result(socket, id, result) do
     StreamUpdate.new(results: [StreamResult.new(id: id, result: result)])
     |> StreamUpdate.encode()
