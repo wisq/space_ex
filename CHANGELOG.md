@@ -7,6 +7,9 @@
 * Removed the `conn` argument from `SpaceEx.Event.create/1`.
   * It can derive `conn` from `expr`.
   * This also allows for expressions to be pipelined in.
+* Changed `SpaceEx.Event.remove/2` to use keyword options.
+  * Timeout is now `opts[:timeout]`.
+  * Added `opts[:remove]`, default `true`.
 * Added the `start: false` option to `SpaceEx.Event.create/2`.
   * Can be used to create an event but start checking it later.
 * Added `SpaceEx.Event.start/1` to manually start an event stream.

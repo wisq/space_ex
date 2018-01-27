@@ -77,9 +77,9 @@ defmodule SpaceEx.EventTest do
     me = self()
     # Now, we wait.
     spawn_link(fn ->
-      send(me, {:first, Event.wait(event, 100)})
-      send(me, {:second, Event.wait(event, 100)})
-      send(me, {:third, Event.wait(event, 100)})
+      send(me, {:first, Event.wait(event, timeout: 100, remove: false)})
+      send(me, {:second, Event.wait(event, timeout: 100, remove: false)})
+      send(me, {:third, Event.wait(event, timeout: 100, remove: false)})
     end)
 
     # Send the result down the wire.
@@ -90,6 +90,52 @@ defmodule SpaceEx.EventTest do
     assert_receive({:first, true})
     assert_receive({:second, true})
     assert_receive({:third, true})
+  end
+
+  test "wait/1 calls remove/1 by default" do
+    state = MockConnection.start(real_stream: true)
+    conn = state.conn
+
+    # Create a dummy Expression reference.
+    type = %API.Type.Class{name: "Expression"}
+    expr = Types.decode(<<42>>, type, conn)
+
+    # AddEvent reply:
+    Protobufs.Event.new(stream: Protobufs.Stream.new(id: 66))
+    |> Protobufs.Event.encode()
+    |> MockConnection.add_result_value(conn)
+
+    # StartStream reply:
+    MockConnection.add_result_value("", conn)
+
+    # RemoveStream reply:
+    MockConnection.add_result_value("", conn)
+
+    me = self()
+    # We need to create the event in a subprocess, so that `Event.remove` works as intended.
+    spawn_link(fn ->
+      assert %Stream{id: 66, pid: stream_pid} = event = Event.create(expr)
+      send(me, {:stream_pid, stream_pid})
+      send(me, {:wait, Event.wait(event, timeout: 500)})
+    end)
+
+    # Should not get a reply yet.
+    refute_receive({:wait, true})
+
+    # Monitor the stream PID so we can properly assert on death.
+    assert_received({:stream_pid, stream_pid})
+    ref = Process.monitor(stream_pid)
+
+    # Send the result down the wire.
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 66, true_result)
+
+    # We should receive a value, and the Stream should terminate.
+    assert_receive({:wait, true})
+    assert_receive({:DOWN, ^ref, :process, ^stream_pid, :normal})
+
+    procedures = MockConnection.dump_calls(conn) |> Enum.map(& &1.procedure)
+    assert procedures == ["AddEvent", "StartStream", "RemoveStream"]
   end
 
   # It may seem redundant to test Event lifecycles, since they're just Streams, but

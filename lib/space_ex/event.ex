@@ -60,23 +60,31 @@ defmodule SpaceEx.Event do
   Waits for an event to trigger (become true).
 
   This will wait until the server reports that the conditional expression has
-  become true.  It will block for up to `timeout` milliseconds (default:
+  become true.  It will block for up to `opts[:timeout]` milliseconds (default:
   forever, aka `:infinity`), after which it will throw an `exit` signal.
 
   You can technically catch this exit signal with `try ... catch :exit, _`,
   but it's not generally considered good practice to do so.  As such, `wait/2`
   timeouts should generally be reserved for "something has gone badly wrong".
 
-  If this function is called and returns true (i.e. does not time out), then
-  the event is complete.  All future calls will immediately return `true` as
-  well, even if the condition is no longer true.
-  """
+  If this function is called and returns (i.e. does not time out), then the
+  event is complete.  As long as the stream remains alive, future calls will
+  immediately return `true` as well, even if the condition is no longer true.
 
-  def wait(event, timeout \\ :infinity) do
+  Since events are single-use, by default, this will call `Event.remove/1`
+  before returning.  This will allow the underlying stream to unregister itself
+  from the server.  You may suppress this behaviour with the `remove: true` option.
+  """
+  def wait(event, opts \\ []) do
+    remove = Keyword.get(opts, :remove, true)
+    timeout = Keyword.get(opts, :timeout, :infinity)
+
     # Don't use Stream.wait here, because it may have already received the
     # "true" value if the condition was true immediately.  The only thing we
     # care about is that the stream has received its first value.
-    Stream.get(event, timeout)
+    value = Stream.get(event, timeout)
+    if remove, do: remove(event)
+    value
   end
 
   @doc """
