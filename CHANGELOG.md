@@ -2,6 +2,16 @@
 
 ## v0.7.0
 
+### New functionality
+
+* Added `SpaceEx.ExpressionBuilder`, a far easier way to create `SpaceEx.KRPC.Expression` objects.
+  * Converted `sub_orbital_flight.exs` to use the new expression builder.
+* Added the `start: false` option to `SpaceEx.Event.create/2`.
+  * Can be used to create an event but start checking it later.
+* Added `SpaceEx.Event.start/1` to manually start an event stream.
+* Added `SpaceEx.Event.set_rate/2` to set the polling rate of an event.
+* Added `SpaceEx.Stream.subscribe/2` to allow asynchronous handling of streams.
+
 ### API changes
 
 * Replaced `SpaceEx.Stream.stream_fn/2` with `SpaceEx.Stream.with_get_fn/1`.
@@ -9,18 +19,9 @@
 * Removed the `conn` argument from `SpaceEx.Event.create/1`.
   * It can derive `conn` from `expr`.
   * This also allows for expressions to be pipelined in.
-* Changed `SpaceEx.Event.remove/2` to use keyword options.
+* Changed `SpaceEx.Event.wait/2` to use keyword options.
   * Timeout is now `opts[:timeout]`.
   * Added `opts[:remove]`, default `true`.
-* Added the `start: false` option to `SpaceEx.Event.create/2`.
-  * Can be used to create an event but start checking it later.
-* Added `SpaceEx.Event.start/1` to manually start an event stream.
-* Added `SpaceEx.Event.set_rate/2` to set the polling rate of an event.
-
-### Expression builder
-
-* Added `SpaceEx.ExpressionBuilder`, a far easier way to create `SpaceEx.KRPC.Expression` objects.
-* Converted `sub_orbital_flight.exs` to use the new expression builder.
 
 ### Other
 

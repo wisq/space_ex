@@ -83,13 +83,26 @@ defmodule SpaceEx.Stream do
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:id, :conn]
+    @enforce_keys [:id, :conn, :decoder]
     defstruct(
       id: nil,
       conn: nil,
       result: nil,
+      decoder: nil,
       waitlist: [],
+      subscriptions: %{},
       bonds: MapSet.new()
+    )
+  end
+
+  defmodule Subscription do
+    @moduledoc false
+
+    @enforce_keys [:pid, :immediate, :remove]
+    defstruct(
+      pid: nil,
+      immediate: nil,
+      remove: nil
     )
   end
 
@@ -138,7 +151,7 @@ defmodule SpaceEx.Stream do
   @doc false
   def launch(conn, stream_id, decoder) do
     pid =
-      case start_link(conn, stream_id) do
+      case start_link(conn, stream_id, decoder) do
         {:ok, pid} -> pid
         {:error, {:already_started, pid}} -> pid
       end
@@ -260,6 +273,37 @@ defmodule SpaceEx.Stream do
   end
 
   @doc """
+  Receive the next decoded value from a stream as a message.
+
+  This is the non-blocking version of `wait/2`.  As soon as the stream receives
+  a value, a message will be delivered to the calling process, in the form of
+  `{:stream_result, id, value}` where `id` is the value of `stream.id`.
+
+  Subscriptions are **not** automatically renewed.  It's up to the process to
+  call `subscribe` again.  Typically, this would be done either at the start or
+  end of the block of code handling the `:stream_result` message.
+
+  ## Options
+
+  * `:immediate` — if `true` and the stream has already received its first
+    result, that result will be sent and no subscription will occur.  Default: `false`
+  * `:remove` — if `true`, then `remove/1` will be called immediately after
+    sending the subscribed result.  Default: `false`
+  """
+  def subscribe(stream, opts \\ []) do
+    sub = %Subscription{
+      pid: self(),
+      immediate: Keyword.get(opts, :immediate, false),
+      remove: Keyword.get(opts, :remove, false)
+    }
+
+    case GenServer.call(stream.pid, {:subscribe, sub}) do
+      :ok -> :ok
+      {:already_subscribed, sub} -> raise "Subscription already exists: #{inspect(sub)}"
+    end
+  end
+
+  @doc """
   Set the update rate of a stream.
 
   `rate` is the number of updates per second.  Setting the rate to `0` or `nil`
@@ -294,10 +338,16 @@ defmodule SpaceEx.Stream do
   end
 
   @doc false
-  def start_link(conn, stream_id) do
+  def start_link(conn, stream_id, decoder) do
+    state = %State{
+      conn: conn,
+      id: stream_id,
+      decoder: decoder
+    }
+
     GenServer.start_link(
       __MODULE__,
-      {%State{id: stream_id, conn: conn}, self()},
+      {state, self()},
       name: {:via, StreamConnection.Registry, {conn.stream_pid, stream_id}}
     )
   end
@@ -328,6 +378,21 @@ defmodule SpaceEx.Stream do
     {:noreply, %State{state | waitlist: waitlist}}
   end
 
+  def handle_call({:subscribe, sub}, _from, state) do
+    cond do
+      existing = Map.get(state.subscriptions, sub.pid) ->
+        {:reply, {:already_subscribed, existing}, state}
+
+      sub.immediate && !is_nil(state.result) ->
+        new_state = dispatch_subscriptions(state, [sub])
+        {:reply, :ok, %State{state | bonds: new_state.bonds}}
+
+      true ->
+        state = %State{state | subscriptions: Map.put(state.subscriptions, sub.pid, sub)}
+        {:reply, :ok, state}
+    end
+  end
+
   def handle_call({:bond, pid}, _from, state) do
     Process.monitor(pid)
     new_bonds = MapSet.put(state.bonds, pid)
@@ -342,8 +407,12 @@ defmodule SpaceEx.Stream do
     if result == state.result do
       {:noreply, state}
     else
-      Enum.each(state.waitlist, &GenServer.reply(&1, result))
-      {:noreply, %State{state | result: result}}
+      state =
+        %State{state | result: result}
+        |> dispatch_waitlist
+        |> dispatch_subscriptions
+
+      {:noreply, state}
     end
   end
 
@@ -369,5 +438,43 @@ defmodule SpaceEx.Stream do
     new_bonds = MapSet.delete(bonds, pid)
     if Enum.empty?(new_bonds), do: send(self(), :shutdown)
     new_bonds
+  end
+
+  defp dispatch_waitlist(state) do
+    Enum.each(state.waitlist, &GenServer.reply(&1, state.result))
+    %State{state | waitlist: []}
+  end
+
+  defp dispatch_subscriptions(state) do
+    if Enum.empty?(state.subscriptions) do
+      state
+    else
+      subs = Map.values(state.subscriptions)
+      dispatch_subscriptions(state, subs)
+    end
+  end
+
+  # I was tempted to put this in a subprocess, but casual benchmarking suggests
+  # that the time to create a subprocess (even from the parent's detached POV)
+  # is greater than the time to just decode a typical simple value.
+  #
+  # Besides, we're not decoding every value.  If this takes a while, and
+  # several results back up in our queue, then we'll (by definition) process
+  # those results before we get the user's next `subscribe` request.  Those
+  # results will go undecoded, clearing our queue.
+  defp dispatch_subscriptions(state, subs) do
+    value = state.decoder.(state.result.value)
+
+    Enum.each(subs, fn sub ->
+      send(sub.pid, {:stream_result, state.id, value})
+    end)
+
+    new_bonds =
+      Enum.filter(subs, & &1.remove)
+      |> Enum.reduce(state.bonds, fn sub, bonds ->
+        remove_bond(bonds, sub.pid)
+      end)
+
+    %State{state | subscriptions: %{}, bonds: new_bonds}
   end
 end

@@ -322,6 +322,168 @@ defmodule SpaceEx.StreamTest do
     assert_receive({:third, true})
   end
 
+  test "subscribe/1" do
+    state = MockConnection.start(real_stream: true)
+
+    # Helper function to send values:
+    send_value = fn scene ->
+      value = KRPC.GameScene.atom_to_wire(scene)
+      result = ProcedureResult.new(value: value)
+      send_stream_result(state.stream_socket, 123, result)
+    end
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream:
+    assert %Stream{id: 123} = stream = KRPC.current_game_scene(state.conn) |> Stream.stream()
+
+    # Send a value before we've subscribed; we won't receive this:
+    send_value.(:flight)
+    assert Stream.get(stream) == :flight
+
+    # Subscribe to the stream:
+    assert :ok = Stream.subscribe(stream)
+    # We shouldn't receive the current value, only the next.
+    refute_receive {:stream_result, 123, :flight}
+
+    # Receive a value now that we're subscribed:
+    send_value.(:space_center)
+    assert_receive {:stream_result, 123, :space_center}
+
+    # We haven't resubscribed, so the next value goes unnoticed:
+    send_value.(:tracking_station)
+    refute_receive {:stream_result, 123, :tracking_station}
+
+    # Subscribe one more time:
+    assert :ok = Stream.subscribe(stream)
+    # We should receive the next value:
+    send_value.(:editor_sph)
+    assert_receive {:stream_result, 123, :editor_sph}
+  end
+
+  test "subscribe/1 does not allow multiple subscriptions with the same pid" do
+    state = MockConnection.start()
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream:
+    assert %Stream{id: 123} = stream = KRPC.current_game_scene(state.conn) |> Stream.stream()
+
+    # Subscribe to the stream:
+    assert :ok = Stream.subscribe(stream)
+
+    # Resubscription should fail:
+    err = assert_raise RuntimeError, fn -> Stream.subscribe(stream) end
+    assert err.message =~ "Subscription already exists"
+
+    # Subscribing from another PID should be fine:
+    me = self()
+    spawn_link(fn -> send(me, {:sub, Stream.subscribe(stream)}) end)
+    assert_receive {:sub, :ok}
+  end
+
+  test "subscribe/1 with immediate: true" do
+    state = MockConnection.start(real_stream: true)
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream:
+    assert %Stream{id: 123} = stream = KRPC.paused(state.conn) |> Stream.stream()
+
+    # Send a value before we've subscribed:
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # Ensure the stream has received the result:
+    assert Stream.get(stream) == true
+
+    # Subscribe to the stream, with `immediate: true`:
+    assert :ok = Stream.subscribe(stream, immediate: true)
+
+    # We should receive the current result immediately.
+    assert_receive {:stream_result, 123, true}
+  end
+
+  test "subscribe/1 with remove: true" do
+    state = MockConnection.start(real_stream: true)
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream:
+    assert %Stream{id: 123} = stream = KRPC.paused(state.conn) |> Stream.stream()
+    ref = Process.monitor(stream.pid)
+
+    # Subscribe right away, with `remove: true`:
+    assert :ok = Stream.subscribe(stream, remove: true)
+
+    # RemoveStream result:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    # Send a value:
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # We should receive it, and the stream should shut down:
+    assert_receive {:stream_result, 123, true}
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}
+
+    # Stream should be removed:
+    assert [_add, remove] = MockConnection.dump_calls(state.conn)
+    assert remove.procedure == "RemoveStream"
+  end
+
+  test "streams do not decode values by default (without subscriptions)" do
+    state = MockConnection.start(real_stream: true)
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream and monitor the PID:
+    assert %Stream{id: 123} = stream = KRPC.current_game_scene(state.conn) |> Stream.stream()
+    Process.monitor(stream.pid)
+
+    # Send a bogus value:
+    result = ProcedureResult.new(value: <<1, 2, 3>>)
+    send_stream_result(state.stream_socket, 123, result)
+
+    # Decoding should raise an error:
+    err =
+      assert_raise(FunctionClauseError, fn ->
+        Stream.get(stream)
+      end)
+
+    assert err.module == KRPC.GameScene
+    assert err.function == :wire_to_atom
+
+    me = self()
+    # Wait for the next value:
+    spawn_link(fn ->
+      send(me, {:result, Stream.wait(stream)})
+    end)
+
+    # Send a real value:
+    value = KRPC.GameScene.atom_to_wire(:flight)
+    true_result = ProcedureResult.new(value: value)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # Should be able to get it, no problem:
+    assert_receive {:result, :flight}
+  end
+
   defp send_stream_result(socket, id, result) do
     StreamUpdate.new(results: [StreamResult.new(id: id, result: result)])
     |> StreamUpdate.encode()
