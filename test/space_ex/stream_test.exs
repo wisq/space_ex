@@ -131,9 +131,6 @@ defmodule SpaceEx.StreamTest do
     [pid1, pid2, pid3] = Enum.shuffle(pids)
 
     send(pid1, :remove)
-    refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
-    assert [] = MockConnection.dump_calls(state.conn)
-
     send(pid2, :remove)
     refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
     assert [] = MockConnection.dump_calls(state.conn)
@@ -181,9 +178,6 @@ defmodule SpaceEx.StreamTest do
     [pid1, pid2, pid3] = Enum.shuffle(pids)
 
     send(pid1, :exit)
-    refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
-    assert [] = MockConnection.dump_calls(state.conn)
-
     send(pid2, :exit)
     refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
     assert [] = MockConnection.dump_calls(state.conn)
@@ -346,12 +340,12 @@ defmodule SpaceEx.StreamTest do
 
     # Subscribe to the stream:
     assert :ok = Stream.subscribe(stream)
-    # We shouldn't receive the current value, only the next.
-    refute_receive {:stream_result, 123, :flight}
 
     # Receive a value now that we're subscribed:
     send_value.(:space_center)
     assert_receive {:stream_result, 123, :space_center}
+    # We shouldn't have received the first value, only the second:
+    refute_received {:stream_result, 123, :flight}
 
     # We haven't resubscribed, so the next value goes unnoticed:
     send_value.(:tracking_station)

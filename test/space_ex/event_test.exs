@@ -191,12 +191,8 @@ defmodule SpaceEx.EventTest do
     # Remove them in a random order, to avoid any ordering favouratism.
     [pid1, pid2, pid3] = Enum.shuffle(pids)
 
-    # First remove does nothing.
+    # First and second removes do nothing.
     send(pid1, :remove)
-    refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
-    assert [] = MockConnection.dump_calls(state.conn)
-
-    # Second remove does nothing.
     send(pid2, :remove)
     refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
     assert [] = MockConnection.dump_calls(state.conn)
@@ -263,12 +259,8 @@ defmodule SpaceEx.EventTest do
     # Exit in a random order, to avoid any ordering favouratism.
     [pid1, pid2, pid3] = Enum.shuffle(pids)
 
-    # First exit does nothing.
+    # First and second exits do nothing.
     send(pid1, :exit)
-    refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
-    assert [] = MockConnection.dump_calls(state.conn)
-
-    # Second exit does nothing.
     send(pid2, :exit)
     refute_receive {:DOWN, ^ref, :process, ^stream_pid, _reason}
     assert [] = MockConnection.dump_calls(state.conn)
