@@ -108,5 +108,25 @@ defmodule SpaceEx.Event do
   """
   defdelegate remove(event), to: SpaceEx.Stream
 
+  @doc """
+  Receive a message when an event triggers (becomes true).
+
+  This is the non-blocking version of `wait/2`.  Once the event is complete, a
+  message will be delivered to the calling process.  By default, this will also
+  call `Event.remove/1` to clean up the event stream.
+
+  Because events are effectively just streams, this message will be in the form
+  of `{:stream_result, id, value}` where `id` is the value of `event.id`.
+
+  This function behaves identically to `SpaceEx.Stream.subscribe/2`, except
+  that the `immediate` and `remove` options are both `true` by default.  It's
+  unlikely that you'll want to change either of these, since event streams
+  only ever get a single message.
+  """
+  def subscribe(event, opts \\ []) do
+    opts = opts |> Keyword.put_new(:immediate, true) |> Keyword.put_new(:remove, true)
+    Stream.subscribe(event, opts)
+  end
+
   defp decode_event(value), do: Types.decode(value, @bool_type, nil)
 end

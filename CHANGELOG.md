@@ -10,7 +10,7 @@
   * Can be used to create an event but start checking it later.
 * Added `SpaceEx.Event.start/1` to manually start an event stream.
 * Added `SpaceEx.Event.set_rate/2` to set the polling rate of an event.
-* Added `SpaceEx.Stream.subscribe/2` to allow asynchronous handling of streams.
+* Added `SpaceEx.Stream.subscribe/2` and `SpaceEx.Event.subscribe/2` to allow asynchronous handling of streams and events.
 
 ### API changes
 

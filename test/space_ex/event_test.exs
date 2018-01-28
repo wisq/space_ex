@@ -367,6 +367,46 @@ defmodule SpaceEx.EventTest do
     assert [%Argument{value: <<76>>}, %Argument{value: <<0, 0, 200, 66>>}] = call.arguments
   end
 
+  test "subscribe/2" do
+    state = MockConnection.start(real_stream: true)
+    conn = state.conn
+
+    # Create a dummy Expression reference:
+    type = %API.Type.Class{name: "Expression"}
+    expr = Types.decode(<<42>>, type, conn)
+
+    # AddEvent reply:
+    Protobufs.Event.new(stream: Protobufs.Stream.new(id: 66))
+    |> Protobufs.Event.encode()
+    |> MockConnection.add_result_value(conn)
+
+    # StartStream reply:
+    MockConnection.add_result_value(<<>>, conn)
+
+    # Create the Event/Stream:
+    assert %Stream{id: 66} = event = Event.create(expr)
+    assert [_add_event, _start_stream] = MockConnection.dump_calls(conn)
+    ref = Process.monitor(event.pid)
+
+    # Subscribe to the new event:
+    assert :ok = Event.subscribe(event)
+
+    # Prepare the RemoveStream reply:
+    MockConnection.add_result_value(<<>>, conn)
+
+    # Send the result down the wire:
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 66, true_result)
+
+    # Receive the stream result:
+    assert_receive {:stream_result, 66, true}
+
+    # Stream should be removed and terminated:
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}
+    assert [remove] = MockConnection.dump_calls(conn)
+    assert remove.procedure == "RemoveStream"
+  end
+
   defp send_stream_result(socket, id, result) do
     StreamUpdate.new(results: [StreamResult.new(id: id, result: result)])
     |> StreamUpdate.encode()
