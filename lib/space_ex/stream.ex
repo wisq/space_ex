@@ -355,7 +355,7 @@ defmodule SpaceEx.Stream do
   @doc false
   def init({%State{conn: conn} = state, launching_pid}) do
     # Re-home this process to the StreamConnection itself.
-    Process.monitor(conn.stream_pid)
+    Process.flag(:trap_exit, true)
     Process.link(conn.stream_pid)
     Process.unlink(launching_pid)
     {:ok, state}
@@ -422,6 +422,11 @@ defmodule SpaceEx.Stream do
     else
       {:noreply, %State{state | bonds: remove_bond(state.bonds, dead_pid)}}
     end
+  end
+
+  def handle_info({:EXIT, _dead_pid, reason}, _state) do
+    # Some linked process -- our StreamConnection, our Connection, and/or its launching process -- has died.
+    exit(reason)
   end
 
   def handle_info(:shutdown, state) do
