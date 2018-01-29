@@ -417,11 +417,7 @@ defmodule SpaceEx.Stream do
   end
 
   def handle_info({:DOWN, _ref, :process, dead_pid, _reason}, state) do
-    if dead_pid == state.conn.stream_pid do
-      exit(:normal)
-    else
-      {:noreply, %State{state | bonds: remove_bond(state.bonds, dead_pid)}}
-    end
+    {:noreply, %State{state | bonds: remove_bond(state.bonds, dead_pid)}}
   end
 
   def handle_info({:EXIT, _dead_pid, reason}, _state) do
