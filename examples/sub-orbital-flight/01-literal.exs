@@ -5,20 +5,22 @@
 # use of multiple Elixir processes to watch for various events, independent of
 # each other, rather than in sequence.
 #
-# Despite this, it's not nearly as bad as the mess that is
-# `launch_into_orbit.exs`.  The use of events -- and the hardcoded sequence,
+# Despite this, it's not nearly as bad as the mess that is the literal version
+# of "launch into orbit".  The use of events -- and the hardcoded sequence,
 # rather than monitoring a bunch of aspects at once -- keeps things much
 # cleaner.
-#
-# There have been some syntax improvements since this script was originally
-# ported, some of which should allow the code to be cleaned up somewhat, but
-# that cleanup is still pending.  I'll do a cleanup pass once we've reached a
-# stable v1.0.0 API.
 #
 # This script should be used with the included "sub_orbital_flight.craft"
 # craft, due to the hardcoded staging sequence.
 
+# Get some common modules like arg parsing, `Loop`, etc.
+Path.expand("../common.ex", __DIR__)
+|> Code.load_file()
+
 defmodule SubOrbitalFlight do
+  require Loop
+  import Loop
+
   use SpaceEx.ExpressionBuilder
 
   alias SpaceEx.{
@@ -44,20 +46,17 @@ defmodule SubOrbitalFlight do
   # ("Gravity turn" may be the most misused term in the Kerbal community.)
   @pitch_over_altitude 10_000
   # Deploy parachutes at 1500m.
-  # The original script has them deploy at 1000m,
-  # but I find this is often too late.
+  # The original script has them deploy at 1000m, but I find this is often too late.
+  # Even 1500m only leaves us with 100m clearance sometimes.  Maybe network latency.
   @parachute_altitude 1_500
 
   def launch(conn) do
     vessel = SpaceCenter.active_vessel(conn)
-    autopilot = Vessel.auto_pilot(vessel)
-    resources = Vessel.resources(vessel)
-    control = Vessel.control(vessel)
-    flight = Vessel.flight(vessel)
-    orbit = Vessel.orbit(vessel)
 
+    autopilot = Vessel.auto_pilot(vessel)
     AutoPilot.target_pitch_and_heading(autopilot, 90, 90)
     AutoPilot.engage(autopilot)
+    control = Vessel.control(vessel)
     Control.set_throttle(control, 1.0)
     Process.sleep(1_000)
 
@@ -66,7 +65,7 @@ defmodule SubOrbitalFlight do
 
     # Wait until SRBs exhausted:
     ExpressionBuilder.build conn do
-      Resources.amount(resources, "SolidFuel") < float(0.1)
+      Vessel.resources(vessel) |> Resources.amount("SolidFuel") < float(0.1)
     end
     |> Event.create()
     |> Event.wait()
@@ -75,6 +74,8 @@ defmodule SubOrbitalFlight do
     Control.activate_next_stage(control)
 
     # Wait until above target altitude:
+    flight = Vessel.flight(vessel)
+
     ExpressionBuilder.build conn do
       Flight.mean_altitude(flight) > double(@pitch_over_altitude)
     end
@@ -85,6 +86,8 @@ defmodule SubOrbitalFlight do
     AutoPilot.target_pitch_and_heading(autopilot, 60, 90)
 
     # Wait until above target apoapsis:
+    orbit = Vessel.orbit(vessel)
+
     ExpressionBuilder.build conn do
       Orbit.apoapsis_altitude(orbit) > double(@target_apoapsis)
     end
@@ -106,40 +109,19 @@ defmodule SubOrbitalFlight do
 
     Control.activate_next_stage(control)
 
-    kerbin_frame = Orbit.body(orbit) |> CelestialBody.reference_frame()
-    kerbin_flight = Vessel.flight(vessel, reference_frame: kerbin_frame)
+    body_frame = Orbit.body(orbit) |> CelestialBody.reference_frame()
+    body_flight = Vessel.flight(vessel, reference_frame: body_frame)
 
-    wait_until(fn ->
+    while Flight.vertical_speed(body_flight) < 0.1 do
       surface_altitude = Flight.surface_altitude(flight)
       alti = :erlang.float_to_binary(surface_altitude, decimals: 1)
       IO.puts("Altitude = #{alti} meters")
 
       Process.sleep(1_000)
-      # Break if vertical speed reaches zero (or positive).
-      vertical_speed = Flight.vertical_speed(kerbin_flight)
-      vertical_speed > -0.1
-    end)
+    end
 
     IO.puts("Landed!")
   end
-
-  # Basically an imperative 'until' loop.
-  def wait_until(func) do
-    Stream.cycle([:ok])
-    |> Enum.find(fn _ -> func.() end)
-  end
 end
 
-host = System.get_env("KRPC_HOST") || "127.0.0.1"
-conn = SpaceEx.Connection.connect!(name: "Sub-orbital flight", host: host)
-
-try do
-  SpaceEx.KRPC.set_paused(conn, false)
-  SubOrbitalFlight.launch(conn)
-  Process.sleep(1_000)
-after
-  # If the script dies, the ship will just keep doing whatever it's doing,
-  # but without any control or autopilot guidance.  Pausing on completion,
-  # but especially on error, makes it clear when a human should take over.
-  SpaceEx.KRPC.set_paused(conn, true)
-end
+Example.run(&SubOrbitalFlight.launch/1, "Sub-orbital flight")
