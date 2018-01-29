@@ -27,11 +27,7 @@ defmodule Example do
       # If the script dies, the ship will just keep doing whatever it's doing,
       # but without any control or autopilot guidance.  Pausing on completion,
       # but especially on error, makes it clear when a human should take over.
-      try do
-        # SpaceEx.KRPC.set_paused(conn, true)
-      rescue
-        _ -> :ignore
-      end
+      SpaceEx.KRPC.set_paused(conn, true)
     end
   end
 end

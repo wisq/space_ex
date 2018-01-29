@@ -154,8 +154,7 @@ defmodule LaunchIntoOrbit do
 
     # Orientate ship
     IO.puts("Orientating ship for circularization burn")
-    node_frame = Node.reference_frame(node)
-    AutoPilot.set_reference_frame(autopilot, node_frame)
+    AutoPilot.set_reference_frame(autopilot, Node.reference_frame(node))
     AutoPilot.set_target_direction(autopilot, {0, 1, 0})
     # Note that AutoPilot.wait sometimes returns immediately, without waiting.
     # It's an old bug in kRPC, not a bug in this code.
