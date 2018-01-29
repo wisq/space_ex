@@ -430,6 +430,7 @@ defmodule SpaceEx.Stream do
       {:noreply, state}
     else
       KRPC.remove_stream(state.conn, state.id)
+      Process.unlink(state.conn.stream_pid)
       exit(:normal)
     end
   end

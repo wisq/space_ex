@@ -147,6 +147,33 @@ defmodule SpaceEx.StreamTest do
     Enum.each(pids, &send(&1, :exit))
   end
 
+  test "remove/1 does not terminate Connection or StreamConnection" do
+    state = MockConnection.start(real_stream: true)
+    conn = state.conn
+
+    # AddStream response:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(conn)
+
+    # RemoveStream response:
+    MockConnection.add_result_value(<<>>, conn)
+
+    stream = KRPC.paused(conn) |> Stream.stream()
+
+    # Monitor all related processes:
+    Process.monitor(conn.pid)
+    Process.monitor(conn.stream_pid)
+    ref = Process.monitor(stream.pid)
+
+    Stream.remove(stream)
+
+    # Stream process should die:
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}
+    # But nobody else should:
+    refute_receive {:DOWN, _ref, :process, _pid, :normal}
+  end
+
   test "stream process removes itself and exits if ALL launching processes exit" do
     state = MockConnection.start(real_stream: true)
 
