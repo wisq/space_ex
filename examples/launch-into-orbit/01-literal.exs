@@ -207,4 +207,4 @@ defmodule LaunchIntoOrbit do
   end
 end
 
-Example.run(&LaunchIntoOrbit.launch/1, "Launch into orbit")
+Example.run(__ENV__, &LaunchIntoOrbit.launch/1, "Launch into orbit")

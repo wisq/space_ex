@@ -1,19 +1,38 @@
 defmodule Example do
-  defp parse_args do
+  defp parse_args(caller_env) do
     {options, args, invalid} =
-      OptionParser.parse(System.argv(), switches: [host: :string, observer: :boolean])
+      OptionParser.parse(System.argv(), strict: [host: :string, observer: :boolean])
 
-    unless args == [] && invalid == [] do
-      whoami = Path.relative_to_cwd(__ENV__.file)
-      IO.puts("\nUsage: mix run #{whoami} [--host 1.2.3.4] [--observer]\n")
-      exit(:normal)
+    unless invalid == [] do
+      IO.puts("")
+
+      Enum.each(invalid, fn {opt, _} ->
+        case opt do
+          "--host" -> "--host should be followed by a hostname or IP."
+          opt -> "Invalid option: #{opt}"
+        end
+        |> IO.puts()
+      end)
+
+      usage(caller_env)
+    end
+
+    unless args == [] do
+      IO.puts("\nThis script does not expect any (non-option) arguments.")
+      usage(caller_env)
     end
 
     options
   end
 
-  def run(module_fn, name) do
-    options = parse_args()
+  defp usage(caller_env) do
+    whoami = Path.relative_to_cwd(caller_env.file)
+    IO.puts("\nUsage: mix run #{whoami} [--host 1.2.3.4] [--observer]\n")
+    exit(:normal)
+  end
+
+  def run(caller_env, module_fn, name) do
+    options = parse_args(caller_env)
     host = options[:host] || "127.0.0.1"
     conn = SpaceEx.Connection.connect!(name: name, host: host)
 

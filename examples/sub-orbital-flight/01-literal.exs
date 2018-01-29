@@ -124,4 +124,4 @@ defmodule SubOrbitalFlight do
   end
 end
 
-Example.run(&SubOrbitalFlight.launch/1, "Sub-orbital flight")
+Example.run(__ENV__, &SubOrbitalFlight.launch/1, "Sub-orbital flight")
