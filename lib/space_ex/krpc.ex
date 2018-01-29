@@ -4,7 +4,7 @@ defmodule SpaceEx.KRPC do
     overrides: %{
       add_stream: [:nodoc],
       add_event: [:nodoc],
-      remove_stream: [:nodoc],
+      remove_stream: [:nodoc, :cast],
       set_stream_rate: [:nodoc],
       start_stream: [:nodoc]
     }

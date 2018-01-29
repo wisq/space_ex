@@ -135,6 +135,22 @@ defmodule SpaceEx.Gen do
         unquote(return_decode_ast)
       end
 
+      if :cast in overrides do
+        cast_name = :"cast_#{fn_name}"
+
+        @doc false
+        def unquote(cast_name)(unquote_splicing(def_args)) when unquote(guard_ast) do
+          unquote_splicing(arg_encode_ast)
+
+          SpaceEx.Connection.cast_rpc(
+            var!(conn, SpaceEx.Gen),
+            unquote(service_name),
+            unquote(rpc_name),
+            unquote(arg_vars)
+          )
+        end
+      end
+
       @doc false
       def unquote(:"rpc_#{fn_name}")(unquote_splicing(def_args)) when unquote(guard_ast) do
         unquote_splicing(arg_encode_ast)

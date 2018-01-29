@@ -429,7 +429,7 @@ defmodule SpaceEx.Stream do
     if Enum.any?(state.bonds, &Process.alive?/1) do
       {:noreply, state}
     else
-      KRPC.remove_stream(state.conn, state.id)
+      KRPC.cast_remove_stream(state.conn, state.id)
       Process.unlink(state.conn.stream_pid)
       exit(:normal)
     end

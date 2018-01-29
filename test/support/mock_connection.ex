@@ -81,10 +81,12 @@ defmodule SpaceEx.Test.MockConnection do
     defstruct(requests: [], replies: [], stream_pid: nil)
   end
 
+  @impl true
   def init([]) do
     {:ok, %State{}}
   end
 
+  @impl true
   def handle_call({:rpc, _bytes}, _from, %State{replies: []}) do
     raise "Got RPC request, but no replies in queue"
   end
@@ -111,9 +113,20 @@ defmodule SpaceEx.Test.MockConnection do
     exit(:normal)
   end
 
+  @impl true
   def handle_cast({:create_stream_connection, port, client_id}, state) do
     info = %Connection.Info{stream_port: port}
     {:ok, pid} = StreamConnection.connect(info, client_id, self())
     {:noreply, %State{state | stream_pid: pid}}
+  end
+
+  @impl true
+  def handle_cast({:rpc, _bytes}, %State{replies: []}) do
+    raise "Got RPC request (cast), but no replies in queue"
+  end
+
+  @impl true
+  def handle_cast({:rpc, bytes}, %State{replies: [_ | future_replies]} = state) do
+    {:noreply, %State{state | requests: state.requests ++ [bytes], replies: future_replies}}
   end
 end

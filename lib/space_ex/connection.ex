@@ -153,6 +153,7 @@ defmodule SpaceEx.Connection do
   end
 
   @doc false
+  @impl true
   def init({info, _launching_pid}) do
     Process.flag(:trap_exit, true)
 
@@ -202,6 +203,27 @@ defmodule SpaceEx.Connection do
 
   @doc false
   def call_rpc(%Connection{pid: pid}, service, procedure, args) do
+    request = encode_rpc_request(service, procedure, args)
+
+    GenServer.call(pid, {:rpc, request}, :infinity)
+    |> decode_rpc_response()
+  end
+
+  @doc false
+  def call_rpc!(conn, service, procedure, args) do
+    case call_rpc(conn, service, procedure, args) do
+      {:ok, value} -> value
+      {:error, error} -> raise RPCError, error
+    end
+  end
+
+  @doc false
+  def cast_rpc(%Connection{pid: pid}, service, procedure, args) do
+    request = encode_rpc_request(service, procedure, args)
+    GenServer.cast(pid, {:rpc, request})
+  end
+
+  defp encode_rpc_request(service, procedure, args) do
     args =
       Enum.with_index(args)
       |> Enum.map(fn {arg, index} ->
@@ -215,13 +237,12 @@ defmodule SpaceEx.Connection do
         arguments: args
       )
 
-    request =
-      Request.new(calls: [call])
-      |> Request.encode()
+    Request.new(calls: [call])
+    |> Request.encode()
+  end
 
-    response =
-      GenServer.call(pid, {:rpc, request}, :infinity)
-      |> Response.decode()
+  defp decode_rpc_response(response) do
+    response = Response.decode(response)
 
     if response.error do
       {:error, response.error}
@@ -236,12 +257,20 @@ defmodule SpaceEx.Connection do
     end
   end
 
-  @doc false
-  def call_rpc!(conn, service, procedure, args) do
-    case call_rpc(conn, service, procedure, args) do
-      {:ok, value} -> value
-      {:error, error} -> raise RPCError, error
-    end
+  @impl true
+  def handle_cast({:rpc, bytes}, state) do
+    send_message(bytes, state.socket)
+    queue = :queue.in(:noreply, state.reply_queue)
+
+    {:noreply, %State{state | reply_queue: queue}}
+  end
+
+  @impl true
+  def handle_call({:rpc, bytes}, from, state) do
+    send_message(bytes, state.socket)
+    queue = :queue.in(from, state.reply_queue)
+
+    {:noreply, %State{state | reply_queue: queue}}
   end
 
   def handle_call(:get_details, _from, state) do
@@ -253,13 +282,6 @@ defmodule SpaceEx.Connection do
     {:reply, details, state}
   end
 
-  def handle_call({:rpc, bytes}, from, state) do
-    send_message(bytes, state.socket)
-    queue = :queue.in(from, state.reply_queue)
-
-    {:noreply, %State{state | reply_queue: queue}}
-  end
-
   def handle_call(:client_id, _from, state) do
     {:reply, state.client_id, state}
   end
@@ -269,6 +291,7 @@ defmodule SpaceEx.Connection do
     exit(:normal)
   end
 
+  @impl true
   def handle_info({:tcp, socket, bytes}, %State{socket: socket} = state) do
     buffer = state.buffer <> bytes
     {queue, buffer} = dispatch_replies(state.reply_queue, buffer)
@@ -298,7 +321,12 @@ defmodule SpaceEx.Connection do
 
   defp dispatch_reply(queue, reply) do
     {{:value, from}, queue} = :queue.out(queue)
-    GenServer.reply(from, reply)
+
+    case from do
+      :noreply -> :ok
+      _ -> GenServer.reply(from, reply)
+    end
+
     queue
   end
 
