@@ -26,10 +26,15 @@
 ### Other
 
 * Fixed bugs with `SpaceEx.Stream.set_rate/2` and `SpaceEx.Stream.start/1`.
+* Fixed race condition with `SpaceEx.Stream` shutdown.
+  * `SpaceEx.KRPC.remove_stream/2` now has a `cast_remove_stream` version to facilitate this.
+  * Now potentially easy to add `cast_` versions to other functions.
 * Added more tests for `SpaceEx.Stream` and `SpaceEx.Event`.
 * Stricter parameter and return type validation for `SpaceEx.Stream` calls.
 * API documentation now gives details on every RPC function's return value.
   * This helps users know what constant types to use in Expressions and the ExpressionBuilder.
+* Examples split out into their own directories.
+  * Multiple versions of each, in progessively more Elixir-y style.
 
 ## v0.6.0
  
