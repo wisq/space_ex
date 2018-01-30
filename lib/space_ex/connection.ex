@@ -137,7 +137,7 @@ defmodule SpaceEx.Connection do
   See `connect/1`.  On success, returns `conn`.
   """
   def connect!(info \\ []) do
-    case connect(opts_or_info) do
+    case connect(info) do
       {:ok, conn} -> conn
       {:error, reason} -> raise "kRPC connection failed: #{inspect(reason)}"
     end
