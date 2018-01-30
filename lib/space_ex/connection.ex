@@ -87,6 +87,9 @@ defmodule SpaceEx.Connection do
       port: 50000,
       stream_port: 50001
     )
+
+    @doc false
+    def host_arg(%Info{host: host}), do: String.to_charlist(host)
   end
 
   @doc """
@@ -164,7 +167,7 @@ defmodule SpaceEx.Connection do
   end
 
   defp establish_rpc_connection(info) do
-    case Socket.TCP.connect(info.host, info.port, packet: :raw) do
+    case :gen_tcp.connect(Info.host_arg(info), info.port, connection_options()) do
       {:ok, socket} ->
         negotiate_rpc_handshake(info, socket)
 
@@ -185,7 +188,7 @@ defmodule SpaceEx.Connection do
 
     case response.status do
       :OK ->
-        Socket.active(socket)
+        :inet.setopts(socket, active: true)
         client_id = response.client_identifier
         {:ok, %State{socket: socket, client_id: client_id}}
 

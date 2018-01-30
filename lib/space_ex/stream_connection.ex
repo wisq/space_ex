@@ -1,6 +1,7 @@
 defmodule SpaceEx.StreamConnection do
   use GenServer
   import SpaceEx.Util.Connection
+  alias SpaceEx.Connection.Info
 
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
@@ -53,7 +54,7 @@ defmodule SpaceEx.StreamConnection do
   end
 
   defp establish_stream_connection(info, client_id) do
-    case Socket.TCP.connect(info.host, info.stream_port, packet: :raw) do
+    case :gen_tcp.connect(Info.host_arg(info), info.stream_port, connection_options()) do
       {:ok, socket} ->
         negotiate_stream_handshake(client_id, socket)
 
@@ -76,7 +77,7 @@ defmodule SpaceEx.StreamConnection do
 
     case response.status do
       :OK ->
-        Socket.active(socket)
+        :inet.setopts(socket, active: true)
         {:ok, %State{socket: socket}}
 
       _ ->

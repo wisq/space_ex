@@ -68,7 +68,6 @@ defmodule SpaceEx.Mixfile do
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"},
       {:exprotobuf, "~> 1.2.9"},
-      {:socket, "~> 0.3"},
       {:poison, "~> 3.1"},
       {:floki, "~> 0.19.0"},
       {:ex_doc, "~> 0.10", only: :dev},

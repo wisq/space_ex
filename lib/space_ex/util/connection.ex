@@ -1,29 +1,37 @@
 defmodule SpaceEx.Util.Connection do
   @moduledoc false
 
+  def connection_options do
+    [:binary] ++ [active: false, packet: :raw]
+  end
+
   def send_message(message, socket) do
     size =
       byte_size(message)
       |> :gpb.encode_varint()
 
-    Socket.Stream.send!(socket, size <> message)
+    :ok = :gen_tcp.send(socket, size <> message)
   end
 
   # Only called during initialisation.
   # After that, the socket is in active mode,
   # and all replies come via handle_info messages.
   def recv_message(socket, buffer \\ <<>>) do
-    case Socket.Stream.recv!(socket, 1) do
+    case recv!(socket, 1) do
       <<1::size(1), _::bitstring>> = byte ->
         # high bit set, varint incomplete
         recv_message(socket, buffer <> byte)
 
       <<0::size(1), _::bitstring>> = byte ->
         {size, ""} = :gpb.decode_varint(buffer <> byte)
-        Socket.Stream.recv!(socket, size)
+        recv!(socket, size)
+    end
+  end
 
-      nil ->
-        raise "kRPC connection closed"
+  defp recv!(socket, size) do
+    case :gen_tcp.recv(socket, size) do
+      {:ok, bytes} -> bytes
+      {:error, :closed} -> raise "kRPC connection closed"
     end
   end
 
