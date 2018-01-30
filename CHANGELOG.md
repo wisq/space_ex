@@ -14,6 +14,7 @@
 
 ### API changes
 
+* Fixed the `SpaceEx.Connection.connect` and `connect!` to allow zero args again.
 * Replaced `SpaceEx.Stream.stream_fn/2` with `SpaceEx.Stream.with_get_fn/1`.
   * `... |> Stream.stream_fn` is now `... |> Stream.stream |> Stream.with_get_fn`
 * Removed the `conn` argument from `SpaceEx.Event.create/1`.

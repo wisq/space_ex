@@ -20,7 +20,7 @@ Then, add `space_ex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:space_ex, "~> 0.6.0"}
+    {:space_ex, "~> 0.7.0"}
   ]
 end
 ```
