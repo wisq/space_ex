@@ -106,6 +106,8 @@ defmodule SpaceEx.Connection do
   that process exits or crashes, the connection will be shut down.
   """
 
+  def connect(info \\ [])
+
   def connect(%Info{} = info) do
     # We avoid start_link since otherwise, if `init/1` fails, we get an EXIT signal.
     # Instead, we link to the connection below.
@@ -134,7 +136,7 @@ defmodule SpaceEx.Connection do
 
   See `connect/1`.  On success, returns `conn`.
   """
-  def connect!(opts_or_info) do
+  def connect!(info \\ []) do
     case connect(opts_or_info) do
       {:ok, conn} -> conn
       {:error, reason} -> raise "kRPC connection failed: #{inspect(reason)}"
