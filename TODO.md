@@ -1,9 +1,21 @@
 # To-do list
 
-## Lazy streams and events
+## Improve the `SpaceEx.Stream.subscribe/2` interface
 
-This needs some more investigation — I need to look into precisely what other libraries do with their streams and events — but I believe the standard is *not* to start the streams/events right away.  Rather, they wait for the first `get` / `wait` / etc. and then start the stream if it's not started already.
+I'm thinking that clients will be able to subscribe to the next `n` values instead of just one value.  The number of values remaining (i.e. the remaining subscription duration) will be delivered with each message, meaning processes can e.g. resubscribe when they get down to a certain number remaining.
 
-This should be relatively easy to implement — change the `start` default to `false` (or remove it entirely?), add a `started` boolean to `SpaceEx.Stream.State`, change the `start` function to a `GenServer.call`, and have auto-starting behaviour (probably `defp ensure_started`) on `get` etc.  Streams already know about `conn`, so they can issue the call.
+I also want to send the time the value was received.  As such, clients can choose between three different approaches to rate control:
 
-It will also have the advantage that users can't accidentally try to `get` a non-started stream and block for a long time because they forgot to start it.
+* "Don't care" — The default approach.  Receive values as they come.  Re-subscribe when remaining items **equals¹** a low water mark.
+  * If your subscription runs out, you'll just have periods of missed events.
+  * You may be parsing older events.
+* "Must not miss an event" — per default, except raise if remaining items ever reaches zero (i.e. subscription expired).
+  * If your subscription runs out, you'll raise an error.
+  * You may be parsing older events.
+* "Must be real-time data" — per default, except throw out any values where the delta between `time` and `now` is too high.
+  * You'll never be parsing older events.
+  * You're less likely to have your subscription run out, because throwing away old data is a very fast way to stay caught up.
+
+It would also be cool if there was a way to retrieve this time value from `get` and `wait`.  Maybe as an optional structure, or a second part of a tuple.
+
+¹ It's important that you renew when *equal to* a number, rather than *less than* a number.  Otherwise, you issue a resubscription request for *every message* below the threshold.  This should be stressed in the docs.
