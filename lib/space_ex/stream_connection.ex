@@ -2,6 +2,7 @@ defmodule SpaceEx.StreamConnection do
   use GenServer
   import SpaceEx.Util.Connection
   alias SpaceEx.Connection.Info
+  alias SpaceEx.Stream
 
   alias SpaceEx.Protobufs.{
     ConnectionRequest,
@@ -157,7 +158,8 @@ defmodule SpaceEx.StreamConnection do
         :error
 
       pid when is_pid(pid) ->
-        send(pid, {:stream_result, id, stream_result.result})
+        result = Stream.package_result(stream_result.result)
+        send(pid, {:stream_result, id, result})
     end
   end
 end

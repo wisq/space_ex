@@ -19,35 +19,45 @@ defmodule SpaceEx.StreamConnectionTest do
     StreamConnection.Registry.register_name({state.conn.stream_pid, 123}, self())
     StreamConnection.Registry.register_name({state.conn.stream_pid, 789}, self())
 
-    result1 = ProcedureResult.new(value: <<4, 5, 6>>)
-    result2 = ProcedureResult.new(value: <<10, 11, 12>>)
+    pres1 = ProcedureResult.new(value: <<4, 5, 6>>)
+    pres2 = ProcedureResult.new(value: <<10, 11, 12>>)
 
     StreamUpdate.new(
       results: [
-        StreamResult.new(id: 123, result: result1),
-        StreamResult.new(id: 789, result: result2)
+        StreamResult.new(id: 123, result: pres1),
+        StreamResult.new(id: 789, result: pres2)
       ]
     )
     |> StreamUpdate.encode()
     |> send_message(state.stream_socket)
 
-    assert_receive {:stream_result, 123, ^result1}
-    assert_receive {:stream_result, 789, ^result2}
+    assert_receive {:stream_result, 123, result1}
+    assert_receive {:stream_result, 789, result2}
+    assert result1.value == pres1.value
+    assert result2.value == pres2.value
 
-    result3 = ProcedureResult.new(value: <<0, 4, 5, 1>>)
-    result4 = ProcedureResult.new(value: <<42, 42, 42, 42>>)
+    pres3 = ProcedureResult.new(value: <<0, 4, 5, 1>>)
+    pres4 = ProcedureResult.new(value: <<42, 42, 42, 42>>)
 
     StreamUpdate.new(
       results: [
-        StreamResult.new(id: 123, result: result3),
-        StreamResult.new(id: 789, result: result4)
+        StreamResult.new(id: 123, result: pres3),
+        StreamResult.new(id: 789, result: pres4)
       ]
     )
     |> StreamUpdate.encode()
     |> send_message(state.stream_socket)
 
-    assert_receive {:stream_result, 123, ^result3}
-    assert_receive {:stream_result, 789, ^result4}
+    assert_receive {:stream_result, 123, result3}
+    assert_receive {:stream_result, 789, result4}
+    assert result3.value == pres3.value
+    assert result4.value == pres4.value
+
+    now = NaiveDateTime.utc_now()
+    assert NaiveDateTime.diff(result1.timestamp, now, :milliseconds) < 200
+    assert NaiveDateTime.diff(result2.timestamp, now, :milliseconds) < 200
+    assert NaiveDateTime.diff(result3.timestamp, now, :milliseconds) < 200
+    assert NaiveDateTime.diff(result4.timestamp, now, :milliseconds) < 200
   end
 
   test "unknown stream IDs are handled gracefully" do
@@ -55,20 +65,21 @@ defmodule SpaceEx.StreamConnectionTest do
 
     StreamConnection.Registry.register_name({state.conn.stream_pid, 123}, self())
 
-    result1 = ProcedureResult.new(value: <<4, 5, 6>>)
-    result2 = ProcedureResult.new(value: <<10, 11, 12>>)
+    pres1 = ProcedureResult.new(value: <<4, 5, 6>>)
+    pres2 = ProcedureResult.new(value: <<10, 11, 12>>)
 
-    StreamUpdate.new(results: [StreamResult.new(id: 789, result: result2)])
+    StreamUpdate.new(results: [StreamResult.new(id: 789, result: pres2)])
     |> StreamUpdate.encode()
     |> send_message(state.stream_socket)
 
     refute_receive {:stream_result, _, _}
 
-    StreamUpdate.new(results: [StreamResult.new(id: 123, result: result1)])
+    StreamUpdate.new(results: [StreamResult.new(id: 123, result: pres1)])
     |> StreamUpdate.encode()
     |> send_message(state.stream_socket)
 
-    assert_receive {:stream_result, 123, ^result1}
+    assert_receive {:stream_result, 123, result1}
+    assert result1.value == pres1.value
   end
 
   test "connection closes if server closes stream socket" do

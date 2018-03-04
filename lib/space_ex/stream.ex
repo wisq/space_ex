@@ -95,6 +95,15 @@ defmodule SpaceEx.Stream do
     )
   end
 
+  defmodule Result do
+    @enforce_keys [:timestamp, :value, :error]
+    defstruct(
+      timestamp: nil,
+      value: nil,
+      error: nil
+    )
+  end
+
   defmodule Subscription do
     @moduledoc false
 
@@ -516,4 +525,15 @@ defmodule SpaceEx.Stream do
 
     %State{state | bonds: new_bonds, subscriptions: new_subs}
   end
+
+  @doc false
+  def package_result(result) do
+    %Result{
+      timestamp: current_timestamp(),
+      value: result.value,
+      error: result.error
+    }
+  end
+
+  defp current_timestamp, do: NaiveDateTime.utc_now()
 end
