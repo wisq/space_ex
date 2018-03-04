@@ -276,20 +276,27 @@ defmodule SpaceEx.Stream do
   Receive the next decoded value from a stream as a message.
 
   This is the non-blocking version of `wait/2`.  As soon as the stream receives
-  a value, a message will be delivered to the calling process, in the form of
-  `{:stream_result, id, value}` where `id` is the value of `stream.id`.
+  a value, a message will be delivered to the calling process.
 
-  Subscriptions are **not** automatically renewed.  It's up to the process to
-  call `subscribe` again.  Typically, this would be done either at the start or
-  end of the block of code handling the `:stream_result` message.
+  Messages will continue to be sent until the calling process calls
+  `unsubscribe/1` (unless the `:remove` option is true; see below).
+
+  It's recommended that you use either `receive_latest/3` or `receive_next/3`
+  to receive messages from streams.  These functions are designed to prevent
+  unexpected results if your code processes stream messages slower than the
+  stream generates them.
+
+  If you choose to receive stream results directly instead, the format is
+  `{:stream_result, id, value}` where `id` is the value of `stream.id`.
 
   ## Options
 
   * `:immediate` — if `true` and the stream has already received at least one
     result, the latest result will be sent and no subscription will occur.
     Default: `false`
-  * `:remove` — if `true`, then `remove/1` will be called immediately after
-    sending the subscribed result.  Default: `false`
+  * `:remove` — if `true`, then `remove/1` (and `unsubscribe/1`) will be called
+    immediately after sending the subscribed result.  Only one message will be
+    delivered.  Default: `false`
   """
   def subscribe(stream, opts \\ []) do
     sub = %Subscription{
@@ -301,6 +308,22 @@ defmodule SpaceEx.Stream do
     case GenServer.call(stream.pid, {:subscribe, sub}) do
       :ok -> :ok
       {:already_subscribed, sub} -> raise "Subscription already exists: #{inspect(sub)}"
+    end
+  end
+
+  @doc """
+  Cancels a previous subscription created by `subscribe/2`.
+
+  The calling process will no longer receive stream result messages for the
+  given stream.  Note that there may still be stream results already waiting in
+  the process mailbox, but no more will be added once this function returns.
+  """
+  def unsubscribe(stream) do
+    pid = self()
+
+    case GenServer.call(stream.pid, {:unsubscribe, pid}) do
+      :ok -> :ok
+      :not_subscribed -> raise "Process #{inspect(pid)} is not subscribed to stream"
     end
   end
 
@@ -394,6 +417,15 @@ defmodule SpaceEx.Stream do
     end
   end
 
+  def handle_call({:unsubscribe, pid}, _from, state) do
+    if Map.has_key?(state.subscriptions, pid) do
+      state = %State{state | subscriptions: Map.delete(state.subscriptions, pid)}
+      {:reply, :ok, state}
+    else
+      {:reply, :not_subscribed, state}
+    end
+  end
+
   def handle_call({:bond, pid}, _from, state) do
     Process.monitor(pid)
     new_bonds = MapSet.put(state.bonds, pid)
@@ -472,12 +504,16 @@ defmodule SpaceEx.Stream do
       send(sub.pid, {:stream_result, state.id, value})
     end)
 
+    remove_sub_pids = Enum.filter(subs, & &1.remove) |> Enum.map(& &1.pid)
+
     new_bonds =
-      Enum.filter(subs, & &1.remove)
-      |> Enum.reduce(state.bonds, fn sub, bonds ->
-        remove_bond(bonds, sub.pid)
+      remove_sub_pids
+      |> Enum.reduce(state.bonds, fn pid, bonds ->
+        remove_bond(bonds, pid)
       end)
 
-    %State{state | subscriptions: %{}, bonds: new_bonds}
+    new_subs = Map.drop(state.subscriptions, remove_sub_pids)
+
+    %State{state | bonds: new_bonds, subscriptions: new_subs}
   end
 end

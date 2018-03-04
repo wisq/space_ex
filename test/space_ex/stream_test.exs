@@ -374,15 +374,16 @@ defmodule SpaceEx.StreamTest do
     # We shouldn't have received the first value, only the second:
     refute_received {:stream_result, 123, :flight}
 
-    # We haven't resubscribed, so the next value goes unnoticed:
+    # Subscriptions are now permanent, so we receive the next value too:
     send_value.(:tracking_station)
-    refute_receive {:stream_result, 123, :tracking_station}
+    assert_receive {:stream_result, 123, :tracking_station}
 
-    # Subscribe one more time:
-    assert :ok = Stream.subscribe(stream)
-    # We should receive the next value:
+    # Cancel our subscription:
+    assert :ok = Stream.unsubscribe(stream)
+
+    # We should NOT receive the next value:
     send_value.(:editor_sph)
-    assert_receive {:stream_result, 123, :editor_sph}
+    refute_receive {:stream_result, 123, :editor_sph}
   end
 
   test "subscribe/1 does not allow multiple subscriptions with the same pid" do
@@ -434,7 +435,7 @@ defmodule SpaceEx.StreamTest do
     assert_receive {:stream_result, 123, true}
   end
 
-  test "subscribe/1 with remove: true" do
+  test "subscribe/1 with remove: true should exit if no other processes bonded" do
     state = MockConnection.start(real_stream: true)
 
     # AddStream result:
@@ -461,7 +462,71 @@ defmodule SpaceEx.StreamTest do
     assert_receive {:DOWN, ^ref, :process, _pid, :normal}
 
     # Stream should be removed:
-    assert [_add, remove] = MockConnection.dump_calls(state.conn)
+    assert [add, remove] = MockConnection.dump_calls(state.conn)
+    assert add.procedure == "AddStream"
+    assert remove.procedure == "RemoveStream"
+  end
+
+  test "subscribe/1 with remove: true should unsubscribe if other processes bonded" do
+    state = MockConnection.start(real_stream: true)
+
+    # AddStream result (twice):
+    Enum.each(1..2, fn _ ->
+      Protobufs.Stream.new(id: 123)
+      |> Protobufs.Stream.encode()
+      |> MockConnection.add_result_value(state.conn)
+    end)
+
+    # Create the stream:
+    assert %Stream{id: 123} = stream = KRPC.paused(state.conn) |> Stream.stream()
+    ref = Process.monitor(stream.pid)
+    stream_pid = stream.pid
+
+    # Create it again in a second process:
+    parent = self()
+
+    child =
+      spawn_link(fn ->
+        assert %Stream{id: 123, pid: ^stream_pid} = KRPC.paused(state.conn) |> Stream.stream()
+        send(parent, :child_started)
+        assert_receive :finish
+        send(parent, :child_finished)
+      end)
+
+    assert_receive(:child_started)
+
+    # Subscribe right away, with `remove: true`:
+    assert :ok = Stream.subscribe(stream, remove: true)
+
+    # Send a value:
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # We should receive it:
+    assert_receive {:stream_result, 123, true}
+
+    # Send a second value:
+    false_result = ProcedureResult.new(value: <<0>>)
+    send_stream_result(state.stream_socket, 123, false_result)
+
+    # We should NOT receive anything:
+    refute_receive {:stream_result, 123, _}
+    # Stream should NOT be down:
+    refute_received {:DOWN, ^ref, :process, _pid, :normal}
+
+    # RemoveStream result:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    # Terminate child process:
+    send(child, :finish)
+    assert_receive(:child_finished)
+
+    # Stream should be terminated:
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}
+
+    # Stream should be removed:
+    assert [add, add, remove] = MockConnection.dump_calls(state.conn)
+    assert add.procedure == "AddStream"
     assert remove.procedure == "RemoveStream"
   end
 
