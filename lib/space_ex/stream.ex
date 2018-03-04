@@ -285,8 +285,9 @@ defmodule SpaceEx.Stream do
 
   ## Options
 
-  * `:immediate` — if `true` and the stream has already received its first
-    result, that result will be sent and no subscription will occur.  Default: `false`
+  * `:immediate` — if `true` and the stream has already received at least one
+    result, the latest result will be sent and no subscription will occur.
+    Default: `false`
   * `:remove` — if `true`, then `remove/1` will be called immediately after
     sending the subscribed result.  Default: `false`
   """
