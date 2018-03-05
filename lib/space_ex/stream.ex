@@ -364,11 +364,15 @@ defmodule SpaceEx.Stream do
   ## Options
 
   * `:immediate` — if `true` and the stream has already received at least one
-    result, the latest result will be sent and no subscription will occur.
-    Default: `false`
+    result, the latest result will be sent immediately.  The subscription will
+    continue normally after that.  Default: `false`
   * `:remove` — if `true`, then `remove/1` (and `unsubscribe/1`) will be called
-    immediately after sending the subscribed result.  Only one message will be
-    delivered.  Default: `false`
+    immediately after sending the first subscribed result.  Only one message
+    will be delivered.  Default: `false`
+
+  If both `:immediate` and `:remove` are `true`, and the stream has received at
+  least one result, then the latest result will be sent immediately, no further
+  messages will be sent (i.e. no subscription), and `remove/1` will be called.
   """
   def subscribe(stream, opts \\ []) do
     sub = %Subscription{
@@ -572,17 +576,26 @@ defmodule SpaceEx.Stream do
   end
 
   def handle_call({:subscribe, sub}, _from, state) do
-    cond do
-      existing = Map.get(state.subscriptions, sub.pid) ->
-        {:reply, {:already_subscribed, existing}, state}
+    if existing = Map.get(state.subscriptions, sub.pid) do
+      {:reply, {:already_subscribed, existing}, state}
+    else
+      new_bonds =
+        if sub.immediate && !is_nil(state.result) do
+          # Do an immediate dispatch just to this one sub,
+          # which may involve removing bonds if remove: true.
+          new_state = dispatch_subscriptions(state, [sub])
+          new_state.bonds
+        else
+          state.bonds
+        end
 
-      sub.immediate && !is_nil(state.result) ->
-        new_state = dispatch_subscriptions(state, [sub])
-        {:reply, :ok, %State{state | bonds: new_state.bonds}}
+      state = %State{
+        state
+        | subscriptions: Map.put(state.subscriptions, sub.pid, sub),
+          bonds: new_bonds
+      }
 
-      true ->
-        state = %State{state | subscriptions: Map.put(state.subscriptions, sub.pid, sub)}
-        {:reply, :ok, state}
+      {:reply, :ok, state}
     end
   end
 

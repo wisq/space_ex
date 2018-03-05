@@ -438,6 +438,13 @@ defmodule SpaceEx.StreamTest do
 
     # We should receive the current result immediately.
     assert_receive {:stream_result, 123, %Result{value: <<1>>}}
+
+    # Send another value:
+    false_result = ProcedureResult.new(value: <<0>>)
+    send_stream_result(state.stream_socket, 123, false_result)
+
+    # We should receive the new value as well.
+    assert_receive {:stream_result, 123, %Result{value: <<0>>}}
   end
 
   test "subscribe/1 with remove: true should exit if no other processes bonded" do
@@ -533,6 +540,93 @@ defmodule SpaceEx.StreamTest do
     assert [add, add, remove] = MockConnection.dump_calls(state.conn)
     assert add.procedure == "AddStream"
     assert remove.procedure == "RemoveStream"
+  end
+
+  test "subscribe/1 with immediate: true and remove: true should only receive one message (including the immediate message)" do
+    state = MockConnection.start(real_stream: true)
+
+    # AddStream result (twice):
+    Enum.each(1..2, fn _ ->
+      Protobufs.Stream.new(id: 123)
+      |> Protobufs.Stream.encode()
+      |> MockConnection.add_result_value(state.conn)
+    end)
+
+    # RemoveStream result:
+    MockConnection.add_result_value(<<>>, state.conn)
+
+    parent = self()
+
+    # Create a stream, which will subscribe *before* first message:
+    child_before =
+      spawn_link(fn ->
+        assert %Stream{id: 123} = stream = KRPC.paused(state.conn) |> Stream.stream()
+        Stream.subscribe(stream, immediate: true, remove: true)
+        send(parent, {:child_before_started, stream.pid})
+
+        # Should get the first value.
+        assert_receive {:stream_result, 123, %Result{value: <<1>>}}
+        # Should NOT get the second value.
+        refute_receive {:stream_result, 123, %Result{value: <<0>>}}
+
+        send(parent, :child_before_done)
+        assert_receive :exit
+      end)
+
+    # Create a stream, which will subscribe *after* first message:
+    child_after =
+      spawn_link(fn ->
+        assert %Stream{id: 123} = stream = KRPC.paused(state.conn) |> Stream.stream()
+        send(parent, {:child_after_started, stream.pid})
+
+        # Wait for the first value:
+        assert Stream.get(stream) == true
+
+        # Subscribe to get the first value as a message:
+        Stream.subscribe(stream, immediate: true, remove: true)
+        send(parent, :child_after_subscribed)
+
+        # Should get the first value.
+        assert_receive {:stream_result, 123, %Result{value: <<1>>}}
+        # Should NOT get the second value, since the immediate
+        # value counted as our "one and only" value.
+        refute_receive {:stream_result, 123, %Result{value: <<0>>}}
+
+        send(parent, :child_after_done)
+        assert_receive :exit
+      end)
+
+    # Wait for children to start up:
+    assert_receive({:child_before_started, stream_pid})
+    assert_receive({:child_after_started, ^stream_pid})
+    ref = Process.monitor(stream_pid)
+
+    # Send a value:
+    true_result = ProcedureResult.new(value: <<1>>)
+    send_stream_result(state.stream_socket, 123, true_result)
+
+    # Wait for second child to establish subscription:
+    assert_receive :child_after_subscribed
+
+    # Send a second value:
+    false_result = ProcedureResult.new(value: <<0>>)
+    send_stream_result(state.stream_socket, 123, false_result)
+
+    # Wait for children to finish:
+    assert_receive :child_before_done
+    assert_receive :child_after_done
+
+    # Stream should be terminated, because both children used remove: true:
+    assert_receive {:DOWN, ^ref, :process, _pid, :normal}
+
+    # Stream should be removed:
+    assert [add, add, remove] = MockConnection.dump_calls(state.conn)
+    assert add.procedure == "AddStream"
+    assert remove.procedure == "RemoveStream"
+
+    # Terminate children:
+    send(child_before, :exit)
+    send(child_after, :exit)
   end
 
   test "receive_latest/1 should receive and decode latest subscribed value" do
