@@ -72,7 +72,8 @@ defmodule SpaceEx.Mixfile do
       {:floki, "~> 0.19.0"},
       {:ex_doc, "~> 0.10", only: :dev},
       {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
-      {:briefly, "~> 0.3", only: :test, runtime: false}
+      {:briefly, "~> 0.3", only: :test, runtime: false},
+      {:version_tasks, "~> 0.11.1", only: :dev}
     ]
   end
 end
