@@ -83,12 +83,11 @@ defmodule SpaceEx.Stream do
   defmodule State do
     @moduledoc false
 
-    @enforce_keys [:id, :conn, :decoder]
+    @enforce_keys [:id, :conn]
     defstruct(
       id: nil,
       conn: nil,
       result: nil,
-      decoder: nil,
       waitlist: [],
       subscriptions: %{},
       bonds: MapSet.new()
@@ -172,7 +171,7 @@ defmodule SpaceEx.Stream do
   @doc false
   def launch(conn, stream_id, decoder) do
     pid =
-      case start_link(conn, stream_id, decoder) do
+      case start_link(conn, stream_id) do
         {:ok, pid} -> pid
         {:error, {:already_started, pid}} -> pid
       end
@@ -384,11 +383,10 @@ defmodule SpaceEx.Stream do
   end
 
   @doc false
-  def start_link(conn, stream_id, decoder) do
+  def start_link(conn, stream_id) do
     state = %State{
       conn: conn,
-      id: stream_id,
-      decoder: decoder
+      id: stream_id
     }
 
     GenServer.start_link(
