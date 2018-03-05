@@ -49,11 +49,12 @@ defmodule SpaceEx.Stream do
     SpaceEx.SpaceCenter.ut(conn)
     |> SpaceEx.Stream.stream()
 
-  # Equivalent:
-  stream =
-    SpaceEx.SpaceCenter.ut(conn)
-    |> SpaceEx.ProcedureCall.create()
-    |> SpaceEx.Stream.create()
+  # This is equivalent to ...
+  #require SpaceEx.ProcedureCall
+  #stream =
+  #  SpaceEx.SpaceCenter.ut(conn)
+  #  |> SpaceEx.ProcedureCall.create()
+  #  |> SpaceEx.Stream.create()
 
   SpaceEx.Stream.get(stream)  # 83689.09043863538
   Process.sleep(100)
@@ -73,10 +74,27 @@ defmodule SpaceEx.Stream do
   # You can even create both the stream and the shortcut at once:
   {stream, ut} =
     SpaceEx.SpaceCenter.get_ut(conn)
-    |> SpaceEx.Stream.stream_fn()
+    |> SpaceEx.Stream.stream()
+    |> SpaceEx.Stream.with_get_fn()
 
   SpaceEx.Stream.get(stream)  # 83689.49043863541
   ut.()  # 83689.49043863541
+
+  # Or, for added efficiency, you can subscribe to a stream ...
+  SpaceEx.Stream.subscribe(stream)
+
+  # ... and then receive messages in your process mailbox.
+  SpaceEx.Stream.receive_latest(stream)  # 83689.49043863541
+  Process.sleep(100)
+  SpaceEx.Stream.receive_latest(stream)  # 83689.59043863543
+  Process.sleep(100)
+  SpaceEx.Stream.receive_latest(stream)  # 83689.69043863545
+
+  # But don't forget to unsubscribe when you're done,
+  # because the messages keep coming whether you're
+  # receiving them or not. :)
+  # (Unless your process just exits here.)
+  SpaceEx.Stream.unsubscribe(stream)
   ```
   """
 
