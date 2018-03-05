@@ -23,12 +23,26 @@ defmodule SpaceEx.Test.MockExpression do
     # Procedure calls:
     :call,
     # Constants:
+    :constant_bool,
     :constant_int,
     :constant_float,
     :constant_double,
     :constant_string,
+    # Conversions:
+    :to_list,
+    :to_set,
     # Boolean logic:
-    :not
+    :not,
+    # Nested types:
+    :create_list,
+    :create_set,
+    :create_tuple,
+    # Collection functions:
+    :max,
+    :min,
+    :average,
+    :sum,
+    :count
   ]
 
   @two_args [
@@ -54,7 +68,27 @@ defmodule SpaceEx.Test.MockExpression do
     :left_shift,
     :right_shift,
     # Type casting:
-    :cast
+    :cast,
+    # Nested types:
+    :create_dictionary,
+    # Collection functions:
+    :aggregate,
+    :all,
+    :any,
+    :concat,
+    :contains,
+    :get,
+    :order_by,
+    :select,
+    :where,
+    # Function calls:
+    :function,
+    :invoke,
+    :parameter
+  ]
+
+  @three_args [
+    :aggregate_with_seed
   ]
 
   Enum.each(@one_arg, fn fn_name ->
@@ -68,6 +102,13 @@ defmodule SpaceEx.Test.MockExpression do
     def unquote(fn_name)(conn, left, right) do
       GenServer.cast(__MODULE__.Seen, {:called, unquote(fn_name), 3})
       {unquote(fn_name), conn, left, right}
+    end
+  end)
+
+  Enum.each(@three_args, fn fn_name ->
+    def unquote(fn_name)(conn, a, b, c) do
+      GenServer.cast(__MODULE__.Seen, {:called, unquote(fn_name), 4})
+      {unquote(fn_name), conn, a, b, c}
     end
   end)
 
