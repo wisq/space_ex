@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.8.0
+
+* Reworked `SpaceEx.Stream.subscribe/2`.
+  * Now delivers raw, undecoded results.
+  * No longer unsubscribes after a single message (unless using `remove` option).
+  * Most user code will want to use the new `SpaceEx.Stream.receive_latest/2`; some may want `SpaceEx.Stream.receive_next/2`.
+  * **Breaking API change.**  Most existing code will fail quickly due to attempting to subscribe multiple times.
+* Added `SpaceEx.Stream.receive_latest/2`.
+  * Receives *latest* subscribed result in process mailbox.
+  * Safe from mailbox overflow due to skipping older results.
+* Added `SpaceEx.Stream.receive_next/2`.
+  * Receives *next* subscribed result in process mailbox.
+  * Safe from mailbox overflow due to enforcing a maximum message age.
+
 ## v0.7.0
 
 ### New functionality
