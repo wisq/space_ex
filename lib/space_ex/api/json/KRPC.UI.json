@@ -1,6 +1,6 @@
 {
   "UI": {
-    "id": 2,
+    "id": 7,
     "documentation": "<doc>\n<summary>\nProvides functionality for drawing and interacting with in-game user interface elements.\n</summary>\n<remarks>\nFor drawing 3D objects in the flight scene, see the Drawing service.\n</remarks>\n</doc>",
     "procedures": {
       "AddCanvas": {

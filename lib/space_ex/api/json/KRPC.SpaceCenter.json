@@ -15264,8 +15264,62 @@
         "return_is_nullable": false,
         "documentation": "<doc>\n<summary>\nThe number of converters in the part.\n</summary>\n</doc>"
       },
-      "ResourceHarvester_get_Part": {
+      "ResourceConverter_get_ThermalEfficiency": {
         "id": 710,
+        "parameters": [
+          {
+            "name": "this",
+            "type": {
+              "code": "CLASS",
+              "service": "SpaceCenter",
+              "name": "ResourceConverter"
+            }
+          }
+        ],
+        "return_type": {
+          "code": "FLOAT"
+        },
+        "return_is_nullable": false,
+        "documentation": "<doc>\n<summary>\nThe thermal efficiency of the converter, as a percentage of its maximum.\n</summary>\n</doc>"
+      },
+      "ResourceConverter_get_CoreTemperature": {
+        "id": 711,
+        "parameters": [
+          {
+            "name": "this",
+            "type": {
+              "code": "CLASS",
+              "service": "SpaceCenter",
+              "name": "ResourceConverter"
+            }
+          }
+        ],
+        "return_type": {
+          "code": "FLOAT"
+        },
+        "return_is_nullable": false,
+        "documentation": "<doc>\n<summary>\nThe core temperature of the converter, in Kelvin.\n</summary>\n</doc>"
+      },
+      "ResourceConverter_get_OptimumCoreTemperature": {
+        "id": 712,
+        "parameters": [
+          {
+            "name": "this",
+            "type": {
+              "code": "CLASS",
+              "service": "SpaceCenter",
+              "name": "ResourceConverter"
+            }
+          }
+        ],
+        "return_type": {
+          "code": "FLOAT"
+        },
+        "return_is_nullable": false,
+        "documentation": "<doc>\n<summary>\nThe core temperature at which the converter will operate with peak efficiency, in Kelvin.\n</summary>\n</doc>"
+      },
+      "ResourceHarvester_get_Part": {
+        "id": 713,
         "parameters": [
           {
             "name": "this",
@@ -15285,7 +15339,7 @@
         "documentation": "<doc>\n<summary>\nThe part object for this harvester.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_State": {
-        "id": 711,
+        "id": 714,
         "parameters": [
           {
             "name": "this",
@@ -15305,7 +15359,7 @@
         "documentation": "<doc>\n<summary>\nThe state of the harvester.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_Deployed": {
-        "id": 712,
+        "id": 715,
         "parameters": [
           {
             "name": "this",
@@ -15323,7 +15377,7 @@
         "documentation": "<doc>\n<summary>\nWhether the harvester is deployed.\n</summary>\n</doc>"
       },
       "ResourceHarvester_set_Deployed": {
-        "id": 713,
+        "id": 716,
         "parameters": [
           {
             "name": "this",
@@ -15343,7 +15397,7 @@
         "documentation": "<doc>\n<summary>\nWhether the harvester is deployed.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_Active": {
-        "id": 714,
+        "id": 717,
         "parameters": [
           {
             "name": "this",
@@ -15361,7 +15415,7 @@
         "documentation": "<doc>\n<summary>\nWhether the harvester is actively drilling.\n</summary>\n</doc>"
       },
       "ResourceHarvester_set_Active": {
-        "id": 715,
+        "id": 718,
         "parameters": [
           {
             "name": "this",
@@ -15381,7 +15435,7 @@
         "documentation": "<doc>\n<summary>\nWhether the harvester is actively drilling.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_ExtractionRate": {
-        "id": 716,
+        "id": 719,
         "parameters": [
           {
             "name": "this",
@@ -15399,7 +15453,7 @@
         "documentation": "<doc>\n<summary>\nThe rate at which the drill is extracting ore, in units per second.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_ThermalEfficiency": {
-        "id": 717,
+        "id": 720,
         "parameters": [
           {
             "name": "this",
@@ -15417,7 +15471,7 @@
         "documentation": "<doc>\n<summary>\nThe thermal efficiency of the drill, as a percentage of its maximum.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_CoreTemperature": {
-        "id": 718,
+        "id": 721,
         "parameters": [
           {
             "name": "this",
@@ -15435,7 +15489,7 @@
         "documentation": "<doc>\n<summary>\nThe core temperature of the drill, in Kelvin.\n</summary>\n</doc>"
       },
       "ResourceHarvester_get_OptimumCoreTemperature": {
-        "id": 719,
+        "id": 722,
         "parameters": [
           {
             "name": "this",
@@ -15453,7 +15507,7 @@
         "documentation": "<doc>\n<summary>\nThe core temperature at which the drill will operate with peak efficiency, in Kelvin.\n</summary>\n</doc>"
       },
       "ScienceData_get_DataAmount": {
-        "id": 720,
+        "id": 723,
         "parameters": [
           {
             "name": "this",
@@ -15471,7 +15525,7 @@
         "documentation": "<doc>\n<summary>\nData amount.\n</summary>\n</doc>"
       },
       "ScienceData_get_ScienceValue": {
-        "id": 721,
+        "id": 724,
         "parameters": [
           {
             "name": "this",
@@ -15489,7 +15543,7 @@
         "documentation": "<doc>\n<summary>\nScience value.\n</summary>\n</doc>"
       },
       "ScienceData_get_TransmitValue": {
-        "id": 722,
+        "id": 725,
         "parameters": [
           {
             "name": "this",
@@ -15507,7 +15561,7 @@
         "documentation": "<doc>\n<summary>\nTransmit value.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_Science": {
-        "id": 723,
+        "id": 726,
         "parameters": [
           {
             "name": "this",
@@ -15525,7 +15579,7 @@
         "documentation": "<doc>\n<summary>\nAmount of science already earned from this subject, not updated until after\ntransmission/recovery.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_ScienceCap": {
-        "id": 724,
+        "id": 727,
         "parameters": [
           {
             "name": "this",
@@ -15543,7 +15597,7 @@
         "documentation": "<doc>\n<summary>\nTotal science allowable for this subject.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_IsComplete": {
-        "id": 725,
+        "id": 728,
         "parameters": [
           {
             "name": "this",
@@ -15561,7 +15615,7 @@
         "documentation": "<doc>\n<summary>\nWhether the experiment has been completed.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_DataScale": {
-        "id": 726,
+        "id": 729,
         "parameters": [
           {
             "name": "this",
@@ -15579,7 +15633,7 @@
         "documentation": "<doc>\n<summary>\nMultiply science value by this to determine data amount in mits.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_ScientificValue": {
-        "id": 727,
+        "id": 730,
         "parameters": [
           {
             "name": "this",
@@ -15597,7 +15651,7 @@
         "documentation": "<doc>\n<summary>\nDiminishing value multiplier for decreasing the science value returned from repeated\nexperiments.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_SubjectValue": {
-        "id": 728,
+        "id": 731,
         "parameters": [
           {
             "name": "this",
@@ -15615,7 +15669,7 @@
         "documentation": "<doc>\n<summary>\nMultiplier for specific Celestial Body/Experiment Situation combination.\n</summary>\n</doc>"
       },
       "ScienceSubject_get_Title": {
-        "id": 729,
+        "id": 732,
         "parameters": [
           {
             "name": "this",
@@ -15633,7 +15687,7 @@
         "documentation": "<doc>\n<summary>\nTitle of science subject, displayed in science archives\n</summary>\n</doc>"
       },
       "Sensor_get_Part": {
-        "id": 730,
+        "id": 733,
         "parameters": [
           {
             "name": "this",
@@ -15653,7 +15707,7 @@
         "documentation": "<doc>\n<summary>\nThe part object for this sensor.\n</summary>\n</doc>"
       },
       "Sensor_get_Active": {
-        "id": 731,
+        "id": 734,
         "parameters": [
           {
             "name": "this",
@@ -15671,7 +15725,7 @@
         "documentation": "<doc>\n<summary>\nWhether the sensor is active.\n</summary>\n</doc>"
       },
       "Sensor_set_Active": {
-        "id": 732,
+        "id": 735,
         "parameters": [
           {
             "name": "this",
@@ -15691,7 +15745,7 @@
         "documentation": "<doc>\n<summary>\nWhether the sensor is active.\n</summary>\n</doc>"
       },
       "Sensor_get_Value": {
-        "id": 733,
+        "id": 736,
         "parameters": [
           {
             "name": "this",
@@ -15709,7 +15763,7 @@
         "documentation": "<doc>\n<summary>\nThe current value of the sensor.\n</summary>\n</doc>"
       },
       "SolarPanel_get_Part": {
-        "id": 734,
+        "id": 737,
         "parameters": [
           {
             "name": "this",
@@ -15729,7 +15783,7 @@
         "documentation": "<doc>\n<summary>\nThe part object for this solar panel.\n</summary>\n</doc>"
       },
       "SolarPanel_get_Deployable": {
-        "id": 735,
+        "id": 738,
         "parameters": [
           {
             "name": "this",
@@ -15747,7 +15801,7 @@
         "documentation": "<doc>\n<summary>\nWhether the solar panel is deployable.\n</summary>\n</doc>"
       },
       "SolarPanel_get_Deployed": {
-        "id": 736,
+        "id": 739,
         "parameters": [
           {
             "name": "this",
@@ -15765,7 +15819,7 @@
         "documentation": "<doc>\n<summary>\nWhether the solar panel is extended.\n</summary>\n</doc>"
       },
       "SolarPanel_set_Deployed": {
-        "id": 737,
+        "id": 740,
         "parameters": [
           {
             "name": "this",
@@ -15785,7 +15839,7 @@
         "documentation": "<doc>\n<summary>\nWhether the solar panel is extended.\n</summary>\n</doc>"
       },
       "SolarPanel_get_State": {
-        "id": 738,
+        "id": 741,
         "parameters": [
           {
             "name": "this",
@@ -15805,7 +15859,7 @@
         "documentation": "<doc>\n<summary>\nThe current state of the solar panel.\n</summary>\n</doc>"
       },
       "SolarPanel_get_EnergyFlow": {
-        "id": 739,
+        "id": 742,
         "parameters": [
           {
             "name": "this",
@@ -15823,7 +15877,7 @@
         "documentation": "<doc>\n<summary>\nThe current amount of energy being generated by the solar panel, in\nunits of charge per second.\n</summary>\n</doc>"
       },
       "SolarPanel_get_SunExposure": {
-        "id": 740,
+        "id": 743,
         "parameters": [
           {
             "name": "this",
@@ -15841,7 +15895,7 @@
         "documentation": "<doc>\n<summary>\nThe current amount of sunlight that is incident on the solar panel,\nas a percentage. A value between 0 and 1.\n</summary>\n</doc>"
       },
       "Thruster_ThrustPosition": {
-        "id": 741,
+        "id": 744,
         "parameters": [
           {
             "name": "this",
@@ -15878,7 +15932,7 @@
         "documentation": "<doc>\n<summary>\nThe position at which the thruster generates thrust, in the given reference frame.\nFor gimballed engines, this takes into account the current rotation of the gimbal.\n</summary>\n<returns>The position as a vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nposition vector is in.</param>\n</doc>"
       },
       "Thruster_ThrustDirection": {
-        "id": 742,
+        "id": 745,
         "parameters": [
           {
             "name": "this",
@@ -15915,7 +15969,7 @@
         "documentation": "<doc>\n<summary>\nThe direction of the force generated by the thruster, in the given reference frame.\nThis is opposite to the direction in which the thruster expels propellant.\nFor gimballed engines, this takes into account the current rotation of the gimbal.\n</summary>\n<returns>The direction as a unit vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\ndirection is in.</param>\n</doc>"
       },
       "Thruster_InitialThrustPosition": {
-        "id": 743,
+        "id": 746,
         "parameters": [
           {
             "name": "this",
@@ -15952,7 +16006,7 @@
         "documentation": "<doc>\n<summary>\nThe position at which the thruster generates thrust, when the engine is in its\ninitial position (no gimballing), in the given reference frame.\n</summary>\n<returns>The position as a vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nposition vector is in.</param>\n<remarks>\nThis position can move when the gimbal rotates. This is because the thrust position and\ngimbal position are not necessarily the same.\n</remarks>\n</doc>"
       },
       "Thruster_InitialThrustDirection": {
-        "id": 744,
+        "id": 747,
         "parameters": [
           {
             "name": "this",
@@ -15989,7 +16043,7 @@
         "documentation": "<doc>\n<summary>\nThe direction of the force generated by the thruster, when the engine is in its\ninitial position (no gimballing), in the given reference frame.\nThis is opposite to the direction in which the thruster expels propellant.\n</summary>\n<returns>The direction as a unit vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\ndirection is in.</param>\n</doc>"
       },
       "Thruster_GimbalPosition": {
-        "id": 745,
+        "id": 748,
         "parameters": [
           {
             "name": "this",
@@ -16026,7 +16080,7 @@
         "documentation": "<doc>\n<summary>\nPosition around which the gimbal pivots.\n</summary>\n<returns>The position as a vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nposition vector is in.</param>\n</doc>"
       },
       "Thruster_get_Part": {
-        "id": 746,
+        "id": 749,
         "parameters": [
           {
             "name": "this",
@@ -16046,7 +16100,7 @@
         "documentation": "<doc>\n<summary>\nThe <see cref=\"T:SpaceCenter.Part\" /> that contains this thruster.\n</summary>\n</doc>"
       },
       "Thruster_get_ThrustReferenceFrame": {
-        "id": 747,
+        "id": 750,
         "parameters": [
           {
             "name": "this",
@@ -16066,7 +16120,7 @@
         "documentation": "<doc>\n<summary>\nA reference frame that is fixed relative to the thruster and orientated with\nits thrust direction (<see cref=\"M:SpaceCenter.Thruster.ThrustDirection\" />).\nFor gimballed engines, this takes into account the current rotation of the gimbal.\n<list type=\"bullet\"><item><description>\nThe origin is at the position of thrust for this thruster\n(<see cref=\"M:SpaceCenter.Thruster.ThrustPosition\" />).</description></item><item><description>\nThe axes rotate with the thrust direction.\nThis is the direction in which the thruster expels propellant, including any gimballing.\n</description></item><item><description>The y-axis points along the thrust direction.</description></item><item><description>The x-axis and z-axis are perpendicular to the thrust direction.\n</description></item></list></summary>\n</doc>"
       },
       "Thruster_get_Gimballed": {
-        "id": 748,
+        "id": 751,
         "parameters": [
           {
             "name": "this",
@@ -16084,7 +16138,7 @@
         "documentation": "<doc>\n<summary>\nWhether the thruster is gimballed.\n</summary>\n</doc>"
       },
       "Thruster_get_GimbalAngle": {
-        "id": 749,
+        "id": 752,
         "parameters": [
           {
             "name": "this",
@@ -16113,7 +16167,7 @@
         "documentation": "<doc>\n<summary>\nThe current gimbal angle in the pitch, roll and yaw axes, in degrees.\n</summary>\n</doc>"
       },
       "Wheel_get_Part": {
-        "id": 750,
+        "id": 753,
         "parameters": [
           {
             "name": "this",
@@ -16133,7 +16187,7 @@
         "documentation": "<doc>\n<summary>\nThe part object for this wheel.\n</summary>\n</doc>"
       },
       "Wheel_get_State": {
-        "id": 751,
+        "id": 754,
         "parameters": [
           {
             "name": "this",
@@ -16153,7 +16207,7 @@
         "documentation": "<doc>\n<summary>\nThe current state of the wheel.\n</summary>\n</doc>"
       },
       "Wheel_get_Radius": {
-        "id": 752,
+        "id": 755,
         "parameters": [
           {
             "name": "this",
@@ -16171,7 +16225,7 @@
         "documentation": "<doc>\n<summary>\nRadius of the wheel, in meters.\n</summary>\n</doc>"
       },
       "Wheel_get_Grounded": {
-        "id": 753,
+        "id": 756,
         "parameters": [
           {
             "name": "this",
@@ -16189,7 +16243,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is touching the ground.\n</summary>\n</doc>"
       },
       "Wheel_get_HasBrakes": {
-        "id": 754,
+        "id": 757,
         "parameters": [
           {
             "name": "this",
@@ -16207,7 +16261,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel has brakes.\n</summary>\n</doc>"
       },
       "Wheel_get_Brakes": {
-        "id": 755,
+        "id": 758,
         "parameters": [
           {
             "name": "this",
@@ -16225,7 +16279,7 @@
         "documentation": "<doc>\n<summary>\nThe braking force, as a percentage of maximum, when the brakes are applied.\n</summary>\n</doc>"
       },
       "Wheel_set_Brakes": {
-        "id": 756,
+        "id": 759,
         "parameters": [
           {
             "name": "this",
@@ -16245,7 +16299,7 @@
         "documentation": "<doc>\n<summary>\nThe braking force, as a percentage of maximum, when the brakes are applied.\n</summary>\n</doc>"
       },
       "Wheel_get_AutoFrictionControl": {
-        "id": 757,
+        "id": 760,
         "parameters": [
           {
             "name": "this",
@@ -16263,7 +16317,7 @@
         "documentation": "<doc>\n<summary>\nWhether automatic friction control is enabled.\n</summary>\n</doc>"
       },
       "Wheel_set_AutoFrictionControl": {
-        "id": 758,
+        "id": 761,
         "parameters": [
           {
             "name": "this",
@@ -16283,7 +16337,7 @@
         "documentation": "<doc>\n<summary>\nWhether automatic friction control is enabled.\n</summary>\n</doc>"
       },
       "Wheel_get_ManualFrictionControl": {
-        "id": 759,
+        "id": 762,
         "parameters": [
           {
             "name": "this",
@@ -16301,7 +16355,7 @@
         "documentation": "<doc>\n<summary>\nManual friction control value. Only has an effect if automatic friction control is disabled.\nA value between 0 and 5 inclusive.\n</summary>\n</doc>"
       },
       "Wheel_set_ManualFrictionControl": {
-        "id": 760,
+        "id": 763,
         "parameters": [
           {
             "name": "this",
@@ -16321,7 +16375,7 @@
         "documentation": "<doc>\n<summary>\nManual friction control value. Only has an effect if automatic friction control is disabled.\nA value between 0 and 5 inclusive.\n</summary>\n</doc>"
       },
       "Wheel_get_Deployable": {
-        "id": 761,
+        "id": 764,
         "parameters": [
           {
             "name": "this",
@@ -16339,7 +16393,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is deployable.\n</summary>\n</doc>"
       },
       "Wheel_get_Deployed": {
-        "id": 762,
+        "id": 765,
         "parameters": [
           {
             "name": "this",
@@ -16357,7 +16411,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is deployed.\n</summary>\n</doc>"
       },
       "Wheel_set_Deployed": {
-        "id": 763,
+        "id": 766,
         "parameters": [
           {
             "name": "this",
@@ -16377,7 +16431,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is deployed.\n</summary>\n</doc>"
       },
       "Wheel_get_Powered": {
-        "id": 764,
+        "id": 767,
         "parameters": [
           {
             "name": "this",
@@ -16395,7 +16449,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is powered by a motor.\n</summary>\n</doc>"
       },
       "Wheel_get_MotorEnabled": {
-        "id": 765,
+        "id": 768,
         "parameters": [
           {
             "name": "this",
@@ -16413,7 +16467,7 @@
         "documentation": "<doc>\n<summary>\nWhether the motor is enabled.\n</summary>\n</doc>"
       },
       "Wheel_set_MotorEnabled": {
-        "id": 766,
+        "id": 769,
         "parameters": [
           {
             "name": "this",
@@ -16433,7 +16487,7 @@
         "documentation": "<doc>\n<summary>\nWhether the motor is enabled.\n</summary>\n</doc>"
       },
       "Wheel_get_MotorInverted": {
-        "id": 767,
+        "id": 770,
         "parameters": [
           {
             "name": "this",
@@ -16451,7 +16505,7 @@
         "documentation": "<doc>\n<summary>\nWhether the direction of the motor is inverted.\n</summary>\n</doc>"
       },
       "Wheel_set_MotorInverted": {
-        "id": 768,
+        "id": 771,
         "parameters": [
           {
             "name": "this",
@@ -16471,7 +16525,7 @@
         "documentation": "<doc>\n<summary>\nWhether the direction of the motor is inverted.\n</summary>\n</doc>"
       },
       "Wheel_get_MotorState": {
-        "id": 769,
+        "id": 772,
         "parameters": [
           {
             "name": "this",
@@ -16491,7 +16545,7 @@
         "documentation": "<doc>\n<summary>\nWhether the direction of the motor is inverted.\n</summary>\n</doc>"
       },
       "Wheel_get_MotorOutput": {
-        "id": 770,
+        "id": 773,
         "parameters": [
           {
             "name": "this",
@@ -16509,7 +16563,7 @@
         "documentation": "<doc>\n<summary>\nThe output of the motor. This is the torque currently being generated, in Newton meters.\n</summary>\n</doc>"
       },
       "Wheel_get_TractionControlEnabled": {
-        "id": 771,
+        "id": 774,
         "parameters": [
           {
             "name": "this",
@@ -16527,7 +16581,7 @@
         "documentation": "<doc>\n<summary>\nWhether automatic traction control is enabled.\nA wheel only has traction control if it is powered.\n</summary>\n</doc>"
       },
       "Wheel_set_TractionControlEnabled": {
-        "id": 772,
+        "id": 775,
         "parameters": [
           {
             "name": "this",
@@ -16547,7 +16601,7 @@
         "documentation": "<doc>\n<summary>\nWhether automatic traction control is enabled.\nA wheel only has traction control if it is powered.\n</summary>\n</doc>"
       },
       "Wheel_get_TractionControl": {
-        "id": 773,
+        "id": 776,
         "parameters": [
           {
             "name": "this",
@@ -16565,7 +16619,7 @@
         "documentation": "<doc>\n<summary>\nSetting for the traction control.\nOnly takes effect if the wheel has automatic traction control enabled.\nA value between 0 and 5 inclusive.\n</summary>\n</doc>"
       },
       "Wheel_set_TractionControl": {
-        "id": 774,
+        "id": 777,
         "parameters": [
           {
             "name": "this",
@@ -16585,7 +16639,7 @@
         "documentation": "<doc>\n<summary>\nSetting for the traction control.\nOnly takes effect if the wheel has automatic traction control enabled.\nA value between 0 and 5 inclusive.\n</summary>\n</doc>"
       },
       "Wheel_get_DriveLimiter": {
-        "id": 775,
+        "id": 778,
         "parameters": [
           {
             "name": "this",
@@ -16603,7 +16657,7 @@
         "documentation": "<doc>\n<summary>\nManual setting for the motor limiter.\nOnly takes effect if the wheel has automatic traction control disabled.\nA value between 0 and 100 inclusive.\n</summary>\n</doc>"
       },
       "Wheel_set_DriveLimiter": {
-        "id": 776,
+        "id": 779,
         "parameters": [
           {
             "name": "this",
@@ -16623,7 +16677,7 @@
         "documentation": "<doc>\n<summary>\nManual setting for the motor limiter.\nOnly takes effect if the wheel has automatic traction control disabled.\nA value between 0 and 100 inclusive.\n</summary>\n</doc>"
       },
       "Wheel_get_Steerable": {
-        "id": 777,
+        "id": 780,
         "parameters": [
           {
             "name": "this",
@@ -16641,7 +16695,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel has steering.\n</summary>\n</doc>"
       },
       "Wheel_get_SteeringEnabled": {
-        "id": 778,
+        "id": 781,
         "parameters": [
           {
             "name": "this",
@@ -16659,7 +16713,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel steering is enabled.\n</summary>\n</doc>"
       },
       "Wheel_set_SteeringEnabled": {
-        "id": 779,
+        "id": 782,
         "parameters": [
           {
             "name": "this",
@@ -16679,7 +16733,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel steering is enabled.\n</summary>\n</doc>"
       },
       "Wheel_get_SteeringInverted": {
-        "id": 780,
+        "id": 783,
         "parameters": [
           {
             "name": "this",
@@ -16697,7 +16751,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel steering is inverted.\n</summary>\n</doc>"
       },
       "Wheel_set_SteeringInverted": {
-        "id": 781,
+        "id": 784,
         "parameters": [
           {
             "name": "this",
@@ -16717,7 +16771,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel steering is inverted.\n</summary>\n</doc>"
       },
       "Wheel_get_HasSuspension": {
-        "id": 782,
+        "id": 785,
         "parameters": [
           {
             "name": "this",
@@ -16735,7 +16789,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel has suspension.\n</summary>\n</doc>"
       },
       "Wheel_get_SuspensionSpringStrength": {
-        "id": 783,
+        "id": 786,
         "parameters": [
           {
             "name": "this",
@@ -16753,7 +16807,7 @@
         "documentation": "<doc>\n<summary>\nSuspension spring strength, as set in the editor.\n</summary>\n</doc>"
       },
       "Wheel_get_SuspensionDamperStrength": {
-        "id": 784,
+        "id": 787,
         "parameters": [
           {
             "name": "this",
@@ -16771,7 +16825,7 @@
         "documentation": "<doc>\n<summary>\nSuspension damper strength, as set in the editor.\n</summary>\n</doc>"
       },
       "Wheel_get_Broken": {
-        "id": 785,
+        "id": 788,
         "parameters": [
           {
             "name": "this",
@@ -16789,7 +16843,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is broken.\n</summary>\n</doc>"
       },
       "Wheel_get_Repairable": {
-        "id": 786,
+        "id": 789,
         "parameters": [
           {
             "name": "this",
@@ -16807,7 +16861,7 @@
         "documentation": "<doc>\n<summary>\nWhether the wheel is repairable.\n</summary>\n</doc>"
       },
       "Wheel_get_Stress": {
-        "id": 787,
+        "id": 790,
         "parameters": [
           {
             "name": "this",
@@ -16825,7 +16879,7 @@
         "documentation": "<doc>\n<summary>\nCurrent stress on the wheel.\n</summary>\n</doc>"
       },
       "Wheel_get_StressTolerance": {
-        "id": 788,
+        "id": 791,
         "parameters": [
           {
             "name": "this",
@@ -16843,7 +16897,7 @@
         "documentation": "<doc>\n<summary>\nStress tolerance of the wheel.\n</summary>\n</doc>"
       },
       "Wheel_get_StressPercentage": {
-        "id": 789,
+        "id": 792,
         "parameters": [
           {
             "name": "this",
@@ -16861,7 +16915,7 @@
         "documentation": "<doc>\n<summary>\nCurrent stress on the wheel as a percentage of its stress tolerance.\n</summary>\n</doc>"
       },
       "Wheel_get_Deflection": {
-        "id": 790,
+        "id": 793,
         "parameters": [
           {
             "name": "this",
@@ -16879,7 +16933,7 @@
         "documentation": "<doc>\n<summary>\nCurrent deflection of the wheel.\n</summary>\n</doc>"
       },
       "Wheel_get_Slip": {
-        "id": 791,
+        "id": 794,
         "parameters": [
           {
             "name": "this",
@@ -16897,7 +16951,7 @@
         "documentation": "<doc>\n<summary>\nCurrent slip of the wheel.\n</summary>\n</doc>"
       },
       "ReferenceFrame_static_CreateRelative": {
-        "id": 792,
+        "id": 795,
         "parameters": [
           {
             "name": "referenceFrame",
@@ -16992,7 +17046,7 @@
         "documentation": "<doc>\n<summary>\nCreate a relative reference frame. This is a custom reference frame\nwhose components offset the components of a parent reference frame.\n</summary>\n<param name=\"referenceFrame\">The parent reference frame on which to\nbase this reference frame.</param>\n<param name=\"position\">The offset of the position of the origin,\nas a position vector. Defaults to <math>(0, 0, 0)</math></param>\n<param name=\"rotation\">The rotation to apply to the parent frames rotation,\nas a quaternion of the form <math>(x, y, z, w)</math>.\nDefaults to <math>(0, 0, 0, 1)</math> (i.e. no rotation)</param>\n<param name=\"velocity\">The linear velocity to offset the parent frame by,\nas a vector pointing in the direction of travel, whose magnitude is the speed in\nmeters per second. Defaults to <math>(0, 0, 0)</math>.</param>\n<param name=\"angularVelocity\">The angular velocity to offset the parent frame by,\nas a vector. This vector points in the direction of the axis of rotation,\nand its magnitude is the speed of the rotation in radians per second.\nDefaults to <math>(0, 0, 0)</math>.</param>\n</doc>"
       },
       "ReferenceFrame_static_CreateHybrid": {
-        "id": 793,
+        "id": 796,
         "parameters": [
           {
             "name": "position",
@@ -17039,7 +17093,7 @@
         "documentation": "<doc>\n<summary>\nCreate a hybrid reference frame. This is a custom reference frame\nwhose components inherited from other reference frames.\n</summary>\n<param name=\"position\">The reference frame providing the position of the origin.</param>\n<param name=\"rotation\">The reference frame providing the rotation of the frame.</param>\n<param name=\"velocity\">The reference frame providing the linear velocity of the frame.\n</param>\n<param name=\"angularVelocity\">The reference frame providing the angular velocity\nof the frame.</param>\n<remarks>\nThe <paramref name=\"position\" /> reference frame is required but all other\nreference frames are optional. If omitted, they are set to the\n<paramref name=\"position\" /> reference frame.\n</remarks>\n</doc>"
       },
       "Resource_get_Name": {
-        "id": 794,
+        "id": 797,
         "parameters": [
           {
             "name": "this",
@@ -17057,7 +17111,7 @@
         "documentation": "<doc>\n<summary>\nThe name of the resource.\n</summary>\n</doc>"
       },
       "Resource_get_Part": {
-        "id": 795,
+        "id": 798,
         "parameters": [
           {
             "name": "this",
@@ -17077,7 +17131,7 @@
         "documentation": "<doc>\n<summary>\nThe part containing the resource.\n</summary>\n</doc>"
       },
       "Resource_get_Max": {
-        "id": 796,
+        "id": 799,
         "parameters": [
           {
             "name": "this",
@@ -17095,7 +17149,7 @@
         "documentation": "<doc>\n<summary>\nThe total amount of the resource that can be stored in the part.\n</summary>\n</doc>"
       },
       "Resource_get_Amount": {
-        "id": 797,
+        "id": 800,
         "parameters": [
           {
             "name": "this",
@@ -17113,7 +17167,7 @@
         "documentation": "<doc>\n<summary>\nThe amount of the resource that is currently stored in the part.\n</summary>\n</doc>"
       },
       "Resource_get_Density": {
-        "id": 798,
+        "id": 801,
         "parameters": [
           {
             "name": "this",
@@ -17131,7 +17185,7 @@
         "documentation": "<doc>\n<summary>\nThe density of the resource, in <math>kg/l</math>.\n</summary>\n</doc>"
       },
       "Resource_get_FlowMode": {
-        "id": 799,
+        "id": 802,
         "parameters": [
           {
             "name": "this",
@@ -17151,7 +17205,7 @@
         "documentation": "<doc>\n<summary>\nThe flow mode of the resource.\n</summary>\n</doc>"
       },
       "Resource_get_Enabled": {
-        "id": 800,
+        "id": 803,
         "parameters": [
           {
             "name": "this",
@@ -17169,7 +17223,7 @@
         "documentation": "<doc>\n<summary>\nWhether use of this resource is enabled.\n</summary>\n</doc>"
       },
       "Resource_set_Enabled": {
-        "id": 801,
+        "id": 804,
         "parameters": [
           {
             "name": "this",
@@ -17189,7 +17243,7 @@
         "documentation": "<doc>\n<summary>\nWhether use of this resource is enabled.\n</summary>\n</doc>"
       },
       "ResourceTransfer_static_Start": {
-        "id": 802,
+        "id": 805,
         "parameters": [
           {
             "name": "fromPart",
@@ -17229,7 +17283,7 @@
         "documentation": "<doc>\n<summary>\nStart transferring a resource transfer between a pair of parts. The transfer will move\nat most <paramref name=\"maxAmount\" /> units of the resource, depending on how much of\nthe resource is available in the source part and how much storage is available in the\ndestination part.\nUse <see cref=\"M:SpaceCenter.ResourceTransfer.Complete\" /> to check if the transfer is complete.\nUse <see cref=\"M:SpaceCenter.ResourceTransfer.Amount\" /> to see how much of the resource has been transferred.\n</summary>\n<param name=\"fromPart\">The part to transfer to.</param>\n<param name=\"toPart\">The part to transfer from.</param>\n<param name=\"resource\">The name of the resource to transfer.</param>\n<param name=\"maxAmount\">The maximum amount of resource to transfer.</param>\n</doc>"
       },
       "ResourceTransfer_get_Complete": {
-        "id": 803,
+        "id": 806,
         "parameters": [
           {
             "name": "this",
@@ -17247,7 +17301,7 @@
         "documentation": "<doc>\n<summary>\nWhether the transfer has completed.\n</summary>\n</doc>"
       },
       "ResourceTransfer_get_Amount": {
-        "id": 804,
+        "id": 807,
         "parameters": [
           {
             "name": "this",
@@ -17265,7 +17319,7 @@
         "documentation": "<doc>\n<summary>\nThe amount of the resource that has been transferred.\n</summary>\n</doc>"
       },
       "Resources_WithResource": {
-        "id": 805,
+        "id": 808,
         "parameters": [
           {
             "name": "this",
@@ -17296,7 +17350,7 @@
         "documentation": "<doc>\n<summary>\nAll the individual resources with the given name that can be stored.\n</summary>\n</doc>"
       },
       "Resources_HasResource": {
-        "id": 806,
+        "id": 809,
         "parameters": [
           {
             "name": "this",
@@ -17320,7 +17374,7 @@
         "documentation": "<doc>\n<summary>\nCheck whether the named resource can be stored.\n</summary>\n<param name=\"name\">The name of the resource.</param>\n</doc>"
       },
       "Resources_Max": {
-        "id": 807,
+        "id": 810,
         "parameters": [
           {
             "name": "this",
@@ -17344,7 +17398,7 @@
         "documentation": "<doc>\n<summary>\nReturns the amount of a resource that can be stored.\n</summary>\n<param name=\"name\">The name of the resource.</param>\n</doc>"
       },
       "Resources_Amount": {
-        "id": 808,
+        "id": 811,
         "parameters": [
           {
             "name": "this",
@@ -17368,7 +17422,7 @@
         "documentation": "<doc>\n<summary>\nReturns the amount of a resource that is currently stored.\n</summary>\n<param name=\"name\">The name of the resource.</param>\n</doc>"
       },
       "Resources_static_Density": {
-        "id": 809,
+        "id": 812,
         "parameters": [
           {
             "name": "name",
@@ -17384,7 +17438,7 @@
         "documentation": "<doc>\n<summary>\nReturns the density of a resource, in <math>kg/l</math>.\n</summary>\n<param name=\"name\">The name of the resource.</param>\n</doc>"
       },
       "Resources_static_FlowMode": {
-        "id": 810,
+        "id": 813,
         "parameters": [
           {
             "name": "name",
@@ -17402,7 +17456,7 @@
         "documentation": "<doc>\n<summary>\nReturns the flow mode of a resource.\n</summary>\n<param name=\"name\">The name of the resource.</param>\n</doc>"
       },
       "Resources_get_All": {
-        "id": 811,
+        "id": 814,
         "parameters": [
           {
             "name": "this",
@@ -17427,7 +17481,7 @@
         "documentation": "<doc>\n<summary>\nAll the individual resources that can be stored.\n</summary>\n</doc>"
       },
       "Resources_get_Names": {
-        "id": 812,
+        "id": 815,
         "parameters": [
           {
             "name": "this",
@@ -17450,7 +17504,7 @@
         "documentation": "<doc>\n<summary>\nA list of resource names that can be stored.\n</summary>\n</doc>"
       },
       "Resources_get_Enabled": {
-        "id": 813,
+        "id": 816,
         "parameters": [
           {
             "name": "this",
@@ -17468,7 +17522,7 @@
         "documentation": "<doc>\n<summary>\nWhether use of all the resources are enabled.\n</summary>\n<remarks>\nThis is <c>true</c> if all of the resources are enabled.\nIf any of the resources are not enabled, this is <c>false</c>.\n</remarks>\n</doc>"
       },
       "Resources_set_Enabled": {
-        "id": 814,
+        "id": 817,
         "parameters": [
           {
             "name": "this",
@@ -17488,7 +17542,7 @@
         "documentation": "<doc>\n<summary>\nWhether use of all the resources are enabled.\n</summary>\n<remarks>\nThis is <c>true</c> if all of the resources are enabled.\nIf any of the resources are not enabled, this is <c>false</c>.\n</remarks>\n</doc>"
       },
       "Vessel_Recover": {
-        "id": 815,
+        "id": 818,
         "parameters": [
           {
             "name": "this",
@@ -17502,7 +17556,7 @@
         "documentation": "<doc>\n<summary>\nRecover the vessel.\n</summary>\n</doc>"
       },
       "Vessel_Flight": {
-        "id": 816,
+        "id": 819,
         "parameters": [
           {
             "name": "this",
@@ -17531,7 +17585,7 @@
         "documentation": "<doc>\n<summary>\nReturns a <see cref=\"T:SpaceCenter.Flight\" /> object that can be used to get flight\ntelemetry for the vessel, in the specified reference frame.\n</summary>\n<param name=\"referenceFrame\">\nReference frame. Defaults to the vessel's surface reference frame\n(<see cref=\"M:SpaceCenter.Vessel.SurfaceReferenceFrame\" />).\n</param>\n</doc>"
       },
       "Vessel_ResourcesInDecoupleStage": {
-        "id": 817,
+        "id": 820,
         "parameters": [
           {
             "name": "this",
@@ -17564,7 +17618,7 @@
         "documentation": "<doc>\n<summary>\nReturns a <see cref=\"T:SpaceCenter.Resources\" /> object, that can used to get\ninformation about resources stored in a given <paramref name=\"stage\" />.\n</summary>\n<param name=\"stage\">Get resources for parts that are decoupled in this stage.</param>\n<param name=\"cumulative\">When <c>false</c>, returns the resources for parts\ndecoupled in just the given stage. When <c>true</c> returns the resources decoupled in\nthe given stage and all subsequent stages combined.</param>\n</doc>"
       },
       "Vessel_Position": {
-        "id": 818,
+        "id": 821,
         "parameters": [
           {
             "name": "this",
@@ -17601,7 +17655,7 @@
         "documentation": "<doc>\n<summary>\nThe position of the center of mass of the vessel, in the given reference frame.\n</summary>\n<returns>The position as a vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nposition vector is in.</param>\n</doc>"
       },
       "Vessel_BoundingBox": {
-        "id": 819,
+        "id": 822,
         "parameters": [
           {
             "name": "this",
@@ -17657,7 +17711,7 @@
         "documentation": "<doc>\n<summary>\nThe axis-aligned bounding box of the vessel in the given reference frame.\n</summary>\n<returns>The positions of the minimum and maximum vertices of the box,\nas position vectors.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nposition vectors are in.</param>\n</doc>"
       },
       "Vessel_Velocity": {
-        "id": 820,
+        "id": 823,
         "parameters": [
           {
             "name": "this",
@@ -17694,7 +17748,7 @@
         "documentation": "<doc>\n<summary>\nThe velocity of the center of mass of the vessel, in the given reference frame.\n</summary>\n<returns>The velocity as a vector. The vector points in the direction of travel,\nand its magnitude is the speed of the body in meters per second.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nvelocity vector is in.</param>\n</doc>"
       },
       "Vessel_Rotation": {
-        "id": 821,
+        "id": 824,
         "parameters": [
           {
             "name": "this",
@@ -17734,7 +17788,7 @@
         "documentation": "<doc>\n<summary>\nThe rotation of the vessel, in the given reference frame.\n</summary>\n<returns>The rotation as a quaternion of the form <math>(x, y, z, w)</math>.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\nrotation is in.</param>\n</doc>"
       },
       "Vessel_Direction": {
-        "id": 822,
+        "id": 825,
         "parameters": [
           {
             "name": "this",
@@ -17771,7 +17825,7 @@
         "documentation": "<doc>\n<summary>\nThe direction in which the vessel is pointing, in the given reference frame.\n</summary>\n<returns>The direction as a unit vector.</returns>\n<param name=\"referenceFrame\">The reference frame that the returned\ndirection is in.</param>\n</doc>"
       },
       "Vessel_AngularVelocity": {
-        "id": 823,
+        "id": 826,
         "parameters": [
           {
             "name": "this",
@@ -17808,7 +17862,7 @@
         "documentation": "<doc>\n<summary>\nThe angular velocity of the vessel, in the given reference frame.\n</summary>\n<returns>The angular velocity as a vector. The magnitude of the vector is the rotational\nspeed of the vessel, in radians per second. The direction of the vector indicates the\naxis of rotation, using the right-hand rule.</returns>\n<param name=\"referenceFrame\">The reference frame the returned\nangular velocity is in.</param>\n</doc>"
       },
       "Vessel_get_Name": {
-        "id": 824,
+        "id": 827,
         "parameters": [
           {
             "name": "this",
@@ -17826,7 +17880,7 @@
         "documentation": "<doc>\n<summary>\nThe name of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_set_Name": {
-        "id": 825,
+        "id": 828,
         "parameters": [
           {
             "name": "this",
@@ -17846,7 +17900,7 @@
         "documentation": "<doc>\n<summary>\nThe name of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Type": {
-        "id": 826,
+        "id": 829,
         "parameters": [
           {
             "name": "this",
@@ -17866,7 +17920,7 @@
         "documentation": "<doc>\n<summary>\nThe type of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_set_Type": {
-        "id": 827,
+        "id": 830,
         "parameters": [
           {
             "name": "this",
@@ -17888,7 +17942,7 @@
         "documentation": "<doc>\n<summary>\nThe type of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Situation": {
-        "id": 828,
+        "id": 831,
         "parameters": [
           {
             "name": "this",
@@ -17908,7 +17962,7 @@
         "documentation": "<doc>\n<summary>\nThe situation the vessel is in.\n</summary>\n</doc>"
       },
       "Vessel_get_Recoverable": {
-        "id": 829,
+        "id": 832,
         "parameters": [
           {
             "name": "this",
@@ -17926,7 +17980,7 @@
         "documentation": "<doc>\n<summary>\nWhether the vessel is recoverable.\n</summary>\n</doc>"
       },
       "Vessel_get_MET": {
-        "id": 830,
+        "id": 833,
         "parameters": [
           {
             "name": "this",
@@ -17944,7 +17998,7 @@
         "documentation": "<doc>\n<summary>\nThe mission elapsed time in seconds.\n</summary>\n</doc>"
       },
       "Vessel_get_Biome": {
-        "id": 831,
+        "id": 834,
         "parameters": [
           {
             "name": "this",
@@ -17962,7 +18016,7 @@
         "documentation": "<doc>\n<summary>\nThe name of the biome the vessel is currently in.\n</summary>\n</doc>"
       },
       "Vessel_get_Orbit": {
-        "id": 832,
+        "id": 835,
         "parameters": [
           {
             "name": "this",
@@ -17982,7 +18036,7 @@
         "documentation": "<doc>\n<summary>\nThe current orbit of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Control": {
-        "id": 833,
+        "id": 836,
         "parameters": [
           {
             "name": "this",
@@ -18002,7 +18056,7 @@
         "documentation": "<doc>\n<summary>\nReturns a <see cref=\"T:SpaceCenter.Control\" /> object that can be used to manipulate\nthe vessel's control inputs. For example, its pitch/yaw/roll controls,\nRCS and thrust.\n</summary>\n</doc>"
       },
       "Vessel_get_Comms": {
-        "id": 834,
+        "id": 837,
         "parameters": [
           {
             "name": "this",
@@ -18022,7 +18076,7 @@
         "documentation": "<doc>\n<summary>\nReturns a <see cref=\"T:SpaceCenter.Comms\" /> object that can be used to interact\nwith CommNet for this vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AutoPilot": {
-        "id": 835,
+        "id": 838,
         "parameters": [
           {
             "name": "this",
@@ -18042,7 +18096,7 @@
         "documentation": "<doc>\n<summary>\nAn <see cref=\"T:SpaceCenter.AutoPilot\" /> object, that can be used to perform\nsimple auto-piloting of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_CrewCapacity": {
-        "id": 836,
+        "id": 839,
         "parameters": [
           {
             "name": "this",
@@ -18060,7 +18114,7 @@
         "documentation": "<doc>\n<summary>\nThe number of crew that can occupy the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_CrewCount": {
-        "id": 837,
+        "id": 840,
         "parameters": [
           {
             "name": "this",
@@ -18078,7 +18132,7 @@
         "documentation": "<doc>\n<summary>\nThe number of crew that are occupying the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Crew": {
-        "id": 838,
+        "id": 841,
         "parameters": [
           {
             "name": "this",
@@ -18103,7 +18157,7 @@
         "documentation": "<doc>\n<summary>\nThe crew in the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Resources": {
-        "id": 839,
+        "id": 842,
         "parameters": [
           {
             "name": "this",
@@ -18123,7 +18177,7 @@
         "documentation": "<doc>\n<summary>\nA <see cref=\"T:SpaceCenter.Resources\" /> object, that can used to get information\nabout resources stored in the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Parts": {
-        "id": 840,
+        "id": 843,
         "parameters": [
           {
             "name": "this",
@@ -18143,7 +18197,7 @@
         "documentation": "<doc>\n<summary>\nA <see cref=\"T:SpaceCenter.Parts\" /> object, that can used to interact with the parts that make up this vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_Mass": {
-        "id": 841,
+        "id": 844,
         "parameters": [
           {
             "name": "this",
@@ -18161,7 +18215,7 @@
         "documentation": "<doc>\n<summary>\nThe total mass of the vessel, including resources, in kg.\n</summary>\n</doc>"
       },
       "Vessel_get_DryMass": {
-        "id": 842,
+        "id": 845,
         "parameters": [
           {
             "name": "this",
@@ -18179,7 +18233,7 @@
         "documentation": "<doc>\n<summary>\nThe total mass of the vessel, excluding resources, in kg.\n</summary>\n</doc>"
       },
       "Vessel_get_Thrust": {
-        "id": 843,
+        "id": 846,
         "parameters": [
           {
             "name": "this",
@@ -18197,7 +18251,7 @@
         "documentation": "<doc>\n<summary>\nThe total thrust currently being produced by the vessel's engines, in\nNewtons. This is computed by summing <see cref=\"M:SpaceCenter.Engine.Thrust\" /> for\nevery engine in the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableThrust": {
-        "id": 844,
+        "id": 847,
         "parameters": [
           {
             "name": "this",
@@ -18215,7 +18269,7 @@
         "documentation": "<doc>\n<summary>\nGets the total available thrust that can be produced by the vessel's\nactive engines, in Newtons. This is computed by summing\n<see cref=\"M:SpaceCenter.Engine.AvailableThrust\" /> for every active engine in the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_MaxThrust": {
-        "id": 845,
+        "id": 848,
         "parameters": [
           {
             "name": "this",
@@ -18233,7 +18287,7 @@
         "documentation": "<doc>\n<summary>\nThe total maximum thrust that can be produced by the vessel's active\nengines, in Newtons. This is computed by summing\n<see cref=\"M:SpaceCenter.Engine.MaxThrust\" /> for every active engine.\n</summary>\n</doc>"
       },
       "Vessel_get_MaxVacuumThrust": {
-        "id": 846,
+        "id": 849,
         "parameters": [
           {
             "name": "this",
@@ -18251,7 +18305,7 @@
         "documentation": "<doc>\n<summary>\nThe total maximum thrust that can be produced by the vessel's active\nengines when the vessel is in a vacuum, in Newtons. This is computed by\nsumming <see cref=\"M:SpaceCenter.Engine.MaxVacuumThrust\" /> for every active engine.\n</summary>\n</doc>"
       },
       "Vessel_get_SpecificImpulse": {
-        "id": 847,
+        "id": 850,
         "parameters": [
           {
             "name": "this",
@@ -18269,7 +18323,7 @@
         "documentation": "<doc>\n<summary>\nThe combined specific impulse of all active engines, in seconds. This is computed using the formula\n<a href=\"https://wiki.kerbalspaceprogram.com/wiki/Specific_impulse#Multiple_engines\">described here</a>.\n</summary>\n</doc>"
       },
       "Vessel_get_VacuumSpecificImpulse": {
-        "id": 848,
+        "id": 851,
         "parameters": [
           {
             "name": "this",
@@ -18287,7 +18341,7 @@
         "documentation": "<doc>\n<summary>\nThe combined vacuum specific impulse of all active engines, in seconds. This is computed using the formula\n<a href=\"https://wiki.kerbalspaceprogram.com/wiki/Specific_impulse#Multiple_engines\">described here</a>.\n</summary>\n</doc>"
       },
       "Vessel_get_KerbinSeaLevelSpecificImpulse": {
-        "id": 849,
+        "id": 852,
         "parameters": [
           {
             "name": "this",
@@ -18305,7 +18359,7 @@
         "documentation": "<doc>\n<summary>\nThe combined specific impulse of all active engines at sea level on Kerbin, in seconds.\nThis is computed using the formula\n<a href=\"https://wiki.kerbalspaceprogram.com/wiki/Specific_impulse#Multiple_engines\">described here</a>.\n</summary>\n</doc>"
       },
       "Vessel_get_MomentOfInertia": {
-        "id": 850,
+        "id": 853,
         "parameters": [
           {
             "name": "this",
@@ -18334,7 +18388,7 @@
         "documentation": "<doc>\n<summary>\nThe moment of inertia of the vessel around its center of mass in <math>kg.m^2</math>.\nThe inertia values in the returned 3-tuple are around the\npitch, roll and yaw directions respectively.\nThis corresponds to the vessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\n</summary>\n</doc>"
       },
       "Vessel_get_InertiaTensor": {
-        "id": 851,
+        "id": 854,
         "parameters": [
           {
             "name": "this",
@@ -18357,7 +18411,7 @@
         "documentation": "<doc>\n<summary>\nThe inertia tensor of the vessel around its center of mass,\nin the vessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nReturns the 3x3 matrix as a list of elements, in row-major order.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableTorque": {
-        "id": 852,
+        "id": 855,
         "parameters": [
           {
             "name": "this",
@@ -18405,7 +18459,7 @@
         "documentation": "<doc>\n<summary>\nThe maximum torque that the vessel generates. Includes contributions from\nreaction wheels, RCS, gimballed engines and aerodynamic control surfaces.\nReturns the torques in <math>N.m</math> around each of the coordinate axes of the\nvessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nThese axes are equivalent to the pitch, roll and yaw axes of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableReactionWheelTorque": {
-        "id": 853,
+        "id": 856,
         "parameters": [
           {
             "name": "this",
@@ -18453,7 +18507,7 @@
         "documentation": "<doc>\n<summary>\nThe maximum torque that the currently active and powered reaction wheels can generate.\nReturns the torques in <math>N.m</math> around each of the coordinate axes of the\nvessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nThese axes are equivalent to the pitch, roll and yaw axes of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableRCSTorque": {
-        "id": 854,
+        "id": 857,
         "parameters": [
           {
             "name": "this",
@@ -18501,7 +18555,7 @@
         "documentation": "<doc>\n<summary>\nThe maximum torque that the currently active RCS thrusters can generate.\nReturns the torques in <math>N.m</math> around each of the coordinate axes of the\nvessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nThese axes are equivalent to the pitch, roll and yaw axes of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableEngineTorque": {
-        "id": 855,
+        "id": 858,
         "parameters": [
           {
             "name": "this",
@@ -18549,7 +18603,7 @@
         "documentation": "<doc>\n<summary>\nThe maximum torque that the currently active and gimballed engines can generate.\nReturns the torques in <math>N.m</math> around each of the coordinate axes of the\nvessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nThese axes are equivalent to the pitch, roll and yaw axes of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableControlSurfaceTorque": {
-        "id": 856,
+        "id": 859,
         "parameters": [
           {
             "name": "this",
@@ -18597,7 +18651,7 @@
         "documentation": "<doc>\n<summary>\nThe maximum torque that the aerodynamic control surfaces can generate.\nReturns the torques in <math>N.m</math> around each of the coordinate axes of the\nvessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nThese axes are equivalent to the pitch, roll and yaw axes of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_AvailableOtherTorque": {
-        "id": 857,
+        "id": 860,
         "parameters": [
           {
             "name": "this",
@@ -18645,7 +18699,7 @@
         "documentation": "<doc>\n<summary>\nThe maximum torque that parts (excluding reaction wheels, gimballed engines,\nRCS and control surfaces) can generate.\nReturns the torques in <math>N.m</math> around each of the coordinate axes of the\nvessels reference frame (<see cref=\"T:SpaceCenter.ReferenceFrame\" />).\nThese axes are equivalent to the pitch, roll and yaw axes of the vessel.\n</summary>\n</doc>"
       },
       "Vessel_get_ReferenceFrame": {
-        "id": 858,
+        "id": 861,
         "parameters": [
           {
             "name": "this",
@@ -18665,7 +18719,7 @@
         "documentation": "<doc>\n<summary>\nThe reference frame that is fixed relative to the vessel,\nand orientated with the vessel.\n<list type=\"bullet\"><item><description>The origin is at the center of mass of the vessel.</description></item><item><description>The axes rotate with the vessel.</description></item><item><description>The x-axis points out to the right of the vessel.</description></item><item><description>The y-axis points in the forward direction of the vessel.</description></item><item><description>The z-axis points out of the bottom off the vessel.</description></item></list></summary>\n</doc>"
       },
       "Vessel_get_OrbitalReferenceFrame": {
-        "id": 859,
+        "id": 862,
         "parameters": [
           {
             "name": "this",
@@ -18685,7 +18739,7 @@
         "documentation": "<doc>\n<summary>\nThe reference frame that is fixed relative to the vessel,\nand orientated with the vessels orbital prograde/normal/radial directions.\n<list type=\"bullet\"><item><description>The origin is at the center of mass of the vessel.</description></item><item><description>The axes rotate with the orbital prograde/normal/radial directions.</description></item><item><description>The x-axis points in the orbital anti-radial direction.</description></item><item><description>The y-axis points in the orbital prograde direction.</description></item><item><description>The z-axis points in the orbital normal direction.</description></item></list></summary>\n<remarks>\nBe careful not to confuse this with 'orbit' mode on the navball.\n</remarks>\n</doc>"
       },
       "Vessel_get_SurfaceReferenceFrame": {
-        "id": 860,
+        "id": 863,
         "parameters": [
           {
             "name": "this",
@@ -18705,7 +18759,7 @@
         "documentation": "<doc>\n<summary>\nThe reference frame that is fixed relative to the vessel,\nand orientated with the surface of the body being orbited.\n<list type=\"bullet\"><item><description>The origin is at the center of mass of the vessel.</description></item><item><description>The axes rotate with the north and up directions on the surface of the body.</description></item><item><description>The x-axis points in the <a href=\"https://en.wikipedia.org/wiki/Zenith\">zenith</a>\ndirection (upwards, normal to the body being orbited, from the center of the body towards the center of\nmass of the vessel).</description></item><item><description>The y-axis points northwards towards the\n<a href=\"https://en.wikipedia.org/wiki/Horizon\">astronomical horizon</a> (north, and tangential to the\nsurface of the body -- the direction in which a compass would point when on the surface).</description></item><item><description>The z-axis points eastwards towards the\n<a href=\"https://en.wikipedia.org/wiki/Horizon\">astronomical horizon</a> (east, and tangential to the\nsurface of the body -- east on a compass when on the surface).</description></item></list></summary>\n<remarks>\nBe careful not to confuse this with 'surface' mode on the navball.\n</remarks>\n</doc>"
       },
       "Vessel_get_SurfaceVelocityReferenceFrame": {
-        "id": 861,
+        "id": 864,
         "parameters": [
           {
             "name": "this",
@@ -18725,7 +18779,7 @@
         "documentation": "<doc>\n<summary>\nThe reference frame that is fixed relative to the vessel,\nand orientated with the velocity vector of the vessel relative\nto the surface of the body being orbited.\n<list type=\"bullet\"><item><description>The origin is at the center of mass of the vessel.</description></item><item><description>The axes rotate with the vessel's velocity vector.</description></item><item><description>The y-axis points in the direction of the vessel's velocity vector,\nrelative to the surface of the body being orbited.</description></item><item><description>The z-axis is in the plane of the\n<a href=\"https://en.wikipedia.org/wiki/Horizon\">astronomical horizon</a>.</description></item><item><description>The x-axis is orthogonal to the other two axes.</description></item></list></summary>\n</doc>"
       },
       "Waypoint_Remove": {
-        "id": 862,
+        "id": 865,
         "parameters": [
           {
             "name": "this",
@@ -18739,7 +18793,7 @@
         "documentation": "<doc>\n<summary>\nRemoves the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_get_Body": {
-        "id": 863,
+        "id": 866,
         "parameters": [
           {
             "name": "this",
@@ -18759,7 +18813,7 @@
         "documentation": "<doc>\n<summary>\nThe celestial body the waypoint is attached to.\n</summary>\n</doc>"
       },
       "Waypoint_set_Body": {
-        "id": 864,
+        "id": 867,
         "parameters": [
           {
             "name": "this",
@@ -18781,7 +18835,7 @@
         "documentation": "<doc>\n<summary>\nThe celestial body the waypoint is attached to.\n</summary>\n</doc>"
       },
       "Waypoint_get_Name": {
-        "id": 865,
+        "id": 868,
         "parameters": [
           {
             "name": "this",
@@ -18799,7 +18853,7 @@
         "documentation": "<doc>\n<summary>\nThe name of the waypoint as it appears on the map and the contract.\n</summary>\n</doc>"
       },
       "Waypoint_set_Name": {
-        "id": 866,
+        "id": 869,
         "parameters": [
           {
             "name": "this",
@@ -18819,7 +18873,7 @@
         "documentation": "<doc>\n<summary>\nThe name of the waypoint as it appears on the map and the contract.\n</summary>\n</doc>"
       },
       "Waypoint_get_Color": {
-        "id": 867,
+        "id": 870,
         "parameters": [
           {
             "name": "this",
@@ -18837,7 +18891,7 @@
         "documentation": "<doc>\n<summary>\nThe seed of the icon color. See <see cref=\"M:SpaceCenter.WaypointManager.Colors\" /> for example colors.\n</summary>\n</doc>"
       },
       "Waypoint_set_Color": {
-        "id": 868,
+        "id": 871,
         "parameters": [
           {
             "name": "this",
@@ -18857,7 +18911,7 @@
         "documentation": "<doc>\n<summary>\nThe seed of the icon color. See <see cref=\"M:SpaceCenter.WaypointManager.Colors\" /> for example colors.\n</summary>\n</doc>"
       },
       "Waypoint_get_Icon": {
-        "id": 869,
+        "id": 872,
         "parameters": [
           {
             "name": "this",
@@ -18875,7 +18929,7 @@
         "documentation": "<doc>\n<summary>\nThe icon of the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_set_Icon": {
-        "id": 870,
+        "id": 873,
         "parameters": [
           {
             "name": "this",
@@ -18895,7 +18949,7 @@
         "documentation": "<doc>\n<summary>\nThe icon of the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_get_Latitude": {
-        "id": 871,
+        "id": 874,
         "parameters": [
           {
             "name": "this",
@@ -18913,7 +18967,7 @@
         "documentation": "<doc>\n<summary>\nThe latitude of the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_set_Latitude": {
-        "id": 872,
+        "id": 875,
         "parameters": [
           {
             "name": "this",
@@ -18933,7 +18987,7 @@
         "documentation": "<doc>\n<summary>\nThe latitude of the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_get_Longitude": {
-        "id": 873,
+        "id": 876,
         "parameters": [
           {
             "name": "this",
@@ -18951,7 +19005,7 @@
         "documentation": "<doc>\n<summary>\nThe longitude of the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_set_Longitude": {
-        "id": 874,
+        "id": 877,
         "parameters": [
           {
             "name": "this",
@@ -18971,7 +19025,7 @@
         "documentation": "<doc>\n<summary>\nThe longitude of the waypoint.\n</summary>\n</doc>"
       },
       "Waypoint_get_MeanAltitude": {
-        "id": 875,
+        "id": 878,
         "parameters": [
           {
             "name": "this",
@@ -18989,7 +19043,7 @@
         "documentation": "<doc>\n<summary>\nThe altitude of the waypoint above sea level, in meters.\n</summary>\n</doc>"
       },
       "Waypoint_set_MeanAltitude": {
-        "id": 876,
+        "id": 879,
         "parameters": [
           {
             "name": "this",
@@ -19009,7 +19063,7 @@
         "documentation": "<doc>\n<summary>\nThe altitude of the waypoint above sea level, in meters.\n</summary>\n</doc>"
       },
       "Waypoint_get_SurfaceAltitude": {
-        "id": 877,
+        "id": 880,
         "parameters": [
           {
             "name": "this",
@@ -19027,7 +19081,7 @@
         "documentation": "<doc>\n<summary>\nThe altitude of the waypoint above the surface of the body or sea level,\nwhichever is closer, in meters.\n</summary>\n</doc>"
       },
       "Waypoint_set_SurfaceAltitude": {
-        "id": 878,
+        "id": 881,
         "parameters": [
           {
             "name": "this",
@@ -19047,7 +19101,7 @@
         "documentation": "<doc>\n<summary>\nThe altitude of the waypoint above the surface of the body or sea level,\nwhichever is closer, in meters.\n</summary>\n</doc>"
       },
       "Waypoint_get_BedrockAltitude": {
-        "id": 879,
+        "id": 882,
         "parameters": [
           {
             "name": "this",
@@ -19065,7 +19119,7 @@
         "documentation": "<doc>\n<summary>\nThe altitude of the waypoint above the surface of the body, in meters.\nWhen over water, this is the altitude above the sea floor.\n</summary>\n</doc>"
       },
       "Waypoint_set_BedrockAltitude": {
-        "id": 880,
+        "id": 883,
         "parameters": [
           {
             "name": "this",
@@ -19085,7 +19139,7 @@
         "documentation": "<doc>\n<summary>\nThe altitude of the waypoint above the surface of the body, in meters.\nWhen over water, this is the altitude above the sea floor.\n</summary>\n</doc>"
       },
       "Waypoint_get_NearSurface": {
-        "id": 881,
+        "id": 884,
         "parameters": [
           {
             "name": "this",
@@ -19103,7 +19157,7 @@
         "documentation": "<doc>\n<summary><c>true</c> if the waypoint is near to the surface of a body.\n</summary>\n</doc>"
       },
       "Waypoint_get_Grounded": {
-        "id": 882,
+        "id": 885,
         "parameters": [
           {
             "name": "this",
@@ -19121,7 +19175,7 @@
         "documentation": "<doc>\n<summary><c>true</c> if the waypoint is attached to the ground.\n</summary>\n</doc>"
       },
       "Waypoint_get_Index": {
-        "id": 883,
+        "id": 886,
         "parameters": [
           {
             "name": "this",
@@ -19139,7 +19193,7 @@
         "documentation": "<doc>\n<summary>\nThe integer index of this waypoint within its cluster of sibling waypoints.\nIn other words, when you have a cluster of waypoints called \"Somewhere Alpha\",\n\"Somewhere Beta\" and \"Somewhere Gamma\", the alpha site has index 0, the beta\nsite has index 1 and the gamma site has index 2.\nWhen <see cref=\"M:SpaceCenter.Waypoint.Clustered\" /> is <c>false</c>, this is zero.\n</summary>\n</doc>"
       },
       "Waypoint_get_Clustered": {
-        "id": 884,
+        "id": 887,
         "parameters": [
           {
             "name": "this",
@@ -19157,7 +19211,7 @@
         "documentation": "<doc>\n<summary><c>true</c> if this waypoint is part of a set of clustered waypoints with greek letter\nnames appended (Alpha, Beta, Gamma, etc).\nIf <c>true</c>, there is a one-to-one correspondence with the greek letter name and\nthe <see cref=\"M:SpaceCenter.Waypoint.Index\" />.\n</summary>\n</doc>"
       },
       "Waypoint_get_HasContract": {
-        "id": 885,
+        "id": 888,
         "parameters": [
           {
             "name": "this",
@@ -19175,7 +19229,7 @@
         "documentation": "<doc>\n<summary>\nWhether the waypoint belongs to a contract.\n</summary>\n</doc>"
       },
       "Waypoint_get_Contract": {
-        "id": 886,
+        "id": 889,
         "parameters": [
           {
             "name": "this",
@@ -19195,7 +19249,7 @@
         "documentation": "<doc>\n<summary>\nThe associated contract.\n</summary>\n</doc>"
       },
       "WaypointManager_AddWaypoint": {
-        "id": 887,
+        "id": 890,
         "parameters": [
           {
             "name": "this",
@@ -19241,7 +19295,7 @@
         "documentation": "<doc>\n<summary>\nCreates a waypoint at the given position at ground level, and returns a\n<see cref=\"T:SpaceCenter.Waypoint\" /> object that can be used to modify it.\n</summary>\n<param name=\"latitude\">Latitude of the waypoint.</param>\n<param name=\"longitude\">Longitude of the waypoint.</param>\n<param name=\"body\">Celestial body the waypoint is attached to.</param>\n<param name=\"name\">Name of the waypoint.</param>\n<returns></returns>\n</doc>"
       },
       "WaypointManager_AddWaypointAtAltitude": {
-        "id": 888,
+        "id": 891,
         "parameters": [
           {
             "name": "this",
@@ -19293,7 +19347,7 @@
         "documentation": "<doc>\n<summary>\nCreates a waypoint at the given position and altitude, and returns a\n<see cref=\"T:SpaceCenter.Waypoint\" /> object that can be used to modify it.\n</summary>\n<param name=\"latitude\">Latitude of the waypoint.</param>\n<param name=\"longitude\">Longitude of the waypoint.</param>\n<param name=\"altitude\">Altitude (above sea level) of the waypoint.</param>\n<param name=\"body\">Celestial body the waypoint is attached to.</param>\n<param name=\"name\">Name of the waypoint.</param>\n<returns></returns>\n</doc>"
       },
       "WaypointManager_get_Waypoints": {
-        "id": 889,
+        "id": 892,
         "parameters": [
           {
             "name": "this",
@@ -19318,7 +19372,7 @@
         "documentation": "<doc>\n<summary>\nA list of all existing waypoints.\n</summary>\n</doc>"
       },
       "WaypointManager_get_Icons": {
-        "id": 890,
+        "id": 893,
         "parameters": [
           {
             "name": "this",
@@ -19341,7 +19395,7 @@
         "documentation": "<doc>\n<summary>\nReturns all available icons (from \"GameData/Squad/Contracts/Icons/\").\n</summary>\n</doc>"
       },
       "WaypointManager_get_Colors": {
-        "id": 891,
+        "id": 894,
         "parameters": [
           {
             "name": "this",

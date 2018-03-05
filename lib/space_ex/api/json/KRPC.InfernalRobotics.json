@@ -1,6 +1,6 @@
 {
   "InfernalRobotics": {
-    "id": 2,
+    "id": 4,
     "documentation": "<doc>\n<summary>\nThis service provides functionality to interact with\n<a href=\"https://forum.kerbalspaceprogram.com/index.php?/topic/104535-112-magic-smoke-industries-infernal-robotics-202/\">Infernal Robotics</a>.\n</summary>\n</doc>",
     "procedures": {
       "ServoGroups": {

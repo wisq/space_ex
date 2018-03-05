@@ -1,6 +1,6 @@
 {
   "KerbalAlarmClock": {
-    "id": 2,
+    "id": 5,
     "documentation": "<doc>\n<summary>\nThis service provides functionality to interact with\n<a href=\"https://forum.kerbalspaceprogram.com/index.php?/topic/22809-13x-kerbal-alarm-clock-v3850-may-30/\">Kerbal Alarm Clock</a>.\n</summary>\n</doc>",
     "procedures": {
       "AlarmWithName": {
