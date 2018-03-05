@@ -4,6 +4,8 @@ defmodule SpaceEx.StreamTest do
 
   require SpaceEx.Stream
   alias SpaceEx.{Stream, Protobufs, KRPC, SpaceCenter}
+  alias KRPC.GameScene
+  alias Stream.Result
 
   alias SpaceEx.Protobufs.{
     StreamUpdate,
@@ -370,20 +372,24 @@ defmodule SpaceEx.StreamTest do
 
     # Receive a value now that we're subscribed:
     send_value.(:space_center)
-    assert_receive {:stream_result, 123, :space_center}
+    expected = GameScene.atom_to_wire(:space_center)
+    assert_receive {:stream_result, 123, %Result{value: ^expected}}
     # We shouldn't have received the first value, only the second:
-    refute_received {:stream_result, 123, :flight}
+    not_expected = GameScene.atom_to_wire(:flight)
+    refute_received {:stream_result, 123, %Result{value: ^not_expected}}
 
     # Subscriptions are now permanent, so we receive the next value too:
     send_value.(:tracking_station)
-    assert_receive {:stream_result, 123, :tracking_station}
+    expected = GameScene.atom_to_wire(:tracking_station)
+    assert_receive {:stream_result, 123, %Result{value: ^expected}}
 
     # Cancel our subscription:
     assert :ok = Stream.unsubscribe(stream)
 
     # We should NOT receive the next value:
     send_value.(:editor_sph)
-    refute_receive {:stream_result, 123, :editor_sph}
+    not_expected = GameScene.atom_to_wire(:editor_sph)
+    refute_receive {:stream_result, 123, %Result{value: ^not_expected}}
   end
 
   test "subscribe/1 does not allow multiple subscriptions with the same pid" do
@@ -432,7 +438,7 @@ defmodule SpaceEx.StreamTest do
     assert :ok = Stream.subscribe(stream, immediate: true)
 
     # We should receive the current result immediately.
-    assert_receive {:stream_result, 123, true}
+    assert_receive {:stream_result, 123, %Result{value: <<1>>}}
   end
 
   test "subscribe/1 with remove: true should exit if no other processes bonded" do
@@ -458,7 +464,7 @@ defmodule SpaceEx.StreamTest do
     send_stream_result(state.stream_socket, 123, true_result)
 
     # We should receive it, and the stream should shut down:
-    assert_receive {:stream_result, 123, true}
+    assert_receive {:stream_result, 123, %Result{value: <<1>>}}
     assert_receive {:DOWN, ^ref, :process, _pid, :normal}
 
     # Stream should be removed:
@@ -503,7 +509,7 @@ defmodule SpaceEx.StreamTest do
     send_stream_result(state.stream_socket, 123, true_result)
 
     # We should receive it:
-    assert_receive {:stream_result, 123, true}
+    assert_receive {:stream_result, 123, %Result{value: <<1>>}}
 
     # Send a second value:
     false_result = ProcedureResult.new(value: <<0>>)

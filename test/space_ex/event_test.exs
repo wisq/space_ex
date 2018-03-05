@@ -4,6 +4,7 @@ defmodule SpaceEx.EventTest do
 
   require SpaceEx.ProcedureCall
   alias SpaceEx.{Event, Stream, ProcedureCall, Protobufs, KRPC, KRPC.Expression, Types, API}
+  alias Stream.Result
 
   alias SpaceEx.Protobufs.{
     StreamUpdate,
@@ -391,7 +392,7 @@ defmodule SpaceEx.EventTest do
     send_stream_result(state.stream_socket, 66, true_result)
 
     # Receive the stream result:
-    assert_receive {:stream_result, 66, true}
+    assert_receive {:stream_result, 66, %Result{value: <<1>>}}
 
     # Stream should be removed and terminated:
     assert_receive {:DOWN, ^ref, :process, _pid, :normal}

@@ -96,6 +96,18 @@ defmodule SpaceEx.Stream do
   end
 
   defmodule Result do
+    @moduledoc """
+    Raw result from a stream, timestamped, not decoded.
+
+    Normally you won't use or see this structure in your own code.  Most `SpaceEx.Stream` functions will return just the decoded value by default.
+
+    ## Keys
+
+    * `:timestamp` — A `NaiveDateTime` indicating when the result was received.
+    * `:value` — The stream result value, in raw bytes, or `nil` if error.
+    * `:error` — The stream error value, as text, or `nil` if no error.
+    """
+
     @enforce_keys [:timestamp, :value, :error]
     defstruct(
       timestamp: nil,
@@ -296,7 +308,8 @@ defmodule SpaceEx.Stream do
   stream generates them.
 
   If you choose to receive stream results directly instead, the format is
-  `{:stream_result, id, value}` where `id` is the value of `stream.id`.
+  `{:stream_result, id, result}` where `id` is the value of `stream.id` and
+  `result` is a `SpaceEx.Stream.Result` structure.
 
   ## Options
 
@@ -498,19 +511,9 @@ defmodule SpaceEx.Stream do
     end
   end
 
-  # I was tempted to put this in a subprocess, but casual benchmarking suggests
-  # that the time to create a subprocess (even from the parent's detached POV)
-  # is greater than the time to just decode a typical simple value.
-  #
-  # Besides, we're not decoding every value.  If this takes a while, and
-  # several results back up in our queue, then we'll (by definition) process
-  # those results before we get the user's next `subscribe` request.  Those
-  # results will go undecoded, clearing our queue.
   defp dispatch_subscriptions(state, subs) do
-    value = state.decoder.(state.result.value)
-
     Enum.each(subs, fn sub ->
-      send(sub.pid, {:stream_result, state.id, value})
+      send(sub.pid, {:stream_result, state.id, state.result})
     end)
 
     remove_sub_pids = Enum.filter(subs, & &1.remove) |> Enum.map(& &1.pid)
