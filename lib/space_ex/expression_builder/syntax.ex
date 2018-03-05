@@ -169,4 +169,15 @@ defmodule SpaceEx.ExpressionBuilder.Syntax do
       EB.pipeline(a, b, opts)
     end
   end
+
+  @doc """
+  Cast a value to a given type.
+
+  `type` is an atom that indicates what type to cast to.  See `SpaceEx.KRPC.Type` for the list of valid types.
+  """
+  def cast(value, type) do
+    fn opts ->
+      EB.cast(value, type, opts)
+    end
+  end
 end

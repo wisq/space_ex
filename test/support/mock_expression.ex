@@ -11,6 +11,14 @@ defmodule SpaceEx.Test.MockExpression do
 
   @moduledoc false
 
+  defmodule Type do
+    def bool(_conn), do: :mock_bool_type
+    def double(_conn), do: :mock_double_type
+    def float(_conn), do: :mock_float_type
+    def int(_conn), do: :mock_int_type
+    def string(_conn), do: :mock_string_type
+  end
+
   @one_arg [
     # Procedure calls:
     :call,

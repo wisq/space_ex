@@ -13,9 +13,14 @@ defmodule SpaceEx.ExpressionBuilderTest do
     on_exit(&MockExpression.Assertions.assert_all_functions_used/0)
   end
 
-  test "MockExpression includes all Expression functions" do
+  test "MockExpression matches all Expression functions" do
     assert MockExpression.Assertions.functions_in(SpaceEx.KRPC.Expression) ==
              MockExpression.Assertions.functions_in(MockExpression)
+  end
+
+  test "MockType matches all Type functions" do
+    assert MockExpression.Assertions.functions_in(SpaceEx.KRPC.Type) ==
+             MockExpression.Assertions.functions_in(MockExpression.Type)
   end
 
   test "build simple expression #1" do

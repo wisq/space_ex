@@ -65,8 +65,9 @@ defmodule SpaceEx.ExpressionBuilder do
 
     # Undocumented, used in test suite:
     module = Keyword.get(opts, :module, SpaceEx.KRPC.Expression)
+    type_module = Keyword.get(opts, :type_module, SpaceEx.KRPC.Type)
 
-    ast = walk(block, %{conn: conn, module: module})
+    ast = walk(block, %{conn: conn, module: module, type_module: type_module})
 
     if opts[:as_string] do
       Macro.to_string(ast)
@@ -152,6 +153,19 @@ defmodule SpaceEx.ExpressionBuilder do
 
     quote location: :keep do
       unquote(opts.module).unquote(fn_name)(unquote(opts.conn), unquote(value))
+    end
+  end
+
+  @doc false
+  def cast(value, type, opts) do
+    value = walk(value, opts)
+
+    quote location: :keep do
+      unquote(opts.module).cast(
+        unquote(opts.conn),
+        unquote(value),
+        unquote(opts.type_module).unquote(type)(unquote(opts.conn))
+      )
     end
   end
 end
