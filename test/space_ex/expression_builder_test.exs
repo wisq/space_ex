@@ -146,12 +146,12 @@ defmodule SpaceEx.ExpressionBuilderTest do
     conn = :dummy_conn
 
     expr =
-      ExpressionBuilder.build conn, module: MockExpression do
-        to_int(SpaceCenter.ut(conn)) > int(123)
+      ExpressionBuilder.build conn, module: MockExpression, type_module: MockExpression.Type do
+        cast(SpaceCenter.ut(conn), :int) > int(123)
       end
 
     assert {:greater_than, ^conn, left, right} = expr
-    assert {:to_int, ^conn, call} = left
+    assert {:cast, ^conn, call, :mock_int_type} = left
     assert {:constant_int, ^conn, 123} = right
     assert {:call, ^conn, %ProcedureCall{}} = call
   end
@@ -160,13 +160,16 @@ defmodule SpaceEx.ExpressionBuilderTest do
     conn = :dummy_conn
 
     expr =
-      ExpressionBuilder.build conn, module: MockExpression do
-        int(123) |> to_double |> to_float |> to_int |> rem(int(999)) == int(123)
+      ExpressionBuilder.build conn, module: MockExpression, type_module: MockExpression.Type do
+        int(123) |> cast(:double) |> cast(:float) |> cast(:int) |> rem(int(999)) == int(123)
       end
 
     assert {:equal, ^conn, left, int_123} = expr
     assert {:modulo, ^conn, nested_123, int_999} = left
-    assert {:to_int, ^conn, {:to_float, ^conn, {:to_double, ^conn, ^int_123}}} = nested_123
+
+    assert {:cast, ^conn, n123_float, :mock_int_type} = nested_123
+    assert {:cast, ^conn, n123_double, :mock_float_type} = n123_float
+    assert {:cast, ^conn, ^int_123, :mock_double_type} = n123_double
 
     assert {:constant_int, ^conn, 123} = int_123
     assert {:constant_int, ^conn, 999} = int_999
@@ -176,15 +179,15 @@ defmodule SpaceEx.ExpressionBuilderTest do
     conn = :dummy_conn
 
     expr =
-      ExpressionBuilder.build conn, module: MockExpression do
-        rem(to_int(SpaceCenter.ut(conn)), int(3600)) == int(0)
+      ExpressionBuilder.build conn, module: MockExpression, type_module: MockExpression.Type do
+        rem(cast(SpaceCenter.ut(conn), :int), int(3600)) == int(0)
       end
 
     assert {:equal, ^conn, left, right} = expr
     assert {:modulo, ^conn, mod_left, mod_right} = left
     assert {:constant_int, ^conn, 0} = right
 
-    assert {:to_int, ^conn, call} = mod_left
+    assert {:cast, ^conn, call, :mock_int_type} = mod_left
     assert {:constant_int, ^conn, 3600} = mod_right
 
     assert {:call, ^conn, %ProcedureCall{}} = call

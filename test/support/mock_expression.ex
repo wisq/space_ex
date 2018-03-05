@@ -27,10 +27,6 @@ defmodule SpaceEx.Test.MockExpression do
     :constant_float,
     :constant_double,
     :constant_string,
-    # Conversions:
-    :to_int,
-    :to_float,
-    :to_double,
     # Boolean logic:
     :not
   ]
@@ -56,7 +52,9 @@ defmodule SpaceEx.Test.MockExpression do
     :power,
     # Bit shifting:
     :left_shift,
-    :right_shift
+    :right_shift,
+    # Type casting:
+    :cast
   ]
 
   Enum.each(@one_arg, fn fn_name ->
