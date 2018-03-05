@@ -4,7 +4,6 @@ defmodule SpaceEx.StreamTest do
 
   require SpaceEx.Stream
   alias SpaceEx.{Stream, Protobufs, KRPC, SpaceCenter}
-  alias KRPC.GameScene
   alias Stream.Result
 
   alias SpaceEx.Protobufs.{
@@ -372,15 +371,15 @@ defmodule SpaceEx.StreamTest do
 
     # Receive a value now that we're subscribed:
     send_value.(:space_center)
-    expected = GameScene.atom_to_wire(:space_center)
+    expected = KRPC.GameScene.atom_to_wire(:space_center)
     assert_receive {:stream_result, 123, %Result{value: ^expected}}
     # We shouldn't have received the first value, only the second:
-    not_expected = GameScene.atom_to_wire(:flight)
+    not_expected = KRPC.GameScene.atom_to_wire(:flight)
     refute_received {:stream_result, 123, %Result{value: ^not_expected}}
 
     # Subscriptions are now permanent, so we receive the next value too:
     send_value.(:tracking_station)
-    expected = GameScene.atom_to_wire(:tracking_station)
+    expected = KRPC.GameScene.atom_to_wire(:tracking_station)
     assert_receive {:stream_result, 123, %Result{value: ^expected}}
 
     # Cancel our subscription:
@@ -388,7 +387,7 @@ defmodule SpaceEx.StreamTest do
 
     # We should NOT receive the next value:
     send_value.(:editor_sph)
-    not_expected = GameScene.atom_to_wire(:editor_sph)
+    not_expected = KRPC.GameScene.atom_to_wire(:editor_sph)
     refute_receive {:stream_result, 123, %Result{value: ^not_expected}}
   end
 
@@ -536,7 +535,118 @@ defmodule SpaceEx.StreamTest do
     assert remove.procedure == "RemoveStream"
   end
 
-  test "streams do not decode values by default (without subscriptions)" do
+  test "receive_latest/1 should receive and decode latest subscribed value" do
+    state = MockConnection.start(real_stream: true)
+
+    # Helper function to send values:
+    send_value = fn scene ->
+      value = KRPC.GameScene.atom_to_wire(scene)
+      result = ProcedureResult.new(value: value)
+      send_stream_result(state.stream_socket, 123, result)
+    end
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream and subscribe:
+    assert %Stream{id: 123} = stream = KRPC.current_game_scene(state.conn) |> Stream.stream()
+    assert :ok = Stream.subscribe(stream)
+
+    # Receive a value now that we're subscribed:
+    send_value.(:space_center)
+    assert Stream.receive_latest(stream) == :space_center
+
+    # Send multiple values:
+    send_value.(:flight)
+    Process.sleep(10)
+    send_value.(:tracking_station)
+    Process.sleep(10)
+    send_value.(:editor_sph)
+    Process.sleep(100)
+
+    # We should see only the most recent:
+    assert Stream.receive_latest(stream) == :editor_sph
+  end
+
+  test "receive_next/1 should receive and decode next subscribed value" do
+    state = MockConnection.start(real_stream: true)
+
+    # Helper function to send values:
+    send_value = fn scene ->
+      value = KRPC.GameScene.atom_to_wire(scene)
+      result = ProcedureResult.new(value: value)
+      send_stream_result(state.stream_socket, 123, result)
+    end
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream and subscribe:
+    assert %Stream{id: 123} = stream = KRPC.current_game_scene(state.conn) |> Stream.stream()
+    assert :ok = Stream.subscribe(stream)
+
+    # Receive a value now that we're subscribed:
+    send_value.(:space_center)
+    assert Stream.receive_next(stream) == :space_center
+
+    # Send multiple values:
+    send_value.(:flight)
+    Process.sleep(10)
+    send_value.(:tracking_station)
+    Process.sleep(10)
+    send_value.(:editor_sph)
+    Process.sleep(100)
+
+    # We should see ALL of them:
+    assert Stream.receive_next(stream) == :flight
+    assert Stream.receive_next(stream) == :tracking_station
+    assert Stream.receive_next(stream) == :editor_sph
+  end
+
+  test "receive_next/1 should raise if value is older than max_age" do
+    state = MockConnection.start(real_stream: true)
+
+    # Helper function to send values:
+    send_value = fn scene ->
+      value = KRPC.GameScene.atom_to_wire(scene)
+      result = ProcedureResult.new(value: value)
+      send_stream_result(state.stream_socket, 123, result)
+    end
+
+    # AddStream result:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream and subscribe:
+    assert %Stream{id: 123} = stream = KRPC.current_game_scene(state.conn) |> Stream.stream()
+    assert :ok = Stream.subscribe(stream)
+
+    # Send values:
+    send_value.(:flight)
+    Process.sleep(10)
+    send_value.(:tracking_station)
+    Process.sleep(50)
+
+    # Too old; we want 10ms or less.
+    error =
+      assert_raise(Stream.StaleDataError, fn ->
+        Stream.receive_next(stream, max_age: 10)
+      end)
+
+    assert error.result.value == KRPC.GameScene.atom_to_wire(:flight)
+    assert error.age > 10
+    assert error.max_age == 10
+
+    # Don't care about max_age.
+    assert Stream.receive_next(stream, max_age: :infinity) == :tracking_station
+  end
+
+  test "streams do not decode values" do
     state = MockConnection.start(real_stream: true)
 
     # AddStream result:

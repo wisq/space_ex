@@ -126,6 +126,36 @@ defmodule SpaceEx.Stream do
     )
   end
 
+  defmodule StaleDataError do
+    defexception [:error, :message, :result, :age, :max_age]
+
+    @moduledoc """
+    Thrown by `SpaceEx.Stream.receive_next/2` if the received data is too old.
+
+    This prevents code from falling behind if the stream rate is too high, relative to the handler's execution speed.
+
+    ## Fields
+
+    * `:result` — The received `SpaceEx.Stream.Result` structure.
+    * `:age` — the age at the time of the `SpaceEx.Stream.receive_next/2` call.
+    * `:max_age` — the `:max_age` parameter to `SpaceEx.Stream.receive_next/2`.
+    """
+
+    def exception(opts) do
+      result = Keyword.fetch!(opts, :result)
+      age = Keyword.fetch!(opts, :age)
+      max_age = Keyword.fetch!(opts, :max_age)
+
+      %StaleDataError{
+        result: result,
+        age: age,
+        max_age: max_age,
+        message:
+          "Stale data (age: #{age}ms, max: #{max_age}ms) from stream -- increase handler speed or decrease stream rate"
+      }
+    end
+  end
+
   @enforce_keys [:id, :conn, :pid, :decoder]
   defstruct(
     id: nil,
@@ -253,8 +283,11 @@ defmodule SpaceEx.Stream do
   """
 
   def get(stream, timeout \\ 5000) do
-    result = GenServer.call(stream.pid, :get, timeout)
+    GenServer.call(stream.pid, :get, timeout)
+    |> return_stream_result(stream)
+  end
 
+  def return_stream_result(result, stream) do
     if result.error do
       raise result.error.description
     else
@@ -345,6 +378,104 @@ defmodule SpaceEx.Stream do
     case GenServer.call(stream.pid, {:unsubscribe, pid}) do
       :ok -> :ok
       :not_subscribed -> raise "Process #{inspect(pid)} is not subscribed to stream"
+    end
+  end
+
+  @doc """
+  Receives the latest value from a subscribed stream.
+
+  If no stream results for `stream` are in the process mailbox, this will block
+  (up to `timeout` milliseconds) until a result is received.  Otherwise, it
+  will immediately return the latest stream result and discard the rest.
+
+  This is generally the best way to receive results from a subscribed stream,
+  since most code is only concerned with the current value of the stream.  If
+  your receive loop is sufficiently fast, it can process every single value;
+  otherwise, it will skip values in order to stay current and not flood the
+  process mailbox.
+  """
+  def receive_latest(stream, timeout \\ 5000) do
+    stream_id = stream.id
+
+    receive do
+      {:stream_result, ^stream_id, result} ->
+        receive_latest_flush(stream_id, result)
+        |> return_stream_result(stream)
+    after
+      timeout -> raise "No stream result received after #{timeout}ms"
+    end
+  end
+
+  defp receive_latest_flush(stream_id, last_result) do
+    receive do
+      {:stream_result, ^stream_id, next_result} -> receive_latest_flush(stream_id, next_result)
+    after
+      0 -> last_result
+    end
+  end
+
+  @doc """
+  Receives the next value from a subscribed stream.
+
+  If no stream results for `stream` are in the process mailbox, this will block
+  (up to `timeout` milliseconds) until a result is received.  Otherwise, it
+  will immediately return the first stream result in the process mailbox.
+
+  This can be used if your code must monitor _every_ received stream result,
+  e.g. if you're monitoring for a rare abnormal value in the data.  This is a
+  relatively rare use case — especially since streams have a polling rate, so
+  there's no guarantee you'll be able to catch said value at all.
+
+  In most cases, your code only needs the current value of a stream, and so you
+  should use `receive_latest/2` instead.
+
+  ## Mailbox overflow
+
+  Since messages are being constantly sent to your process, and
+  `receive_next/2` does not skip messages, your loop needs to be fast enough to
+  process all messages and not fall behind.  Otherwise, the process mailbox
+  will continually grow with more and more pending results, and the results
+  processed by your code will be more and more out-of-date.
+
+  Falling behind can often be subtle and hard to detect, so `receive_next/2`
+  has a built-in safeguard by default.  The `:max_age` option indicates the
+  maximum age (in milliseconds) of a returned result.  If we would return a
+  result older than that, a `StaleDataError` is raised instead.
+
+  If your code must monitor every value, then a `StaleDataError` is a fatal
+  error — you should increase the speed of your code or pick a lower stream
+  rate.  Otherwise, there are various ways to handle this error.  For example,
+  you could process the data anyway (via the `:result` field in the error), or
+  you could issue a one-off `receive_latest/2` call to flush all pending data
+  and start over from the latest.  However, if you're encountering this error
+  regularly, you should probably rethink your approach.
+
+  ## Options
+
+  * `:timeout` — Maximum time (in milliseconds) to wait for the next stream result.
+  * `:max_age` — Maximum age of the next stream result, or `:infinity` for no limit.
+  """
+  def receive_next(stream, opts \\ []) do
+    stream_id = stream.id
+    timeout = Keyword.get(opts, :timeout, 5000)
+    max_age = Keyword.get(opts, :max_age, 1000)
+
+    receive do
+      {:stream_result, ^stream_id, result} ->
+        assert_max_age(result, max_age)
+        return_stream_result(result, stream)
+    after
+      timeout -> raise "No stream result received after #{timeout}ms"
+    end
+  end
+
+  defp assert_max_age(_result, :infinity), do: :ok
+
+  defp assert_max_age(result, max_age) do
+    age = NaiveDateTime.diff(current_timestamp(), result.timestamp, :milliseconds)
+
+    if age > max_age do
+      raise StaleDataError, result: result, age: age, max_age: max_age
     end
   end
 
