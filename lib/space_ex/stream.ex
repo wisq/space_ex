@@ -344,7 +344,7 @@ defmodule SpaceEx.Stream do
   end
 
   @doc """
-  Receive the next decoded value from a stream as a message.
+  Receive values from a stream as messages.
 
   This is the non-blocking version of `wait/2`.  As soon as the stream receives
   a value, a message will be delivered to the calling process.
