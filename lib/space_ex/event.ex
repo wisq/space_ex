@@ -116,8 +116,10 @@ defmodule SpaceEx.Event do
   call `Event.remove/1` to clean up the event stream.
 
   Because events are effectively just streams, this message will be in the form
-  of `{:stream_result, id, value}` where `id` is the value of `event.id` (or
-  the `:name` option, if specified).
+  of `{:stream_result, id, result}` where `id` is the value of `event.id` (or
+  the `:name` option, if specified).  You can use `Stream.decode/2` to decode
+  `result`, or you can just check that `result.value == <<1>>` (`true` in wire
+  format) which is almost always the case for event streams.
 
   This function behaves identically to `SpaceEx.Stream.subscribe/2`, except
   that the `:immediate` and `:remove` options are both `true` by default.  It's
