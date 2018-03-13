@@ -455,10 +455,10 @@ defmodule SpaceEx.Stream do
   result older than that, a `SpaceEx.Stream.StaleDataError` is raised instead.
 
   If your code must monitor every value, then a `SpaceEx.Stream.StaleDataError`
-  is a fatal error — you should increase the speed of your code or pick a lower
-  stream rate.  Otherwise, there are various ways to handle this error.  For
-  example, you could process the data anyway (via the `:result` field in the
-  error), or you could issue a one-off `receive_latest/2` call to flush all
+  is a fatal error — you should increase the speed of your code, or pick a
+  lower stream rate.  Otherwise, there are various ways to handle this error.
+  For example, you could process the data anyway (via the `:result` field in
+  the error), or you could issue a one-off `receive_latest/2` call to flush all
   pending data and start over from the latest.  However, if you're encountering
   this error regularly, you should probably rethink your approach.
 

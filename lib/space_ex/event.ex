@@ -116,12 +116,13 @@ defmodule SpaceEx.Event do
   call `Event.remove/1` to clean up the event stream.
 
   Because events are effectively just streams, this message will be in the form
-  of `{:stream_result, id, value}` where `id` is the value of `event.id`.
+  of `{:stream_result, id, value}` where `id` is the value of `event.id` (or
+  the `:name` option, if specified).
 
   This function behaves identically to `SpaceEx.Stream.subscribe/2`, except
-  that the `immediate` and `remove` options are both `true` by default.  It's
-  unlikely that you'll want to change either of these, since event streams
-  only ever get a single message.
+  that the `:immediate` and `:remove` options are both `true` by default.  It's
+  unlikely that you'll want to change either of these, since event streams only
+  ever get a single message.
   """
   def subscribe(event, opts \\ []) do
     opts = opts |> Keyword.put_new(:immediate, true) |> Keyword.put_new(:remove, true)
