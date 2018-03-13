@@ -302,16 +302,7 @@ defmodule SpaceEx.Stream do
   """
 
   def get(stream, timeout \\ 5000) do
-    GenServer.call(stream.pid, :get, timeout)
-    |> return_stream_result(stream)
-  end
-
-  defp return_stream_result(result, stream) do
-    if result.error do
-      raise result.error.description
-    else
-      stream.decoder.(result.value)
-    end
+    decode(stream, GenServer.call(stream.pid, :get, timeout))
   end
 
   @doc """
@@ -335,13 +326,7 @@ defmodule SpaceEx.Stream do
   """
 
   def wait(stream, timeout \\ :infinity) do
-    result = GenServer.call(stream.pid, :wait, timeout)
-
-    if result.error do
-      raise result.error.description
-    else
-      stream.decoder.(result.value)
-    end
+    decode(stream, GenServer.call(stream.pid, :wait, timeout))
   end
 
   @doc """
@@ -427,8 +412,7 @@ defmodule SpaceEx.Stream do
 
     receive do
       {:stream_result, ^stream_id, result} ->
-        receive_latest_flush(stream_id, result)
-        |> return_stream_result(stream)
+        decode(stream, receive_latest_flush(stream_id, result))
     after
       timeout -> raise "No stream result received after #{timeout}ms"
     end
@@ -491,7 +475,7 @@ defmodule SpaceEx.Stream do
     receive do
       {:stream_result, ^stream_id, result} ->
         assert_max_age(result, max_age)
-        return_stream_result(result, stream)
+        decode(stream, result)
     after
       timeout -> raise "No stream result received after #{timeout}ms"
     end
@@ -504,6 +488,20 @@ defmodule SpaceEx.Stream do
 
     if age > max_age do
       raise StaleDataError, result: result, age: age, max_age: max_age
+    end
+  end
+
+  @doc """
+  Decode a stream result (e.g. from a `subscribe/2` subscription).
+
+  If the function being streamed has resulted in an error, this will raise that
+  error.  Otherwise, returns the streamed value.
+  """
+  def decode(stream, result) do
+    if result.error do
+      raise result.error.description
+    else
+      stream.decoder.(result.value)
     end
   end
 
