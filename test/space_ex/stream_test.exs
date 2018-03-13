@@ -391,6 +391,42 @@ defmodule SpaceEx.StreamTest do
     refute_receive {:stream_result, 123, %Result{value: ^not_expected}}
   end
 
+  test "subscribe/1 with name option" do
+    state = MockConnection.start(real_stream: true)
+
+    # Helper function to send values:
+    send_value = fn id, scene ->
+      value = KRPC.GameScene.atom_to_wire(scene)
+      result = ProcedureResult.new(value: value)
+      send_stream_result(state.stream_socket, id, result)
+    end
+
+    # AddStream results:
+    Protobufs.Stream.new(id: 123)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    Protobufs.Stream.new(id: 456)
+    |> Protobufs.Stream.encode()
+    |> MockConnection.add_result_value(state.conn)
+
+    # Create the stream:
+    assert %Stream{id: 123} = stream1 = KRPC.current_game_scene(state.conn) |> Stream.stream()
+    assert %Stream{id: 456} = stream2 = KRPC.current_game_scene(state.conn) |> Stream.stream()
+
+    # Subscribe to the streams:
+    assert :ok = Stream.subscribe(stream1, name: :stream_one)
+    assert :ok = Stream.subscribe(stream2, name: :stream_two)
+
+    # Receive values:
+    send_value.(123, :space_center)
+    send_value.(456, :flight)
+    expected1 = KRPC.GameScene.atom_to_wire(:space_center)
+    expected2 = KRPC.GameScene.atom_to_wire(:flight)
+    assert_receive {:stream_result, :stream_one, %Result{value: ^expected1}}
+    assert_receive {:stream_result, :stream_two, %Result{value: ^expected2}}
+  end
+
   test "subscribe/1 does not allow multiple subscriptions with the same pid" do
     state = MockConnection.start()
 

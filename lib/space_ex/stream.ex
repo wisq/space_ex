@@ -136,9 +136,10 @@ defmodule SpaceEx.Stream do
   defmodule Subscription do
     @moduledoc false
 
-    @enforce_keys [:pid, :immediate, :remove]
+    @enforce_keys [:pid, :name, :immediate, :remove]
     defstruct(
       pid: nil,
+      name: nil,
       immediate: nil,
       remove: nil
     )
@@ -352,17 +353,21 @@ defmodule SpaceEx.Stream do
   Messages will continue to be sent until the calling process calls
   `unsubscribe/1` (unless the `:remove` option is true; see below).
 
-  It's recommended that you use either `receive_latest/2` or `receive_next/2`
+  It's suggested that you use either `receive_latest/2` or `receive_next/2`
   to receive messages from streams.  These functions are designed to prevent
   unexpected results if your code processes stream messages slower than the
   stream generates them.
 
   If you choose to receive stream results directly instead, the format is
   `{:stream_result, id, result}` where `id` is the value of `stream.id` and
-  `result` is a `SpaceEx.Stream.Result` structure.
+  `result` is a `SpaceEx.Stream.Result` structure.  (If the `:name` option is
+  given, it will replace `id` here.)  Use `decode/2` to decode results.
 
   ## Options
 
+  * `:name` — if set, will be used as the stream ID in messages; however, this
+    will make your subscription incompatible with `receive_latest/2` and
+    `receive_next/2`.
   * `:immediate` — if `true` and the stream has already received at least one
     result, the latest result will be sent immediately.  The subscription will
     continue normally after that.  Default: `false`
@@ -377,6 +382,7 @@ defmodule SpaceEx.Stream do
   def subscribe(stream, opts \\ []) do
     sub = %Subscription{
       pid: self(),
+      name: Keyword.get(opts, :name),
       immediate: Keyword.get(opts, :immediate, false),
       remove: Keyword.get(opts, :remove, false)
     }
@@ -673,7 +679,7 @@ defmodule SpaceEx.Stream do
 
   defp dispatch_subscriptions(state, subs) do
     Enum.each(subs, fn sub ->
-      send(sub.pid, {:stream_result, state.id, state.result})
+      send(sub.pid, {:stream_result, sub.name || state.id, state.result})
     end)
 
     remove_sub_pids = Enum.filter(subs, & &1.remove) |> Enum.map(& &1.pid)
