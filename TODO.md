@@ -1,16 +1,24 @@
 # To-do list
 
-## Path to v1.0.0
+Development stalled out in 2018.  Since then, there's been some notable events:
 
-* Finish porting example scripts to more Elixir-like syntax.
-* Check all code samples in module docs to ensure they're up-to-date.
-* Release v1.0.0!
+## KSP 2
 
-## Update to kRPC 0.4.4
+Kerbal Space Program 2 was announced in 2019, and hit Early Access in 2023.  At
+this point, my interest in KSP1 has mostly fallen away, so development on this
+library is 100% on hold at the moment.
 
-I've got a branch for this, and I've got all the new functions mocked out.
-However, I can't actually proceed until I understand how to use the new
-functions, so I can create meaningful syntax and test examples for them.
-There's nearly zero documentation at the moment — the API docs alone aren't
-very helpful without any sort of example usage, since everything is just an
-Expression.
+I don't know if there will be a kRPC (or equivalent) for KSP2, or what it might
+look like.  But I imagine that if/when it happens, this library will likely be
+resurrected and ported (or rewritten) to use it.
+
+## GenStage
+
+Elixir released [GenStage](https://github.com/elixir-lang/gen_stage), a much
+better way to create an events pipeline.  Technically this was in 2016, but it
+took me until much more recently to discover how useful it is.
+
+The entire `SpaceEx.Stream` system could probably be rewritten using this.  I
+might still want to put some syntactic sugar on top to keep things clean from a
+library user's point of view.  And, of course, the entire future of streams
+will depend on what our KSP2 RPC API (if any) looks like.
