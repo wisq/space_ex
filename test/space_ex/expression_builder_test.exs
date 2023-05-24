@@ -339,6 +339,8 @@ defmodule SpaceEx.ExpressionBuilderTest do
       ExpressionBuilder.build conn, as_string: true do
         SpaceCenter.ut(conn) > double(123.456)
       end
+      |> String.replace(~r/,\n\s+/, ", ")
+      |> String.replace(~r/\n\s*/, "")
 
     expected =
       """

@@ -799,7 +799,7 @@ defmodule SpaceEx.StreamTest do
       end)
 
     assert err.module == KRPC.GameScene
-    assert err.function == :wire_to_atom
+    assert err.function == :"-inlined-wire_to_atom/1-"
 
     me = self()
     # Wait for the next value:
